@@ -1,8 +1,12 @@
+
 #include "common.h"
 #include "stdio.h"
 #include "stddef.h"
 #include "list.h"
 #include "ilogger.h"
+
+#ifndef LOGGER_H
+#define LOGGER_H
 
 #define PIPE_CHUNK_SIZE  512
 #define LOG_DESTINATION_STDERR 1
@@ -50,3 +54,5 @@ void write_message_file(
 	int                 count);
 uint __stdcall pipeThread(void *arg);
 int logger_start(void*  self);
+
+#endif

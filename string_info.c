@@ -3,6 +3,7 @@
 #include "ierrorlogger.h"
 #include "memcontainermanager.h"
 #include "string_info.h"
+#include "trackmemmanager.h"
 
 const SIStringManager sStringManager = 
 { 

@@ -1330,6 +1330,26 @@
 							</Filter>
 						</Filter>
 					</Filter>
+					<Filter
+						Name="process_helper"
+						>
+						<Filter
+							Name="start_sub_proc"
+							>
+							<Filter
+								Name="negative"
+								>
+							</Filter>
+							<Filter
+								Name="positive"
+								>
+								<File
+									RelativePath=".\when_start_sub_proc.c"
+									>
+								</File>
+							</Filter>
+						</Filter>
+					</Filter>
 				</Filter>
 			</Filter>
 			<Filter

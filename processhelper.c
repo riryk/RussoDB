@@ -223,6 +223,9 @@ int startSubProcess(void* self, int argc, char* argv[])
 
 	int                  i, j;
 
+	ASSERT(elog, argv != NULL, -1); 
+    ASSERT(elog, argv[0] != NULL, -1); 
+    ASSERT(elog, argv[1] != NULL, -1); 
     ASSERT(elog, argv[2] == NULL, -1); 
 
     /* Set up shared memory for parameter passing */
