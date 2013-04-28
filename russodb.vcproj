@@ -43,7 +43,7 @@
 				Name="VCCLCompilerTool"
 				AdditionalOptions="/MP"
 				Optimization="0"
-				AdditionalIncludeDirectories="src/include/file;"
+				AdditionalIncludeDirectories="src/include/file;src/include/error;src/include/common;src/include/os/file;"
 				StringPooling="false"
 				RuntimeLibrary="3"
 				AssemblerOutput="0"
@@ -128,7 +128,7 @@
 				Name="VCCLCompilerTool"
 				AdditionalOptions="/MP"
 				Optimization="0"
-				AdditionalIncludeDirectories="src/include/file;"
+				AdditionalIncludeDirectories="src/include/file;src/include/error;src/include/common;src/include/os/file;"
 				StringPooling="false"
 				RuntimeLibrary="3"
 				AssemblerOutput="0"
@@ -203,6 +203,36 @@
 						>
 					</File>
 				</Filter>
+				<Filter
+					Name="error"
+					>
+					<File
+						RelativePath="src\include\error\error.h"
+						>
+					</File>
+				</Filter>
+				<Filter
+					Name="common"
+					>
+					<File
+						RelativePath="src\include\common\common.h"
+						>
+					</File>
+				</Filter>
+				
+				<Filter
+					Name="os"
+					>
+					<Filter
+					    Name="file"
+					    >
+					    <File
+						    RelativePath="src\include\os\file\osfile.h"
+						    >
+					    </File>
+				    </Filter>	
+				</Filter>
+				
 			</Filter>
 			
 			<Filter
@@ -215,12 +245,43 @@
 			</Filter>
 			
 			<Filter
+				Name="error"
+				>
+				<File
+					RelativePath="src\error\error.c"
+					>
+				</File>
+			</Filter>
+			
+			<Filter
+				Name="common"
+				>
+				<File
+					RelativePath="src\common\common.c"
+					>
+				</File>
+			</Filter>
+			
+			<Filter
 				Name="main"
 				>
 				<File
 					RelativePath="src\main\main.c"
 					>
 				</File>
+			</Filter>
+			
+			<Filter
+				Name="windows"
+				>
+				<Filter
+					Name="file"
+					>
+					<File
+						RelativePath="src\windows\file\winfile.c"
+						>
+					</File>
+				</Filter>	
 			</Filter>
 			
 		</Filter>
