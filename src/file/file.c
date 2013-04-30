@@ -18,6 +18,11 @@ int			maxProcessFileDescriptors = 500;
  * file descriptors. It will be estimated inside Init() method */
 int			maxNumberOfOpenedFileDescriptors = 64;	
 
+/* Each transaction can have a lot of temporary table spaces
+ * If the count of temporary tablespaces is -1, that means that it
+ * has not been set by current transaction */
+static int	temporaryTableSpaceCount = -1;
+
 typedef struct fileItem
 {
 	int			descriptor;		/* file pointer */
@@ -152,7 +157,7 @@ void DetermineMaxAllowedFileDescriptors()
 			  MIN_FILE_DESCRIPTORS + SYSTEM_RESERVED_FILE_IDS);
 }
 
-int FileOpen(char* FileName, int FileFlags, int FileMode)
+int FileOpenBase(char* FileName, int FileFlags, int FileMode)
 {
 	int FileDescriptor;
 
@@ -231,7 +236,7 @@ static int Insert(int FileDescriptor)
 		 * We delete the oldest files from the ring until reach allowed amount */
 		while (FilesInUseNum >= maxNumberOfOpenedFileDescriptors)
 		{
-			if (!ReleaseLruFile())
+			if (! ClearFileList())
 				break;
 		}
 
@@ -252,55 +257,193 @@ static int Insert(int FileDescriptor)
 	return 0;
 }
 
-static long AllocateVfd()
+/* Allocates new memory for the Files array */
+static int GetNextFreeItem()
 {
 	int		i;
 	int		fileDescriptor;
 
-	if (VfdCache[0].nextFree == 0)
-	{
-		/*
-		 * The free list is empty so it is time to increase the size of the
-		 * array.  We choose to double it each time this happens. However,
-		 * there's not much point in starting *real* small.
-		 */
-		Size		newCacheSize = SizeVfdCache * 2;
-		Vfd		   *newVfdCache;
+	/* When we have noticed that there are no free plates inside 
+	 * Files array we need to reallocate memory for that. We simply 
+	 * double it */
+	if (Files[0].nextFree == 0)
+	{	
+		long		newFilesSize = SizeFiles * 2;
+	    FileItem	*newFiles;
 
-		if (newCacheSize < 32)
-			newCacheSize = 32;
+		if (newFilesSize < 32)
+			newFilesSize = 32;
+		/* Reallocate new  */
+		newFiles = (FileItem*)realloc(newFiles, sizeof(FileItem) * newFilesSize);
+		if (newFiles == NULL)
+            Fatal(ERR_OUT_OF_MEMORY, "Can not allocate memory");
 
-		/*
-		 * Be careful not to clobber VfdCache ptr if realloc fails.
-		 */
-		newVfdCache = (Vfd *) realloc(VfdCache, sizeof(Vfd) * newCacheSize);
-		if (newVfdCache == NULL)
-			ereport(ERROR,
-					(errcode(ERRCODE_OUT_OF_MEMORY),
-					 errmsg("out of memory")));
-		VfdCache = newVfdCache;
+		Files = newFiles;
 
-		/*
-		 * Initialize the new entries and link them into the free list.
-		 */
-		for (i = SizeVfdCache; i < newCacheSize; i++)
+		/* Add new items into free list */
+		for (i = SizeFiles; i < newFilesSize; i++)
 		{
-			MemSet((char *) &(VfdCache[i]), 0, sizeof(Vfd));
-			VfdCache[i].nextFree = i + 1;
-			VfdCache[i].fd = VFD_CLOSED;
+			memset((char*)&(Files[i]), 0, sizeof(FileItem));
+			Files[i].nextFree = i + 1;
+			Files[i].descriptor = CLOSED_DESCRIPTOR;
 		}
-		VfdCache[newCacheSize - 1].nextFree = 0;
-		VfdCache[0].nextFree = SizeVfdCache;
 
-		/*
-		 * Record the new size
-		 */
-		SizeVfdCache = newCacheSize;
+		Files[newFilesSize - 1].nextFree = 0;
+		Files[0].nextFree = SizeFiles;
+
+		Files = newFiles;
+	}
+    /* Get the first free node in Files array to client */
+	fileDescriptor = Files[0].nextFree;
+	Files[0].nextFree = Files[fileDescriptor].nextFree;
+
+	return fileDescriptor;
+}
+
+/* Mark file as deleted inside Files list */
+void FreeFile(int fileDescriptor)
+{
+	FileItem	   *file = &Files[fileDescriptor];
+
+	if (file->name != NULL)
+	{
+		free(file->name);
+		file->name = NULL;
+	}
+    /* Insert this cell into free list */
+	file->nextFree = Files[0].nextFree;
+	Files[0].nextFree = file;
+}
+
+static int FileReOpen(int fileDescriptor)
+{
+	if (Files[fileDescriptor].descriptor == CLOSED_DESCRIPTOR)
+	{
+		int returnValue = Insert(fileDescriptor);
+		if (returnValue != 0)
+			return returnValue;
+		return 0;
 	}
 
-	file = VfdCache[0].nextFree;
+	/* Move file to the head of the list */
+	if (Files[0].prevFile != fileDescriptor)
+	{
+		DeleteFromList(fileDescriptor);
+		InsertIntoList(ffileDescriptorile);
+	}
 
-	VfdCache[0].nextFree = VfdCache[file].nextFree;
+	return 0;
+}
+
+int OpenFile(char* FileName, int FileFlags, int FileMode)
+{
+	char*       FileNameCopy;
+	int		    FileHandler;
+	FileItem*   Item;
+
+	/* We need to copy FileName. If strdup function returns null
+	 * there can only be if there are no free memory in the system */
+	FileNameCopy = strdup(FileName);
+	if (FileNameCopy == NULL)
+		Fatal(ERR_OUT_OF_MEMORY, "Can not allocate memory");
+    
+	/* Get free descriptor from Files list */
+	FileHandler = GetNextFreeItem();
+	Item = &Files[FileHandler];
+
+	/* Get free position inside the list */
+	while (FilesInUseNum >= maxNumberOfOpenedFileDescriptors)
+    {
+	   if (!ClearFileList())
+		  break;
+    }
+
+	Item->descriptor = FileOpenBase(FileName, FileFlags, FileMode);
+    /* If some error has happened we free this descriptor and FileNameCopy */
+	if (Item->descriptor < 0)
+	{
+		FreeFile(FileHandler);
+		free(FileNameCopy);
+		return -1;
+	}
+
+	++FilesInUseNum;
+
+	Insert(FileHandler);
+
+	Item->name = FileNameCopy;
+	Item->flags = FileFlags & ~(O_CREAT | O_TRUNC | O_EXCL);
+	Item->mode = FileMode;
+	Item->seekPos = 0;
+	Item->size = 0;
+
+	return FileHandler;
+}
+
+
+/*
+ * GetNextTempTableSpace
+ *
+ * Select the next temp tablespace to use.	A result of InvalidOid means
+ * to use the current database's default tablespace.
+ */
+unsigned int GetNExtTempTableSpace()
+{
+	if (numTempTableSpaces > 0)
+	{
+		/* Advance nextTempTableSpace counter with wraparound */
+		if (++nextTempTableSpace >= temporaryTableSpaceCount)
+			nextTempTableSpace = 0;
+		return tempTableSpaces[nextTempTableSpace];
+	}
+	return InvalidOid;
+}
+
+
+/* if crossTransactions flag is set to true - this file is supposed 
+ * to live more than the current transaction. We save it into 
+ * default database tablespace. Temporary tablespaces can easily be deleted 
+ * by other transactions. */
+int OpenTempFile(int crossTransactions)
+{
+	int		fileDescriptor = 0;
+
+	/* If the current transaction has given us some tablespaces 
+	 * we save this file into one of them */
+	if (temporaryTableSpaceCount > 0 && !crossTransactions)
+	{
+		Oid			tblspcOid = GetNextTempTableSpace();
+
+		if (OidIsValid(tblspcOid))
+			file = OpenTemporaryFileInTablespace(tblspcOid, false);
+	}
+
+	/*
+	 * If not, or if tablespace is bad, create in database's default
+	 * tablespace.	MyDatabaseTableSpace should normally be set before we get
+	 * here, but just in case it isn't, fall back to pg_default tablespace.
+	 */
+	if (file <= 0)
+		file = OpenTemporaryFileInTablespace(MyDatabaseTableSpace ?
+											 MyDatabaseTableSpace :
+											 DEFAULTTABLESPACE_OID,
+											 true);
+
+	/* Mark it for deletion at close */
+	VfdCache[file].fdstate |= FD_TEMPORARY;
+
+	/* Register it with the current resource owner */
+	if (!interXact)
+	{
+		VfdCache[file].fdstate |= FD_XACT_TEMPORARY;
+
+		ResourceOwnerEnlargeFiles(CurrentResourceOwner);
+		ResourceOwnerRememberFile(CurrentResourceOwner, file);
+		VfdCache[file].resowner = CurrentResourceOwner;
+
+		/* ensure cleanup happens at eoxact */
+		have_xact_temporary_files = true;
+	}
 
 	return file;
 }

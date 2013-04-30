@@ -1,6 +1,7 @@
 
 #include <stdio.h>
 #include <errno.h>
+#include <string.h>
 #include "error.h"
 #include "common.h"
 #include "osfile.h"
