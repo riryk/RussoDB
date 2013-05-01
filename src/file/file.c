@@ -3,11 +3,23 @@
 
 #define     CLOSED_DESCRIPTOR              (-1)
 #define     SYSTEM_RESERVED_FILE_IDS		10
+#define     PATH_MAX_LENGTH                 1024
+
+#define     TABLE_SPACE_DEFAULT_ID          5000
+#define     TABLE_SPACE_GLOBAL_ID           5001
 
 /* The minimal number of allowed file descriptors
  * If the system can't open at least this number of file 
  * descriptors, we stop process */
 #define     MIN_FILE_DESCRIPTORS			10
+
+#define     FILE_DELETE_WHEN_CLOSED		   (1 << 0)
+#define     DELETE_TRANSACTION_END	       (1 << 1)	
+
+unsigned int  CurrentDatabaseTableSpace = 0;
+
+/* Current process identifier */
+int         currentProcessId;                
 
 /* This parameter will be changed by DBA, because there are 
  * a lot of operating system which allows more opened files 
@@ -23,6 +35,22 @@ int			maxNumberOfOpenedFileDescriptors = 64;
  * has not been set by current transaction */
 static int	temporaryTableSpaceCount = -1;
 
+/* A pointer to the next table space */
+static int  nextTempTableSpace = 0;
+
+/* A list of temporary spaces */
+static unsigned int *temporarySpacesArray = NULL;
+
+/* The number of opened temp files */
+static long tempFilesCount = 0;
+
+static int HasCurrentTranTempFiles = 0;
+
+/* Total temporary files size */
+static uint64 TempFilesSize = 0;
+
+static int TempFileSizeLimit = -1;
+
 typedef struct fileItem
 {
 	int			descriptor;		/* file pointer */
@@ -36,6 +64,7 @@ typedef struct fileItem
 	int		    prevFile;
 	int         nextFreePosition; 
 	int         flags;
+	unsigned short state;	    /* A state of the file */
 } FileItem;
 
 /* The list of files and the list size */
@@ -380,25 +409,52 @@ int OpenFile(char* FileName, int FileFlags, int FileMode)
 	return FileHandler;
 }
 
-
-/*
- * GetNextTempTableSpace
- *
- * Select the next temp tablespace to use.	A result of InvalidOid means
- * to use the current database's default tablespace.
- */
-unsigned int GetNExtTempTableSpace()
+/* This function returns returns 0 when there are no temp table spaces */
+unsigned int GetNextTempTableSpace()
 {
-	if (numTempTableSpaces > 0)
+	if (temporaryTableSpaceCount > 0)
 	{
-		/* Advance nextTempTableSpace counter with wraparound */
+		/* If we reach the end of the temporary array, 
+		 * we come back to the beginning */
 		if (++nextTempTableSpace >= temporaryTableSpaceCount)
 			nextTempTableSpace = 0;
-		return tempTableSpaces[nextTempTableSpace];
+
+		return temporarySpacesArray[nextTempTableSpace];
 	}
-	return InvalidOid;
+	return 0;
 }
 
+static int OpenTempFileInTablespace(int tableSpaceId, bool error)
+{
+	char		DirectoryPath[PATH_MAX_LENGTH];
+	char		FilePath[PATH_MAX_LENGTH];
+	int 		fileDescriptor;
+
+	if (tableSpaceId == TABLE_SPACE_DEFAULT_ID || tableSpaceId == TABLE_SPACE_GLOBAL_ID)
+		DirectoryPath = "DefaultTableSpace/Temp";
+	else
+		snprintf(DirectoryPath, sizeof(DirectoryPath), "TableSpaces/%u/Temp", tableSpaceId);
+
+	/* Generate temp file name */
+	snprintf(FilePath, sizeof(FilePath), "%s/Temp%d.%ld",
+			 DirectoryPath, currentProcessId, tempFilesCount++);
+
+	fileDescriptor = OpenFile(FilePath, O_RDWR | O_CREAT | O_TRUNC | PG_BINARY, 0600);
+
+	if (fileDescriptor <= 0)
+	{
+		/* In case of error try to create  */
+		mkdir(tempdirpath, _S_IREAD | _S_IWRITE | _S_IEXEC);
+        
+		/* Try to open again after creating  */
+		fileDescriptor = OpenFile(FilePath, O_RDWR | O_CREAT | O_TRUNC | PG_BINARY, 0600);
+
+		if (fileDescriptor <= 0 && error)
+			Log(ERR_COULD_NOT_CREATE_TEMP_FILE, "could not create temporary file \"%s\"", FilePath);
+	}
+
+	return ffileDescriptor;
+}
 
 /* if crossTransactions flag is set to true - this file is supposed 
  * to live more than the current transaction. We save it into 
@@ -412,38 +468,204 @@ int OpenTempFile(int crossTransactions)
 	 * we save this file into one of them */
 	if (temporaryTableSpaceCount > 0 && !crossTransactions)
 	{
-		Oid			tblspcOid = GetNextTempTableSpace();
+		unsigned int   tableSpaceId = GetNextTempTableSpace();
 
-		if (OidIsValid(tblspcOid))
-			file = OpenTemporaryFileInTablespace(tblspcOid, false);
+		if (tableSpaceId != 0)
+			fileDescriptor = OpenTempFileInTablespace(tableSpaceId, false);
 	}
 
-	/*
-	 * If not, or if tablespace is bad, create in database's default
-	 * tablespace.	MyDatabaseTableSpace should normally be set before we get
-	 * here, but just in case it isn't, fall back to pg_default tablespace.
-	 */
 	if (file <= 0)
-		file = OpenTemporaryFileInTablespace(MyDatabaseTableSpace ?
-											 MyDatabaseTableSpace :
-											 DEFAULTTABLESPACE_OID,
-											 true);
-
-	/* Mark it for deletion at close */
-	VfdCache[file].fdstate |= FD_TEMPORARY;
-
-	/* Register it with the current resource owner */
-	if (!interXact)
 	{
-		VfdCache[file].fdstate |= FD_XACT_TEMPORARY;
+		int TableSpace = CurrentDatabaseTableSpace ? 
+                         CurrentDatabaseTableSpace :
+                         TABLE_SPACE_DEFAULT_ID;
 
-		ResourceOwnerEnlargeFiles(CurrentResourceOwner);
-		ResourceOwnerRememberFile(CurrentResourceOwner, file);
-		VfdCache[file].resowner = CurrentResourceOwner;
+		file = OpenTemporaryFileInTablespace(TableSpace, true);
+	}
 
-		/* ensure cleanup happens at eoxact */
-		have_xact_temporary_files = true;
+	VfdCache[file].fdstate |= FILE_DELETE_WHEN_CLOSED;
+
+	if (!crossTransactions)
+	{
+		VfdCache[file].fdstate |= DELETE_TRANSACTION_END;
+
+		//ResourceOwnerEnlargeFiles(CurrentResourceOwner);
+		//ResourceOwnerRememberFile(CurrentResourceOwner, file);
+		//VfdCache[file].resowner = CurrentResourceOwner;
+
+		HasCurrentTranTempFiles = true;
 	}
 
 	return file;
+}
+
+void CloseFile(int fileDescriptor)
+{
+	FileItem*    file = &Files[fileDescriptor];
+    
+	if (file->descriptor == CLOSED_DESCRIPTOR)
+	{
+        Delete(file->descriptor);
+	}
+  
+	if (!FileIsNotOpen(file))
+	{
+		Delete(file);
+
+		if (close(file->descriptor))
+			Log("could not close file \"%s\"", file->name);
+
+		FilesInUseNum--;
+		file->descriptor = CLOSED_DESCRIPTOR;
+	}
+
+	/* If the file is temporary, we delete it */
+	if (file->state & FILE_DELETE_WHEN_CLOSED)
+	{
+		struct stat    FileStatistic;
+		int			   Error;
+
+		file->state &= ~FILE_DELETE_WHEN_CLOSED;
+		TempFilesSize -= file->size;
+
+		file->size = 0;
+
+		if (stat(file->name, &FileStatistic))
+			Error = errno;
+		else
+			Error = 0;
+
+		if (unlink(file->name))
+            Log("could not unlink file \"%s\"", file->name);
+
+		if (Error == 0)
+		{
+			// Write to log file
+		}
+		else
+		{
+			errno = Error;
+			Log("could not stat file \"%s\"", file->name);
+		}
+	}
+
+	/* Free the file slot */
+	FreeVfd(file);
+}
+
+int ReadFile(int FileDescriptor, char *Buffer, int Amount)
+{
+	int			returnCode;
+    int         ContinueReading = 1;
+
+	returnCode = FileReOpen(FileDescriptor);
+	if (returnCode < 0)
+		return returnCode;
+
+    while (ContinueReading)
+	{
+		returnCode = read(Files[FileDescriptor].descriptor, Buffer, Amount);
+        ContinueReading = 0;
+
+		if (returnCode >= 0)
+			Files[FileDescriptor].seekPos += returnCode;
+		else
+		{
+			DWORD		error = GetLastError();
+
+			switch (error)
+			{
+				case ERROR_NO_SYSTEM_RESOURCES:
+					Sleep(1000);
+					errno = ERR_INSUFFICIENT_SYSTEM_RESOURCE;
+                    ContinueReading = 1;
+					break;
+				default:
+					Log("unexpected error has happened \"%s\"", error);
+					break;
+			}
+
+            if (ContinueReading == 1)
+				continue;
+
+			Files[FileDescriptor].seekPos = -1;
+		}
+	}
+
+	return returnCode;
+}
+
+int FileWrite(int FileDescriptor, char* Buffer, int Amount)
+{
+	int			returnCode;
+	int         ContinueWriting = 1;
+
+	returnCode = FileReOpen(FileDescriptor);
+	if (returnCode < 0)
+		return returnCode;
+
+	if (TempFileSizeLimit >= 0 && (Files[FileDescriptor].descriptor & FILE_DELETE_WHEN_CLOSED))
+	{
+		long		NewPos = Files[FileDescriptor].seekPos + Amount;
+
+		if (NewPos > Files[FileDescriptor].size)
+		{
+			uint64		newTotal = TempFilesSize;
+
+			newTotal += NewPos - Files[FileDescriptor].size;
+			if (newTotal > (uint64) TempFileSizeLimit * (uint64) 1024)
+                Fatal(ERR_TEMP_FILES_LIMIT_EXCEEDED, 
+				      "temporary file size exceeds TempFileSizeLimit (%dkB)",
+					  TempFileSizeLimit);
+		}
+	}
+
+retry:
+	errno = 0;
+	returnCode = write(Files[FileDescriptor].descriptor, Buffer, Amount);
+	ContinueWriting = 0;
+
+	/* if write didn't set errno, assume problem is no disk space */
+	if (returnCode != Amount && errno == 0)
+		errno = ENOSPC;
+
+	if (returnCode >= 0)
+	{
+		Files[FileDescriptor].seekPos += returnCode;
+
+		/* If this file is a temporary file, we recalculate tempfilesize */
+		if (Files[FileDescriptor].state & FILE_DELETE_WHEN_CLOSED)
+		{
+			long    newPosition = Files[FileDescriptor].seekPos;
+
+			if (newPosition > Files[FileDescriptor].size)
+			{
+				TempFilesSize += newPos - VfdCache[file].fileSize;
+				VfdCache[file].fileSize = newPos;
+			}
+		}
+	}
+	else
+	{
+		DWORD		error = GetLastError();
+
+		switch (error)
+		{
+			case ERROR_NO_SYSTEM_RESOURCES:
+				Sleep(1000);
+				errno = EINTR;
+				ContinueWriting = 1;
+				break;
+			default:
+				Log("unexpected error has happened \"%s\"", error);
+				break;
+		}
+
+		if (ContinueWriting == 1)
+			continue;
+
+		Files[FileDescriptor].seekPos = -1;
+	}
+
+	return returnCode;
 }
