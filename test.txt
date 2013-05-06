@@ -1,0 +1,11 @@
+
+void Error(const char* format,...)
+{
+   va_list arglist;
+   
+   va_start(arglist, format);
+   
+   
+   
+   va_end(args); 
+}

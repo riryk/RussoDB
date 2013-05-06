@@ -269,7 +269,7 @@ static int Insert(int FileDescriptor)
 				break;
 		}
 
-		Current->descriptor = FileOpen(Current->name, Current->flags, Current->mode);
+		Current->descriptor = ROpenFile(Current->name, Current->flags, Current->mode);
         /* re open the file failed */
 		if (Current->descriptor < 0)
 			return Current->descriptor;
@@ -295,7 +295,7 @@ static int GetNextFreeItem()
 	/* When we have noticed that there are no free plates inside 
 	 * Files array we need to reallocate memory for that. We simply 
 	 * double it */
-	if (Files[0].nextFree == 0)
+	if (Files[0].nextFreePosition == 0)
 	{	
 		long		newFilesSize = SizeFiles * 2;
 	    FileItem	*newFiles;
@@ -313,18 +313,18 @@ static int GetNextFreeItem()
 		for (i = SizeFiles; i < newFilesSize; i++)
 		{
 			memset((char*)&(Files[i]), 0, sizeof(FileItem));
-			Files[i].nextFree = i + 1;
+			Files[i].nextFreePosition = i + 1;
 			Files[i].descriptor = CLOSED_DESCRIPTOR;
 		}
 
-		Files[newFilesSize - 1].nextFree = 0;
-		Files[0].nextFree = SizeFiles;
+		Files[newFilesSize - 1].nextFreePosition = 0;
+		Files[0].nextFreePosition = SizeFiles;
 
 		Files = newFiles;
 	}
     /* Get the first free node in Files array to client */
-	fileDescriptor = Files[0].nextFree;
-	Files[0].nextFree = Files[fileDescriptor].nextFree;
+	fileDescriptor = Files[0].nextFreePosition;
+	Files[0].nextFreePosition = Files[fileDescriptor].nextFreePosition;
 
 	return fileDescriptor;
 }
@@ -340,8 +340,8 @@ void FreeFile(int fileDescriptor)
 		file->name = NULL;
 	}
     /* Insert this cell into free list */
-	file->nextFree = Files[0].nextFree;
-	Files[0].nextFree = file;
+	file->nextFreePosition = Files[0].nextFreePosition;
+	Files[0].nextFreePosition = file;
 }
 
 static int FileReOpen(int fileDescriptor)
@@ -358,13 +358,13 @@ static int FileReOpen(int fileDescriptor)
 	if (Files[0].prevFile != fileDescriptor)
 	{
 		DeleteFromList(fileDescriptor);
-		InsertIntoList(ffileDescriptorile);
+		InsertIntoList(fileDescriptor);
 	}
 
 	return 0;
 }
 
-int OpenFile(char* FileName, int FileFlags, int FileMode)
+int ROpenFile(char* FileName, int FileFlags, int FileMode)
 {
 	char*       FileNameCopy;
 	int		    FileHandler;
@@ -424,43 +424,43 @@ unsigned int GetNextTempTableSpace()
 	return 0;
 }
 
-static int OpenTempFileInTablespace(int tableSpaceId, bool error)
+static int OpenTempFileInTablespace(int tableSpaceId, int error)
 {
 	char		DirectoryPath[PATH_MAX_LENGTH];
 	char		FilePath[PATH_MAX_LENGTH];
 	int 		fileDescriptor;
 
 	if (tableSpaceId == TABLE_SPACE_DEFAULT_ID || tableSpaceId == TABLE_SPACE_GLOBAL_ID)
-		DirectoryPath = "DefaultTableSpace/Temp";
+	    _snprintf_s(DirectoryPath, sizeof(DirectoryPath), 1024, "DefaultTableSpace/Temp");
 	else
-		snprintf(DirectoryPath, sizeof(DirectoryPath), "TableSpaces/%u/Temp", tableSpaceId);
+		_snprintf_s(DirectoryPath, sizeof(DirectoryPath), 1024, "TableSpaces/%u/Temp", tableSpaceId);
 
 	/* Generate temp file name */
-	snprintf(FilePath, sizeof(FilePath), "%s/Temp%d.%ld",
-			 DirectoryPath, currentProcessId, tempFilesCount++);
+	_snprintf_s(FilePath, sizeof(FilePath), 1024, "%s/Temp%d.%ld",
+			    DirectoryPath, currentProcessId, tempFilesCount++);
 
-	fileDescriptor = OpenFile(FilePath, O_RDWR | O_CREAT | O_TRUNC | PG_BINARY, 0600);
+	fileDescriptor = OpenFile(FilePath, O_RDWR | O_CREAT | O_TRUNC | O_BINARY, 0600);
 
 	if (fileDescriptor <= 0)
 	{
 		/* In case of error try to create  */
-		mkdir(tempdirpath, _S_IREAD | _S_IWRITE | _S_IEXEC);
+		mkdir(DirectoryPath, _S_IREAD | _S_IWRITE | _S_IEXEC);
         
 		/* Try to open again after creating  */
-		fileDescriptor = OpenFile(FilePath, O_RDWR | O_CREAT | O_TRUNC | PG_BINARY, 0600);
+		fileDescriptor = OpenFile(FilePath, O_RDWR | O_CREAT | O_TRUNC | O_BINARY, 0600);
 
 		if (fileDescriptor <= 0 && error)
 			Log(ERR_COULD_NOT_CREATE_TEMP_FILE, "could not create temporary file \"%s\"", FilePath);
 	}
 
-	return ffileDescriptor;
+	return fileDescriptor;
 }
 
 /* if crossTransactions flag is set to true - this file is supposed 
  * to live more than the current transaction. We save it into 
  * default database tablespace. Temporary tablespaces can easily be deleted 
  * by other transactions. */
-int OpenTempFile(int crossTransactions)
+int static OpenTempFile(int crossTransactions)
 {
 	int		fileDescriptor = 0;
 
@@ -471,32 +471,32 @@ int OpenTempFile(int crossTransactions)
 		unsigned int   tableSpaceId = GetNextTempTableSpace();
 
 		if (tableSpaceId != 0)
-			fileDescriptor = OpenTempFileInTablespace(tableSpaceId, false);
+			fileDescriptor = OpenTempFileInTablespace(tableSpaceId, 0);
 	}
 
-	if (file <= 0)
+	if (fileDescriptor <= 0)
 	{
 		int TableSpace = CurrentDatabaseTableSpace ? 
                          CurrentDatabaseTableSpace :
                          TABLE_SPACE_DEFAULT_ID;
 
-		file = OpenTemporaryFileInTablespace(TableSpace, true);
+		fileDescriptor = OpenTemporaryFileInTablespace(TableSpace, 1);
 	}
 
-	VfdCache[file].fdstate |= FILE_DELETE_WHEN_CLOSED;
+	Files[fileDescriptor].state |= FILE_DELETE_WHEN_CLOSED;
 
 	if (!crossTransactions)
 	{
-		VfdCache[file].fdstate |= DELETE_TRANSACTION_END;
+		Files[fileDescriptor].state |= DELETE_TRANSACTION_END;
 
 		//ResourceOwnerEnlargeFiles(CurrentResourceOwner);
 		//ResourceOwnerRememberFile(CurrentResourceOwner, file);
 		//VfdCache[file].resowner = CurrentResourceOwner;
 
-		HasCurrentTranTempFiles = true;
+		HasCurrentTranTempFiles = 1;
 	}
 
-	return file;
+	return fileDescriptor;
 }
 
 void CloseFile(int fileDescriptor)
@@ -508,7 +508,7 @@ void CloseFile(int fileDescriptor)
         Delete(file->descriptor);
 	}
   
-	if (!FileIsNotOpen(file))
+	if (file->descriptor == CLOSED_DESCRIPTOR) 
 	{
 		Delete(file);
 
@@ -550,10 +550,10 @@ void CloseFile(int fileDescriptor)
 	}
 
 	/* Free the file slot */
-	FreeVfd(file);
+	FreeFile(fileDescriptor);
 }
 
-int ReadFile(int FileDescriptor, char *Buffer, int Amount)
+int RReadFile(int FileDescriptor, char *Buffer, int Amount)
 {
 	int			returnCode;
     int         ContinueReading = 1;
@@ -620,52 +620,121 @@ int FileWrite(int FileDescriptor, char* Buffer, int Amount)
 		}
 	}
 
-retry:
-	errno = 0;
-	returnCode = write(Files[FileDescriptor].descriptor, Buffer, Amount);
-	ContinueWriting = 0;
-
-	/* if write didn't set errno, assume problem is no disk space */
-	if (returnCode != Amount && errno == 0)
-		errno = ENOSPC;
-
-	if (returnCode >= 0)
+    while (ContinueWriting)
 	{
-		Files[FileDescriptor].seekPos += returnCode;
+		errno = 0;
+		returnCode = write(Files[FileDescriptor].descriptor, Buffer, Amount);
+		ContinueWriting = 0;
 
-		/* If this file is a temporary file, we recalculate tempfilesize */
-		if (Files[FileDescriptor].state & FILE_DELETE_WHEN_CLOSED)
+		/* if write didn't set errno, assume problem is no disk space */
+		if (returnCode != Amount && errno == 0)
+			errno = ENOSPC;
+
+		if (returnCode >= 0)
 		{
-			long    newPosition = Files[FileDescriptor].seekPos;
+			Files[FileDescriptor].seekPos += returnCode;
 
-			if (newPosition > Files[FileDescriptor].size)
+			/* If this file is a temporary file, we recalculate tempfilesize */
+			if (Files[FileDescriptor].state & FILE_DELETE_WHEN_CLOSED)
 			{
-				TempFilesSize += newPos - VfdCache[file].fileSize;
-				VfdCache[file].fileSize = newPos;
+				long    newPosition = Files[FileDescriptor].seekPos;
+
+				if (newPosition > Files[FileDescriptor].size)
+				{
+					TempFilesSize += newPosition - Files[FileDescriptor].size;
+					Files[FileDescriptor].size = newPosition;
+				}
 			}
+		}
+		else
+		{
+			DWORD		error = GetLastError();
+
+			switch (error)
+			{
+				case ERROR_NO_SYSTEM_RESOURCES:
+					Sleep(1000);
+					errno = EINTR;
+					ContinueWriting = 1;
+					break;
+				default:
+					Log("unexpected error has happened \"%s\"", error);
+					break;
+			}
+
+			if (ContinueWriting == 1)
+				continue;
+
+			Files[FileDescriptor].seekPos = -1;
+		}
+	}
+
+	return returnCode;
+}
+
+int FileSync(int FileDescriptor)
+{
+	int			returnCode;
+
+	returnCode = FileReOpen(FileDescriptor);
+	if (returnCode < 0)
+		return returnCode;
+
+	_commit(Files[FileDescriptor].descriptor);
+}
+
+long FileSeek(int FileDescriptor, long Offset, int Mode)
+{
+	int			returnCode;
+
+	if (Files[FileDescriptor].descriptor = CLOSED_DESCRIPTOR)
+	{
+		switch (Mode)
+		{
+			case SEEK_SET:
+				if (Offset < 0)
+					Log("invalid seek offset %d", Offset);
+				Files[FileDescriptor].seekPos = Offset;
+				break;
+			case SEEK_CUR:
+				Files[FileDescriptor].seekPos + Offset;
+				break;
+			case SEEK_END:
+				returnCode = FileReOpen(FileDescriptor);
+				if (returnCode < 0)
+					return returnCode;
+				Files[FileDescriptor].seekPos = 
+					lseek(Files[FileDescriptor].descriptor, Offset, Mode);
+				break;
+			default:
+				Log("invalid Mode %d", Mode);
+				break;
 		}
 	}
 	else
 	{
-		DWORD		error = GetLastError();
-
-		switch (error)
+		switch (Mode)
 		{
-			case ERROR_NO_SYSTEM_RESOURCES:
-				Sleep(1000);
-				errno = EINTR;
-				ContinueWriting = 1;
+			case SEEK_SET:
+				if (Offset < 0)
+					Log("invalid seek offset %d", Offset);
+				if (Files[FileDescriptor].seekPos != Offset)
+					Files[FileDescriptor].seekPos = 
+					   lseek(Files[FileDescriptor].descriptor, Offset, Mode);
+				break;
+			case SEEK_CUR:
+				if (Offset != 0 || Files[FileDescriptor].seekPos == -1)
+					Files[FileDescriptor].seekPos = 
+					   lseek(Files[FileDescriptor].descriptor, Offset, Mode);
+				break;
+			case SEEK_END:
+				Files[FileDescriptor].seekPos = 
+					   lseek(Files[FileDescriptor].descriptor, Offset, Mode);
 				break;
 			default:
-				Log("unexpected error has happened \"%s\"", error);
+			    Log("invalid seek offset %d", Offset);
 				break;
 		}
-
-		if (ContinueWriting == 1)
-			continue;
-
-		Files[FileDescriptor].seekPos = -1;
 	}
-
-	return returnCode;
+	return Files[FileDescriptor].seekPos;
 }

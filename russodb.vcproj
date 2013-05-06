@@ -202,6 +202,10 @@
 						RelativePath="src\include\file\file.h"
 						>
 					</File>
+                              <File
+						RelativePath="src\include\file\relation_storage.h"
+						>
+					</File>
 				</Filter>
 				<Filter
 					Name="error"
@@ -218,8 +222,16 @@
 						RelativePath="src\include\common\common.h"
 						>
 					</File>
+                             <File
+						RelativePath="src\include\common\hashtable.h"
+						>
+					</File>
+                             <File
+						RelativePath="src\include\common\set.h"
+						>
+					</File>
 				</Filter>
-				
+                       
 				<Filter
 					Name="os"
 					>
@@ -242,6 +254,10 @@
 					RelativePath="src\file\file.c"
 					>
 				</File>
+                        <File
+					RelativePath="src\file\relation_storage.c"
+					>
+				</File>
 			</Filter>
 			
 			<Filter
@@ -260,6 +276,14 @@
 					RelativePath="src\common\common.c"
 					>
 				</File>
+                        <File
+					RelativePath="src\common\hashtable.c"
+					>
+				</File>
+                        <File
+					RelativePath="src\common\set.c"
+					>
+				</File> 
 			</Filter>
 			
 			<Filter
