@@ -11,6 +11,15 @@ typedef int (*HashCompareFunc) (void* Key1, void* Key2, DWORD KeySize);
 
 typedef void* (*HashCopyFunc) (void* Destination, void* Source, DWORD KeySize);
 
+
+typedef enum
+{
+	FIND,
+	INSERT,
+	DELETE,
+	INSERT_NULL
+} EHashAction;
+
 typedef struct HashTableSettings
 {
 	long             PartNumber;      /* Number of sets on which the whole data will be divided */

@@ -21,6 +21,11 @@ typedef struct RelationFileInfo
 	unsigned int		relationId;		    /* relation */
 } RelationFileInfo;
 
+typedef struct RelFileNodeBackend
+{
+	RelationFileInfo   node;
+	int	               backend;
+} RelFileNodeBackend;
 
 typedef struct
 {
@@ -29,7 +34,14 @@ typedef struct
 	Set*    FSyncRequests[MAX_REL_PARTS_NUMBER + 1];  /* fsync requests */
 } FSyncRequestItem;
 
+typedef struct StorageRelationData
+{
+	RelationFileInfo    Key;
+	/* hash table key */
+} StorageRelationData;
+
 static HashTable *requestsTable = NULL;
+static HashTable *storageRelationTable = NULL;
 
 void RelationStorageInit()
 {
@@ -48,6 +60,59 @@ void RelationStorageInit()
 									    &hashTableSett,
 								        HASH_FUNCTION);
 	}
+}
+
+StorageRelation RelationOpen(RelationFileInfo rnode, int backend)
+{
+	RelFileNodeBackend  brnode;
+	StorageRelation     reln;
+	int		            found;
+
+	if (storageRelationTable == NULL)
+	{
+		HashTableSettings		hashTableSett;
+
+		MemSet(&hashTableSett, 0, sizeof(hashTableSett));
+
+		hashTableSett.KeyLength = sizeof(RelationFileInfo);
+		hashTableSett.ValueLength = sizeof(StorageRelationData);
+        hashTableSett.HashFunc = TagHash;
+
+		storageRelationTable = HashTableCreate("Storage Relation Table",
+									    400,
+									    &hashTableSett,
+								        HASH_FUNCTION);
+	}
+	
+	brnode.node = rnode;
+	brnode.backend = backend;
+
+	reln = (StorageRelation) hash_search(SMgrRelationHash,
+									  (void *) &brnode,
+									  HASH_ENTER, &found);
+
+	/* Initialize it if not present before */
+	if (!found)
+	{
+		int			forknum;
+
+		/* hash_search already filled in the lookup key */
+		reln->smgr_owner = NULL;
+		reln->smgr_targblock = InvalidBlockNumber;
+		reln->smgr_fsm_nblocks = InvalidBlockNumber;
+		reln->smgr_vm_nblocks = InvalidBlockNumber;
+		reln->smgr_which = 0;	/* we only have md.c at present */
+
+		/* mark it not open */
+		for (forknum = 0; forknum <= MAX_FORKNUM; forknum++)
+			reln->md_fd[forknum] = NULL;
+
+		/* place it at head of unowned list (to make smgrsetowner cheap) */
+		reln->next_unowned_reln = first_unowned_reln;
+		first_unowned_reln = reln;
+	}
+
+	return reln;
 }
 
 void RelationWritesSync()
@@ -92,25 +157,12 @@ void RelationWritesSync()
 
 				for (failures = 0;;failures++) /* loop exits at "break" */
 				{
-					StorageRelation  storageRel;
-					MdfdVec    *seg;
-					char	   *path;
-					int			save_errno;
+					//StorageRelation  storageRel;
+					//MdfdVec    *seg;
+					//char	   *path;
+					//int			save_errno;
 
-					/*
-					 * Find or create an smgr hash entry for this relation.
-					 * This may seem a bit unclean -- md calling smgr?	But
-					 * it's really the best solution.  It ensures that the
-					 * open file reference isn't permanently leaked if we get
-					 * an error here. (You may say "but an unreferenced
-					 * SMgrRelation is still a leak!" Not really, because the
-					 * only case in which a checkpoint is done by a process
-					 * that isn't about to shut down is in the checkpointer,
-					 * and it will periodically do smgrcloseall(). This fact
-					 * justifies our not closing the reln in the success path
-					 * either, which is a good thing since in non-checkpointer
-					 * cases we couldn't safely do that.)
-					 */
+					
 					reln = smgropen(entry->rnode, InvalidBackendId);
 
 					/* Attempt to open and fsync the target segment */
