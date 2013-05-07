@@ -47,11 +47,17 @@ typedef struct Hashtable
 	int			     SegmentShift;			
     HashtableHeader* Header;
 	HashSegment*     StartSegment;		
+	int              PartitionNumber;
 } Hashtable;
 
 typedef struct HashtableHeader
 {
-	unsigned int	 MaxBucketId;
+	long             ItemsNumber;
+    long             MaxBucketId;
+    long             BucketSize;
+	unsigned int     SegmentsCount;
+	unsigned int     DirectorySize;
+	long             MaxDirectorySize;
 } HashtableHeader;
 
 #define HASH_FUNCTION	0x010	
