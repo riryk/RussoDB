@@ -11,6 +11,7 @@ typedef int (*HashCompareFunc) (void* Key1, void* Key2, DWORD KeySize);
 
 typedef void* (*HashCopyFunc) (void* Destination, void* Source, DWORD KeySize);
 
+typedef void* (*HashAllocFunc) (unsigned int Size);
 
 typedef enum
 {
@@ -37,7 +38,8 @@ typedef struct Hashtable
 {
 	HashValueFunc    HashFunc;			/* hash function */
 	HashCompareFunc  HashCompare;
-	HashCopyFunc     HashCopy;		 
+	HashCopyFunc     HashCopy;		
+	HashAllocFunc    HashAlloc;
 	char*            Name;		        /* name */
 	int		         IsInShared;		/* is in shared memory */
 	int		         NotEnlarge;  		
@@ -46,8 +48,9 @@ typedef struct Hashtable
 	long		     SegmentSize;			
 	int			     SegmentShift;			
     HashtableHeader* Header;
-	HashSegment*     StartSegment;		
+	HashItem**       StartSegment;		
 	int              PartitionNumber;
+	HashItem***      Directory;
 } Hashtable;
 
 typedef struct HashtableHeader
@@ -58,6 +61,7 @@ typedef struct HashtableHeader
 	unsigned int     SegmentsCount;
 	unsigned int     DirectorySize;
 	long             MaxDirectorySize;
+	long             MaskLowerTablePart;
 } HashtableHeader;
 
 #define HASH_FUNCTION	0x010	
@@ -78,7 +82,6 @@ typedef struct
 	HashItem*       CurrentItem;		
 } HashSequenceItem;
 
-typedef HashItem* HashSegment;
 
 #define SEQUENCE_MAX_SCANS 100
 
