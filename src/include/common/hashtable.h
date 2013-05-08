@@ -61,7 +61,9 @@ typedef struct HashtableHeader
 	unsigned int     SegmentsCount;
 	unsigned int     DirectorySize;
 	long             MaxDirectorySize;
-	long             MaskLowerTablePart;
+	unsigned int	 HighMask;		
+	unsigned int	 LowMask;		
+
 } HashtableHeader;
 
 #define HASH_FUNCTION	0x010	
