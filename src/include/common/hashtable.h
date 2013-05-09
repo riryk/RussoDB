@@ -63,7 +63,7 @@ typedef struct HashtableHeader
 	long             MaxDirectorySize;
 	unsigned int	 HighMask;		
 	unsigned int	 LowMask;		
-
+    long             Locker;
 } HashtableHeader;
 
 #define HASH_FUNCTION	0x010	

@@ -222,12 +222,16 @@
 						RelativePath="src\include\common\common.h"
 						>
 					</File>
-                             <File
+                    <File
 						RelativePath="src\include\common\hashtable.h"
 						>
 					</File>
-                             <File
+                    <File
 						RelativePath="src\include\common\set.h"
+						>
+					</File>
+					<File
+						RelativePath="src\include\common\lock.h"
 						>
 					</File>
 				</Filter>
@@ -276,12 +280,16 @@
 					RelativePath="src\common\common.c"
 					>
 				</File>
-                        <File
+                <File
 					RelativePath="src\common\hashtable.c"
 					>
 				</File>
-                        <File
+                <File
 					RelativePath="src\common\set.c"
+					>
+				</File> 
+				<File
+					RelativePath="src\common\lock.c"
 					>
 				</File> 
 			</Filter>
