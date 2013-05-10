@@ -1,0 +1,1 @@
+int SpinLock(volatile long* lock, char* file, int line);

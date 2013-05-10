@@ -64,6 +64,7 @@ typedef struct HashtableHeader
 	unsigned int	 HighMask;		
 	unsigned int	 LowMask;		
     long             Locker;
+	HashItem*        FreeList;
 } HashtableHeader;
 
 #define HASH_FUNCTION	0x010	
