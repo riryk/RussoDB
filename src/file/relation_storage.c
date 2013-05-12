@@ -9,9 +9,26 @@ static int SyncNumber          = 0;
 static int SyncInProgress      = 0;
 
 static int EnableFsync         = 1;
+static int InRecovery          = 0;
+
+
+typedef struct RelationSegment
+{
+	int		                  fileDescriptor;		
+	unsigned int              segmentNumber;
+	struct RelationSegment*   segmentNext;	
+} RelationSegment;
 
 typedef struct StorageRelation
 {
+   RelationFileBackend  relationKey;
+   struct StorageRelation** Parent;
+   int CurrentBlock;
+   int FsmForkSize;
+   int VmForkSize;
+   int StorageManager;
+   RelationSegment* Segments[INIT_FORK + 1];
+   StorageRelation* NextRelation;
 } StorageRelation;
 
 typedef struct RelationFileInfo
@@ -21,11 +38,11 @@ typedef struct RelationFileInfo
 	unsigned int		relationId;		    /* relation */
 } RelationFileInfo;
 
-typedef struct RelFileNodeBackend
+typedef struct RelationFileBackend
 {
-	RelationFileInfo   node;
+	RelationFileInfo   fileInfo;
 	int	               backend;
-} RelFileNodeBackend;
+} RelationFileBackend;
 
 typedef struct
 {
@@ -39,6 +56,13 @@ typedef struct StorageRelationData
 	RelationFileInfo    Key;
 	/* hash table key */
 } StorageRelationData;
+
+typedef enum					
+{
+	FAIL,				        
+	RETURN_NULL,		        
+	CREATE			            
+} Behavior;
 
 static HashTable *requestsTable = NULL;
 static HashTable *storageRelationTable = NULL;
@@ -62,11 +86,12 @@ void RelationStorageInit()
 	}
 }
 
-StorageRelation RelationOpen(RelationFileInfo rnode, int backend)
+StorageRelation RelationOpen(RelationFileInfo fileInfo, int backend)
 {
-	RelFileNodeBackend  brnode;
-	StorageRelation     reln;
-	int		            found;
+	RelationFileBackend  fileBackend; 
+	StorageRelation      relation;
+	int		             found;
+	int                  i;
 
 	if (storageRelationTable == NULL)
 	{
@@ -84,35 +109,120 @@ StorageRelation RelationOpen(RelationFileInfo rnode, int backend)
 								        HASH_FUNCTION);
 	}
 	
-	brnode.node = rnode;
-	brnode.backend = backend;
+	fileBackend.fileInfo = fileInfo;
+	fileBackend.backend = backend;
 
-	reln = (StorageRelation) hash_search(SMgrRelationHash,
-									  (void *) &brnode,
-									  HASH_ENTER, &found);
+	relation = HashSearch(storageRelationTable, 
+		                  (void*)&fileBackend,
+		                  HASH_ENTER,
+		                  &found);
 
-	/* Initialize it if not present before */
+	/* If this item exists in the hash table found will be true */
 	if (!found)
 	{
 		int			forknum;
 
-		/* hash_search already filled in the lookup key */
-		reln->smgr_owner = NULL;
-		reln->smgr_targblock = InvalidBlockNumber;
-		reln->smgr_fsm_nblocks = InvalidBlockNumber;
-		reln->smgr_vm_nblocks = InvalidBlockNumber;
-		reln->smgr_which = 0;	/* we only have md.c at present */
+		relation->Parent = NULL;
 
-		/* mark it not open */
-		for (forknum = 0; forknum <= MAX_FORKNUM; forknum++)
-			reln->md_fd[forknum] = NULL;
+		relation->CurrentBlock = -1;
+		relation->FsmForkSize = -1;
+		relation->VmForkSize = -1;
+		relation->StorageManager = 0;	
 
-		/* place it at head of unowned list (to make smgrsetowner cheap) */
-		reln->next_unowned_reln = first_unowned_reln;
-		first_unowned_reln = reln;
+		for (i = 0; i <= INIT_FORK; i++)
+			relation->Segments[i] = NULL;
 	}
 
-	return reln;
+	return relation;
+}
+
+static RelationSegment* OpenSegment(StorageRelation relation, int forkNumber)
+{
+    RelationSegment* segment;
+	char* filePath;
+	int   fileDescriptor;
+
+	if (relation->Segments[forkNumber])
+		return relation->Segments[forkNumber];
+    
+	filePath = GenerateFilePath(relation->relationKey, relation->relationKey->backend, forkNumber);
+	fileDescriptor = ROpenFile(filePath, O_RDWR | PG_BINARY, 0600);
+
+	if (fileDescriptor < 0)
+		Error("Could not open file %s", filePath);
+
+    free(filePath);
+
+    segment = (RelationSegment*)malloc(sizeof(RelationSegment));
+	relation->Segments[forkNumber] = segment;
+
+    segment->fileDescriptor = fileDescriptor;
+	segment->segmentNumber = 0;
+	segment->segmentNext = NULL;
+
+	return segment;
+}
+
+
+
+static int GetNumberOfBlocls(StorageRelation relation, int forkNumber, RelationSegment*  segment)
+{
+    long length;
+	length = FileSeek(segment->fileDescriptor, 0, SEEK_END);
+	if (length < 0)
+       Error("Could not seek in file");
+    return length / BLOCK_SIZE;
+}
+
+static RelationSegment* GetSegment(
+	StorageRelation relation, 
+	int forkNumber, 
+	int blockNumber,
+	int skipFsync, 
+	Behavior behavior)
+{
+	int i;
+    RelationSegment*    segment = OpenSegment(relation, forkNumber);  
+    int segmentNum = blockNumber / RELATION_SEGMENT_SIZE;
+
+	for (i = 1; i <= segmentNum; i++)
+	{
+       if (segment->segmentNext == NULL)
+	   {
+           if (behavior == CREATE || InRecovery)
+		   {
+               if (GetNumberOfBlocls(relation, forkNumber, segment) < RELATION_SEGMENT_SIZE)
+			   {
+                   char* newBuffer = malloc(BLOCK_SIZE);
+                   long  seekPosition;
+				   int   bytesWritten;
+
+                   MemSet(newBuffer, 0, BLOCK_SIZE);
+
+				   if (blockNumber == 1 << 32 - 1)
+	                   Error("Could not extend");
+                   
+                   seekPosition = (long)BLOCK_SIZE*(blockNumber % RELATION_SEGMENT_SIZE);
+				   if (FileSeek(segment, seekPosition, seekPosition) != seekPosition)
+                       Error("Could not seek into block");
+
+				   if ((bytesWritten = FileWrite(segment, buffer, BLOCK_SIZE)) != BLOCK_SIZE)
+					   Error("Could not write into block");
+                   
+                   free(newBuffer); 
+			   }
+			   segment->segmentNext = OpenSegment(relation, forknum);
+		   }
+		   else
+		   {
+               segment->segmentNext = OpenSegment(relation, forknum);
+		   }
+           if (segment->segmentNext == NULL)
+               Error("Could not open file");
+	   }
+	   segment = segment->segmentNext;
+	}
+	return segment;
 }
 
 void RelationWritesSync()
@@ -129,9 +239,6 @@ void RelationWritesSync()
 	SyncNumber++;
 	SyncInProgress = 1;
 
-	/* Now scan the hashtable for fsync requests to process */
-	//absorb_counter = FSYNCS_PER_ABSORB;
-	
 	HashSequenceInit(&hashSequence, &requestsTable);
 	while ((request = (FSyncRequestItem*)HashSequenceSearch(&hashSequence)) != NULL)
 	{
@@ -142,128 +249,37 @@ void RelationWritesSync()
 
 		for (fork = 0; fork <= INIT_FORK; fork++)
 		{
-			Set*  requests = request->FSyncRequests[fork];
-			int			segno;
+			Set*        requests = request->FSyncRequests[fork];
+			int			segmentNumber;
 
 			request->FSyncRequestsv[fork] = NULL;
-			//entry->canceled[forknum] = false;
 
-			while ((segno = Set_GetFirstMember(requests)) >= 0)
+			while ((segmentNumber = Set_GetFirstMember(requests)) >= 0)
 			{
 				int			failures;
 
 				if (!EnableFsync)
 					continue;
 
-				for (failures = 0;;failures++) /* loop exits at "break" */
+				for (failures = 0;;failures++) 
 				{
-					//StorageRelation  storageRel;
-					//MdfdVec    *seg;
-					//char	   *path;
-					//int			save_errno;
+					StorageRelation   storageRel;
+					RelationSegment*  segment;
 
-					
-					reln = smgropen(entry->rnode, InvalidBackendId);
+					storageRel = RelationOpen(request->Key, -1);
+					segment = GetSegment(storageRel, 
+						       fork, 
+							   segmentNumber * RELATION_SEGMENT_SIZE,
+	                           0, 
+	                           RETURN_NULL);
 
-					/* Attempt to open and fsync the target segment */
-					seg = _mdfd_getseg(reln, forknum,
-							 (BlockNumber) segno * (BlockNumber) RELSEG_SIZE,
-									   false, EXTENSION_RETURN_NULL);
-
-					INSTR_TIME_SET_CURRENT(sync_start);
-
-					if (seg != NULL &&
-						FileSync(seg->mdfd_vfd) >= 0)
-					{
-						/* Success; update statistics about sync timing */
-						INSTR_TIME_SET_CURRENT(sync_end);
-						sync_diff = sync_end;
-						INSTR_TIME_SUBTRACT(sync_diff, sync_start);
-						elapsed = INSTR_TIME_GET_MICROSEC(sync_diff);
-						if (elapsed > longest)
-							longest = elapsed;
-						total_elapsed += elapsed;
-						processed++;
-						if (log_checkpoints)
-							elog(DEBUG1, "checkpoint sync: number=%d file=%s time=%.3f msec",
-								 processed,
-								 FilePathName(seg->mdfd_vfd),
-								 (double) elapsed / 1000);
-
-						break;	/* out of retry loop */
-					}
-
-					/* Compute file name for use in message */
-					save_errno = errno;
-					path = _mdfd_segpath(reln, forknum, (BlockNumber) segno);
-					errno = save_errno;
-
-					/*
-					 * It is possible that the relation has been dropped or
-					 * truncated since the fsync request was entered.
-					 * Therefore, allow ENOENT, but only if we didn't fail
-					 * already on this file.  This applies both for
-					 * _mdfd_getseg() and for FileSync, since fd.c might have
-					 * closed the file behind our back.
-					 *
-					 * XXX is there any point in allowing more than one retry?
-					 * Don't see one at the moment, but easy to change the
-					 * test here if so.
-					 */
-					if (!FILE_POSSIBLY_DELETED(errno) ||
-						failures > 0)
-						ereport(ERROR,
-								(errcode_for_file_access(),
-								 errmsg("could not fsync file \"%s\": %m",
-										path)));
-					else
-						ereport(DEBUG1,
-								(errcode_for_file_access(),
-						errmsg("could not fsync file \"%s\" but retrying: %m",
-							   path)));
-					pfree(path);
-
-					/*
-					 * Absorb incoming requests and check to see if a cancel
-					 * arrived for this relation fork.
-					 */
-					AbsorbFsyncRequests();
-					absorb_counter = FSYNCS_PER_ABSORB; /* might as well... */
-
-					if (entry->canceled[forknum])
-						break;
-				}				/* end retry loop */
+					if (segment != NULL && FileSync(segment->fileDescriptor) >= 0)
+						break;	
+				}	
 			}
-			bms_free(requests);
+			free(requests);
 		}
+	}	
 
-		/*
-		 * We've finished everything that was requested before we started to
-		 * scan the entry.	If no new requests have been inserted meanwhile,
-		 * remove the entry.  Otherwise, update its cycle counter, as all the
-		 * requests now in it must have arrived during this cycle.
-		 */
-		for (forknum = 0; forknum <= MAX_FORKNUM; forknum++)
-		{
-			if (entry->requests[forknum] != NULL)
-				break;
-		}
-		if (forknum <= MAX_FORKNUM)
-			entry->cycle_ctr = mdsync_cycle_ctr;
-		else
-		{
-			/* Okay to remove it */
-			if (hash_search(pendingOpsTable, &entry->rnode,
-							HASH_REMOVE, NULL) == NULL)
-				elog(ERROR, "pendingOpsTable corrupted");
-		}
-	}							/* end loop over hashtable entries */
-
-	/* Return sync performance metrics for report at checkpoint end */
-	CheckpointStats.ckpt_sync_rels = processed;
-	CheckpointStats.ckpt_longest_sync = longest;
-	CheckpointStats.ckpt_agg_sync_time = total_elapsed;
-
-	/* Flag successful completion of mdsync */
-	mdsync_in_progress = false;
+	SyncInProgress = 0;
 }

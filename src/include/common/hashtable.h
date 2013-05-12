@@ -65,6 +65,8 @@ typedef struct HashtableHeader
 	unsigned int	 LowMask;		
     long             Locker;
 	HashItem*        FreeList;
+	int              DataItemSize;
+	int              ItemsNumToAllocAtOnce;
 } HashtableHeader;
 
 #define HASH_FUNCTION	0x010	
@@ -74,7 +76,7 @@ typedef struct HashtableHeader
 
 typedef struct HashItem
 {
-	struct HashItem    *Next;	    
+	struct HashItem*    Next;	    
 	unsigned int		Hash;		
 } HashItem;
 

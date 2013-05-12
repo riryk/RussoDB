@@ -235,7 +235,14 @@
 						>
 					</File>
 				</Filter>
-                       
+                <Filter
+					Name="commands"
+					>
+					<File
+						RelativePath="src\include\commands\modify.h"
+						>
+					</File>
+                </Filter>					
 				<Filter
 					Name="os"
 					>
@@ -302,6 +309,15 @@
 					>
 				</File>
 			</Filter>
+			
+			<Filter
+				Name="commands"
+				>
+				<File
+					RelativePath="src\commands\modify.c"
+					>
+				</File>
+            </Filter>	
 			
 			<Filter
 				Name="windows"
