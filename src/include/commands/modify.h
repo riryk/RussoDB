@@ -1,0 +1,5 @@
+
+#define MAX_ATTRIBUTES_COUNT 1664
+
+
+#define TYPE_REC_OID		2249
