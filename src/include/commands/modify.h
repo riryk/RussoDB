@@ -1,5 +1,10 @@
 
 #define MAX_ATTRIBUTES_COUNT 1664
 
+#define TYPE_REC_OID		 2249
 
-#define TYPE_REC_OID		2249
+#define TRAN_MASK			 0xFFE0	
+
+#define ATTR_MASK			 0x07FF
+
+#define TRAN_MAX_INVALID	 0x0800
