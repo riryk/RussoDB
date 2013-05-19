@@ -43,7 +43,7 @@
 				Name="VCCLCompilerTool"
 				AdditionalOptions="/MP"
 				Optimization="0"
-				AdditionalIncludeDirectories="src/include/file;src/include/error;src/include/common;src/include/os/file;"
+				AdditionalIncludeDirectories="src/include/file;src/include/error;src/include/common;src/include/os/file;src/include/commands;"
 				StringPooling="false"
 				RuntimeLibrary="3"
 				AssemblerOutput="0"
@@ -128,7 +128,7 @@
 				Name="VCCLCompilerTool"
 				AdditionalOptions="/MP"
 				Optimization="0"
-				AdditionalIncludeDirectories="src/include/file;src/include/error;src/include/common;src/include/os/file;"
+				AdditionalIncludeDirectories="src/include/file;src/include/error;src/include/common;src/include/os/file;src/include/commands;"
 				StringPooling="false"
 				RuntimeLibrary="3"
 				AssemblerOutput="0"
@@ -242,6 +242,19 @@
 						RelativePath="src\include\commands\modify.h"
 						>
 					</File>
+                    <File
+					    RelativePath="src\include\commands\freespacemanager.h"
+					    >
+				    </File>
+                    <File
+					    RelativePath="src\include\commands\tranlog.h"
+					    >
+				    </File>
+                    <File
+					    RelativePath="src\include\commands\buffermanager.h"
+					    >
+				    </File>
+ 
                 </Filter>					
 				<Filter
 					Name="os"
@@ -315,6 +328,18 @@
 				>
 				<File
 					RelativePath="src\commands\modify.c"
+					>
+				</File>
+                <File
+					RelativePath="src\commands\freespacemanager.c"
+					>
+				</File>
+                <File
+					RelativePath="src\commands\tranlog.c"
+					>
+				</File>
+				<File
+					RelativePath="src\commands\buffermanager.c"
 					>
 				</File>
             </Filter>	

@@ -5,11 +5,11 @@
 
 #define MOD(x,y)			   ((x) & ((y)-1))
 
-typedef unsigned int (*HashFunction) (void* Key, DWORD KeySize);
+typedef unsigned int (*HashFunction) (void* Key, unsigned long KeySize);
 
-typedef int (*HashCompareFunc) (void* Key1, void* Key2, DWORD KeySize);
+typedef int (*HashCompareFunc) (void* Key1, void* Key2, unsigned long KeySize);
 
-typedef void* (*HashCopyFunc) (void* Destination, void* Source, DWORD KeySize);
+typedef void* (*HashCopyFunc) (void* Destination, void* Source, unsigned long KeySize);
 
 typedef void* (*HashAllocFunc) (unsigned int Size);
 
@@ -21,7 +21,7 @@ typedef enum
 	INSERT_NULL
 } EHashAction;
 
-typedef struct HashTableSettings
+struct HashTableSettings
 {
 	long             PartNumber;      /* Number of sets on which the whole data will be divided */
 	unsigned int	 KeyLength;       /* hash key length in bytes */
@@ -31,7 +31,7 @@ typedef struct HashTableSettings
 	HashFunction     HashFunc;
 	HashCompareFunc  HashCompare;
 	HashCopyFunc     HashCopy;		 
-} HashTableSettings;
+};
 
 
 typedef struct Hashtable
@@ -80,18 +80,22 @@ typedef struct HashItem
 	unsigned int		Hash;		
 } HashItem;
 
-typedef struct
+struct HashSequenceItem
 {
 	Hashtable*      Table;
 	unsigned int	CurrentBucket;
 	HashItem*       CurrentItem;		
-} HashSequenceItem;
+};
 
 
 #define SEQUENCE_MAX_SCANS 100
 
 static Hashtable* SequenceScans[SEQUENCE_MAX_SCANS];
 static int SequenceScansCount = 0;
+
+unsigned int HashSimple(void* Key, unsigned long KeySize);
+
+int StringCmp(char* Key1, char* Key2, unsigned long KeySize);
 
 HashTable* HashTableCreate(
 	char* Name, 

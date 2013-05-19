@@ -4,9 +4,9 @@
 int	   SimultaneousProcessMode = 0;
 int    FlushToDiskProcess      = 0;
 int    StartupProcess          = 0;
+int    SyncInProgress          = 0;
 
-static int SyncNumber          = 0;
-static int SyncInProgress      = 0;
+int SyncNumber                 = 0;
 
 static int EnableFsync         = 1;
 static int InRecovery          = 0;
@@ -19,7 +19,7 @@ typedef struct RelationSegment
 	struct RelationSegment*   segmentNext;	
 } RelationSegment;
 
-typedef struct StorageRelation
+struct StorageRelation
 {
    RelationFileBackend  relationKey;
    struct StorageRelation** Parent;
@@ -28,28 +28,21 @@ typedef struct StorageRelation
    int VmForkSize;
    int StorageManager;
    RelationSegment* Segments[INIT_FORK + 1];
-   StorageRelation* NextRelation;
-} StorageRelation;
+   struct StorageRelation* NextRelation;
+};
 
-typedef struct RelationFileInfo
+struct RelationFileBackend
 {
-	unsigned int		tableSpaceId;		/* tablespace */
-	unsigned int 		databaseId;		    /* database */
-	unsigned int		relationId;		    /* relation */
-} RelationFileInfo;
-
-typedef struct RelationFileBackend
-{
-	RelationFileInfo   fileInfo;
+	struct RelationFileInfo   fileInfo;
 	int	               backend;
-} RelationFileBackend;
+};
 
-typedef struct
+struct FSyncRequestItem
 {
-	RelationFileInfo    Key;	                      /* hash table key */
-	int             	SyncNumber;		
-	Set*    FSyncRequests[MAX_REL_PARTS_NUMBER + 1];  /* fsync requests */
-} FSyncRequestItem;
+	struct RelationFileInfo    Key;	                      /* hash table key */
+	int             	       SyncNumber;		
+	struct Set*                FSyncRequests[MAX_REL_PARTS_NUMBER + 1];  /* fsync requests */
+};
 
 typedef struct StorageRelationData
 {
@@ -71,13 +64,13 @@ void RelationStorageInit()
 {
 	if (!SimultaneousProcessMode || FlushToDiskProcess || StartupProcess)
 	{
-		HashTableSettings		hashTableSett;
+		struct HashTableSettings*		hashTableSett;
 
 		MemSet(&hashTableSett, 0, sizeof(hashTableSett));
 
-		hashTableSett.KeyLength = sizeof(RelationFileInfo);
-		hashTableSett.ValueLength = sizeof(FSyncRequestItem);
-        hashTableSett.HashFunc = HashSimple;
+		hashTableSett->KeyLength = sizeof(RelationFileInfo);
+		hashTableSett->ValueLength = sizeof(FSyncRequestItem);
+        hashTableSett->HashFunc = HashSimple;
 
 		requestsTable = HashTableCreate("Requests Table",
 									    100L,
@@ -85,17 +78,17 @@ void RelationStorageInit()
 								        HASH_FUNCTION);
 	}
 }
-
-StorageRelation RelationOpen(RelationFileInfo fileInfo, int backend)
+  
+struct StorageRelation RelationOpen(struct RelationFileInfo fileInfo, int backend)
 {
-	RelationFileBackend  fileBackend; 
-	StorageRelation      relation;
+	struct RelationFileBackend  fileBackend; 
+	struct StorageRelation*      relation;
 	int		             found;
 	int                  i;
 
 	if (storageRelationTable == NULL)
 	{
-		HashTableSettings		hashTableSett;
+		struct HashTableSettings		hashTableSett;
 
 		MemSet(&hashTableSett, 0, sizeof(hashTableSett));
 
@@ -136,7 +129,7 @@ StorageRelation RelationOpen(RelationFileInfo fileInfo, int backend)
 	return relation;
 }
 
-static RelationSegment* OpenSegment(StorageRelation relation, int forkNumber)
+static RelationSegment* OpenSegment(struct StorageRelation relation, int forkNumber)
 {
     RelationSegment* segment;
 	char* filePath;
@@ -165,7 +158,7 @@ static RelationSegment* OpenSegment(StorageRelation relation, int forkNumber)
 
 
 
-static int GetNumberOfBlocls(StorageRelation relation, int forkNumber, RelationSegment*  segment)
+static int GetNumberOfBlocls(struct StorageRelation relation, int forkNumber, RelationSegment*  segment)
 {
     long length;
 	length = FileSeek(segment->fileDescriptor, 0, SEEK_END);
@@ -175,7 +168,7 @@ static int GetNumberOfBlocls(StorageRelation relation, int forkNumber, RelationS
 }
 
 static RelationSegment* GetSegment(
-	StorageRelation relation, 
+	struct StorageRelation relation, 
 	int forkNumber, 
 	int blockNumber,
 	int skipFsync, 
@@ -227,8 +220,8 @@ static RelationSegment* GetSegment(
 
 void RelationWritesSync()
 {
-	HashSequenceItem  hashSequence;
-	FSyncRequestItem* request;
+	struct HashSequenceItem  hashSequence;
+	struct FSyncRequestItem* request;
 
 	HashSequenceInit(&hashSequence, &requestsTable);
 	while ((request = (FSyncRequestItem*)HashSequenceSearch(&hashSequence)) != NULL)
@@ -236,7 +229,7 @@ void RelationWritesSync()
 		request->SyncNumber = SyncNumber;
 	}
 
-	SyncNumber++;
+	SyncNumber = SyncNumber + 1;
 	SyncInProgress = 1;
 
 	HashSequenceInit(&hashSequence, &requestsTable);
