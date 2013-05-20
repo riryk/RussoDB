@@ -1,4 +1,6 @@
 
+#define TRAN_LOG_BLOCK_SIZE (1024 * 64)
+
 typedef unsigned long long int uint64;
 
 typedef struct BlockId
@@ -25,6 +27,11 @@ struct tran_log_header
 	unsigned char		offset;
 };
 
+struct tran_log_page_header
+{
+    unsigned short		magic;	 
+};
+
 struct tran_log_data
 {
 	char*                 data;			
@@ -41,6 +48,12 @@ struct tran_log_record
 	unsigned int		  length;
 	unsigned char		  info;
 	uint64	              prev;	
+};
+
+struct tran_log_id
+{
+	unsigned int		  log_id;	
+	unsigned int		  tran_offset;
 };
 
 struct RelationFileInfo
@@ -86,4 +99,22 @@ struct PageHeader
 	struct PageItemData   rowInfoData[1];	
 };
 
+struct TranLogInsertState
+{
+    char*                currentPosition;		
+	tran_log_page_header currentPage;
+	int			         currentBlockIndex;	
+	tran_log_id*         blocks; 
+};
 
+struct TranLogState
+{
+    struct TranLogInsertState InsertState;
+	int		                  highestBlock;
+};
+
+struct TranLogProgress
+{
+	tran_log_id	  WritePosition;
+	tran_log_id	  FlushPosition;
+};
