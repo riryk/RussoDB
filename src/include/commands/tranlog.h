@@ -107,14 +107,16 @@ struct TranLogInsertState
 	tran_log_id*         blocks; 
 };
 
-struct TranLogState
-{
-    struct TranLogInsertState InsertState;
-	int		                  highestBlock;
-};
-
 struct TranLogProgress
 {
 	tran_log_id	  WritePosition;
 	tran_log_id	  FlushPosition;
+};
+
+struct TranLogState
+{
+    struct TranLogInsertState InsertState;
+	int		                  highestBlock;
+	long                      locker;
+    struct TranLogProgress*   LogProgress;  
 };
