@@ -1,5 +1,6 @@
 
 #define TRAN_LOG_BLOCK_SIZE (1024 * 64)
+#define TRAN_LOG_SEG_SIZE (1024 * 64)
 
 typedef unsigned long long int uint64;
 
@@ -113,10 +114,23 @@ struct TranLogProgress
 	tran_log_id	  FlushPosition;
 };
 
+struct TranLogWriteProgress
+{
+	tran_log_id	  WritePosition;
+	tran_log_id	  FlushPosition;
+};
+
 struct TranLogState
 {
     struct TranLogInsertState InsertState;
 	int		                  highestBlock;
 	long                      locker;
     struct TranLogProgress*   LogProgress;  
+	struct TranLogWriteState  WriteState; 
+	tran_log_id*              blocks; 
+};
+
+struct TranLogWriteState
+{
+	int	   currentIndex;			
 };
