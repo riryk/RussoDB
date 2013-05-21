@@ -1,6 +1,7 @@
 
 #define TRAN_LOG_BLOCK_SIZE (1024 * 64)
-#define TRAN_LOG_SEG_SIZE (1024 * 64)
+#define TRAN_LOG_SEG_SIZE   (1024 * 64)
+#define TRAN_LOG_SEG_NUMBER	(0x100000000 / TRAN_LOG_SEG_SIZE)
 
 typedef unsigned long long int uint64;
 
