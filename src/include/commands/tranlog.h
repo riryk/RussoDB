@@ -133,6 +133,7 @@ struct TranLogState
     struct TranLogProgress*   LogProgress;  
 	struct TranLogWriteState  WriteState; 
 	tran_log_id*              blocks; 
+	char*                     pages;
 };
 
 struct TranLogWriteState
