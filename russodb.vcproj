@@ -342,6 +342,10 @@
 					RelativePath="src\commands\buffermanager.c"
 					>
 				</File>
+				<File
+					RelativePath="src\commands\bufferwriter.c"
+					>
+				</File>
             </Filter>	
 			
 			<Filter
