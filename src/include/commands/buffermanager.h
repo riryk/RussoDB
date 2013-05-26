@@ -6,6 +6,9 @@ struct BufferDescription
 	int            Id;
 	unsigned int   blockNumber;
 	unsigned short flags;
+	struct RelationFileInfo    relation;	
+	Fork	       forkNum;
+	uint32         blockNum;
 };
 
 /*
