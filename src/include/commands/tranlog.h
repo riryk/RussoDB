@@ -108,21 +108,21 @@ struct PageHeader
 struct TranLogInsertState
 {
     char*                currentPosition;		
-	tran_log_page_header currentPage;
+	struct tran_log_page_header currentPage;
 	int			         currentBlockIndex;	
-	tran_log_id*         blocks; 
+	struct tran_log_id*         blocks; 
 };
 
 struct TranLogProgress
 {
-	tran_log_id	  WritePosition;
-	tran_log_id	  FlushPosition;
+	struct tran_log_id	  WritePosition;
+	struct tran_log_id	  FlushPosition;
 };
 
 struct TranLogWriteProgress
 {
-	tran_log_id	  WritePosition;
-	tran_log_id	  FlushPosition;
+	struct tran_log_id	  WritePosition;
+	struct tran_log_id	  FlushPosition;
 };
 
 struct TranLogState
