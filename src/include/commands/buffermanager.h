@@ -1,5 +1,10 @@
 
+#ifndef BUFFER_MAN_H
+#define BUFFER_MAN_H
+
 #include <stdio.h>
+#include "tranlog.h"
+
 
 struct BufferDescription
 {
@@ -8,7 +13,7 @@ struct BufferDescription
 	unsigned short flags;
 	struct RelationFileInfo    relation;	
 	Fork	       forkNum;
-	uint32         blockNum;
+	unsigned int         blockNum;
 };
 
 /*
@@ -19,11 +24,20 @@ struct BufferState
 	int			nextBufferToFlush;
 	int			firstFreeBuffer;	
 	int			lastFreeBuffer;
-	uint32		completedCycles; 
-	uint32		newBufferAllocs;
+	unsigned int		completedCycles; 
+	unsigned int		newBufferAllocs;
 };
 
 struct BufferWriterState
 {
     int         numberBuffersAlloc;
 };
+
+extern  struct BufferDescription* LocalBufferDescriptions;
+extern  struct BufferDescription* BufferDescriptions;
+
+extern void** LocalBuffers;
+extern char* BufferBlocks;
+
+
+#endif

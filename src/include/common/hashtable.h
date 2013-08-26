@@ -2,6 +2,7 @@
 #include <io.h>
 #include <string.h>
 #include "error.h"
+#include "common.h"
 
 #define MOD(x,y)			   ((x) & ((y)-1))
 
@@ -21,39 +22,38 @@ typedef enum
 	INSERT_NULL
 } EHashAction;
 
-struct HashTableSettings
+typedef struct SHashtableSettings
 {
 	long             PartNumber;      /* Number of sets on which the whole data will be divided */
-	unsigned int	 KeyLength;       /* hash key length in bytes */
-    unsigned int     ValueLength;     /* hash table value size in bytes */
+	uint	         KeyLength;       /* hash key length in bytes */
+    uint             ValueLength;     /* hash table value size in bytes */
 	long		     SegmentSize;			
 	int			     SegmentShift;	
 	HashFunction     HashFunc;
 	HashCompareFunc  HashCompare;
 	HashCopyFunc     HashCopy;		 
-};
+} SHashtableSettings, *HashtableSettings;
 
-
-typedef struct Hashtable
+typedef struct SHashtable
 {
-	HashValueFunc    HashFunc;			/* hash function */
-	HashCompareFunc  HashCompare;
-	HashCopyFunc     HashCopy;		
-	HashAllocFunc    HashAlloc;
-	char*            Name;		        /* name */
-	int		         IsInShared;		/* is in shared memory */
-	int		         NotEnlarge;  		
-	int		         NoMoreInserts;	    
-	unsigned int	 KeyLength;		    
-	long		     SegmentSize;			
-	int			     SegmentShift;			
-    HashtableHeader* Header;
-	HashItem**       StartSegment;		
-	int              PartitionNumber;
-	HashItem***      Directory;
-} Hashtable;
+	HashFunction            HashFunc;			    /* hash function */
+	HashCompareFunc         HashCompare;
+	HashCopyFunc            HashCopy;		
+	HashAllocFunc           HashAlloc;
+	char*                   Name;		            /* name */
+	int		                IsInSharedMemory;		/* is in shared memory */
+	int		                ProhibitEnlarge;  		
+	int		                ProhibitInserts;	    
+	uint	                KeyLength;		    
+	long		            SegmentSize;			
+	int			            SegmentShift;			
+    struct HashtableHeader* Header;
+	struct HashItem**       StartSegment;		
+	int                     PartitionNumber;
+	struct HashItem***      Directory;
+} SHashtable, Hashtable;
 
-typedef struct HashtableHeader
+struct HashtableHeader
 {
 	long             ItemsNumber;
     long             MaxBucketId;
@@ -64,41 +64,42 @@ typedef struct HashtableHeader
 	unsigned int	 HighMask;		
 	unsigned int	 LowMask;		
     long             Locker;
-	HashItem*        FreeList;
+	struct HashItem*        FreeList;
 	int              DataItemSize;
 	int              ItemsNumToAllocAtOnce;
-} HashtableHeader;
+};
 
 #define HASH_FUNCTION	0x010	
 #define HASH_COMPARE	0x400	
 #define HASH_KEYCOPY	0x800	
 #define HASH_ALLOC		0x100
 
-typedef struct HashItem
+struct HashItem
 {
 	struct HashItem*    Next;	    
 	unsigned int		Hash;		
-} HashItem;
+};
 
 struct HashSequenceItem
 {
-	Hashtable*      Table;
+	struct Hashtable*      Table;
 	unsigned int	CurrentBucket;
-	HashItem*       CurrentItem;		
+	struct HashItem*       CurrentItem;		
 };
 
 
 #define SEQUENCE_MAX_SCANS 100
 
-static Hashtable* SequenceScans[SEQUENCE_MAX_SCANS];
+static struct Hashtable* SequenceScans[SEQUENCE_MAX_SCANS];
 static int SequenceScansCount = 0;
 
 unsigned int HashSimple(void* Key, unsigned long KeySize);
+unsigned int HashForRelId(void* Key, unsigned long KeySize);
 
 int StringCmp(char* Key1, char* Key2, unsigned long KeySize);
 
-HashTable* HashTableCreate(
+struct HashTable* HashTableCreate(
 	char* Name, 
 	long MaxItemsNum, 
-	HashTableSettings* Info, 
+	struct HashTableSettings* Info, 
 	int Flags);

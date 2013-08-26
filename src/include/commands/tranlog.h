@@ -1,6 +1,11 @@
 
 #include <io.h>
 
+
+#ifndef NEW_H
+#define NEW_H
+
+
 #define TRAN_LOG_BLOCK_SIZE  (1024 * 64)
 #define TRAN_LOG_SEG_SIZE    (1024 * 64 * 8)
 #define TRAN_LOG_SEG_NUMBER	 (0x100000000 / TRAN_LOG_SEG_SIZE)
@@ -108,21 +113,26 @@ struct PageHeader
 struct TranLogInsertState
 {
     char*                currentPosition;		
-	tran_log_page_header currentPage;
+	struct tran_log_page_header currentPage;
 	int			         currentBlockIndex;	
-	tran_log_id*         blocks; 
+	struct tran_log_id*         blocks; 
 };
 
 struct TranLogProgress
 {
-	tran_log_id	  WritePosition;
-	tran_log_id	  FlushPosition;
+	struct tran_log_id	  WritePosition;
+	struct tran_log_id	  FlushPosition;
 };
 
 struct TranLogWriteProgress
 {
-	tran_log_id	  WritePosition;
-	tran_log_id	  FlushPosition;
+	struct tran_log_id	  WritePosition;
+	struct tran_log_id	  FlushPosition;
+};
+
+struct TranLogWriteState
+{
+	int	   currentIndex;			
 };
 
 struct TranLogState
@@ -132,11 +142,9 @@ struct TranLogState
 	long                      locker;
     struct TranLogProgress*   LogProgress;  
 	struct TranLogWriteState  WriteState; 
-	tran_log_id*              blocks; 
+	struct tran_log_id*              blocks; 
 	char*                     pages;
 };
 
-struct TranLogWriteState
-{
-	int	   currentIndex;			
-};
+
+#endif

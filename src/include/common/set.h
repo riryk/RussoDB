@@ -1,9 +1,9 @@
 
-typedef struct Set
+struct Set
 {
 	int			    ItemsNumber;			/* number of items in array */
 	unsigned int	Items[1];		        
-} Set;					
+};					
 
 #define WORD_BITS_COUNT 32
 

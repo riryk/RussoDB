@@ -43,7 +43,7 @@
 				Name="VCCLCompilerTool"
 				AdditionalOptions="/MP"
 				Optimization="0"
-				AdditionalIncludeDirectories="src/include/file;src/include/error;src/include/common;src/include/os/file;src/include/commands;"
+				AdditionalIncludeDirectories="src/include/file;src/include/error;src/include/common;src/include/os/file;src/include/commands;src/include/commands/relation;src/include/memory;"
 				StringPooling="false"
 				RuntimeLibrary="3"
 				AssemblerOutput="0"
@@ -216,6 +216,14 @@
 					</File>
 				</Filter>
 				<Filter
+					Name="memory"
+					>
+					<File
+						RelativePath="src\include\memory\memorymanager.h"
+						>
+					</File>
+				</Filter>
+				<Filter
 					Name="common"
 					>
 					<File
@@ -254,7 +262,18 @@
 					    RelativePath="src\include\commands\buffermanager.h"
 					    >
 				    </File>
- 
+                    <File
+						RelativePath="src\include\commands\parser.h"
+						>
+					</File>
+					<Filter
+					    Name="relation"
+					    >
+						<File
+						    RelativePath="src\include\commands\relation\relationmanager.h"
+						>
+					    </File>
+					</Filter>
                 </Filter>					
 				<Filter
 					Name="os"
@@ -289,6 +308,15 @@
 				>
 				<File
 					RelativePath="src\error\error.c"
+					>
+				</File>
+			</Filter>
+			
+			<Filter
+				Name="memory"
+				>
+				<File
+					RelativePath="src\memory\memorymanager.c"
 					>
 				</File>
 			</Filter>
@@ -358,6 +386,14 @@
 					RelativePath="src\commands\createtable.c"
 					>
 				</File>
+				<Filter
+					Name="relation"
+					>
+						<File
+						    RelativePath="src\commands\relation\relationmanager.c"
+						>
+					    </File>
+				</Filter>
             </Filter>	
 			
 			<Filter

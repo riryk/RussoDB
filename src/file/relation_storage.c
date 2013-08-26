@@ -1,10 +1,13 @@
 
 #include "relation_storage.h"
+#include "tranlog.h"
+#include <fcntl.h>
+#include "string.h"
 
 int	   SimultaneousProcessMode = 0;
 int    FlushToDiskProcess      = 0;
 int    StartupProcess          = 0;
-int    SyncInProgress          = 0;
+int    SyncInProgress;
 
 int SyncNumber                 = 0;
 
@@ -19,23 +22,23 @@ typedef struct RelationSegment
 	struct RelationSegment*   segmentNext;	
 } RelationSegment;
 
-struct StorageRelation
+/*struct StorageRelation
 {
-   RelationFileBackend  relationKey;
+   struct RelationFileBackend  relationKey;
    struct StorageRelation** Parent;
    int CurrentBlock;
    int FsmForkSize;
    int VmForkSize;
    int StorageManager;
-   RelationSegment* Segments[INIT_FORK + 1];
+   struct RelationSegment* Segments[4 + 1];
    struct StorageRelation* NextRelation;
-};
+};*/
 
-struct RelationFileBackend
+/*struct RelationFileBackend
 {
 	struct RelationFileInfo   fileInfo;
 	int	               backend;
-};
+};*/
 
 struct FSyncRequestItem
 {
@@ -46,7 +49,7 @@ struct FSyncRequestItem
 
 typedef struct StorageRelationData
 {
-	RelationFileInfo    Key;
+	struct RelationFileInfo    Key;
 	/* hash table key */
 } StorageRelationData;
 
@@ -57,8 +60,8 @@ typedef enum
 	CREATE			            
 } Behavior;
 
-static HashTable *requestsTable = NULL;
-static HashTable *storageRelationTable = NULL;
+static struct HashTable *requestsTable = NULL;
+static struct HashTable *storageRelationTable = NULL;
 
 void RelationStorageInit()
 {
@@ -66,10 +69,10 @@ void RelationStorageInit()
 	{
 		struct HashTableSettings*		hashTableSett;
 
-		MemSet(&hashTableSett, 0, sizeof(hashTableSett));
+		memset(&hashTableSett, 0, sizeof(hashTableSett));
 
-		hashTableSett->KeyLength = sizeof(RelationFileInfo);
-		hashTableSett->ValueLength = sizeof(FSyncRequestItem);
+		hashTableSett->KeyLength = sizeof(struct RelationFileInfo);
+		hashTableSett->ValueLength = sizeof(struct FSyncRequestItem);
         hashTableSett->HashFunc = HashSimple;
 
 		requestsTable = HashTableCreate("Requests Table",
@@ -90,11 +93,11 @@ struct StorageRelation RelationOpen(struct RelationFileInfo fileInfo, int backen
 	{
 		struct HashTableSettings		hashTableSett;
 
-		MemSet(&hashTableSett, 0, sizeof(hashTableSett));
+		memset(&hashTableSett, 0, sizeof(hashTableSett));
 
-		hashTableSett.KeyLength = sizeof(RelationFileInfo);
-		hashTableSett.ValueLength = sizeof(StorageRelationData);
-        hashTableSett.HashFunc = TagHash;
+		hashTableSett.KeyLength = sizeof(struct RelationFileInfo);
+		hashTableSett.ValueLength = sizeof(struct StorageRelationData);
+        //hashTableSett.HashFunc = TagHash;
 
 		storageRelationTable = HashTableCreate("Storage Relation Table",
 									    400,
@@ -102,12 +105,12 @@ struct StorageRelation RelationOpen(struct RelationFileInfo fileInfo, int backen
 								        HASH_FUNCTION);
 	}
 	
-	fileBackend.fileInfo = fileInfo;
+	//fileBackend.fileInfo = fileInfo;
 	fileBackend.backend = backend;
 
 	relation = HashSearch(storageRelationTable, 
 		                  (void*)&fileBackend,
-		                  HASH_ENTER,
+		                  1 /*HASH_ENTER*/,
 		                  &found);
 
 	/* If this item exists in the hash table found will be true */
@@ -126,7 +129,7 @@ struct StorageRelation RelationOpen(struct RelationFileInfo fileInfo, int backen
 			relation->Segments[i] = NULL;
 	}
 
-	return relation;
+	return *relation;
 }
 
 static RelationSegment* OpenSegment(struct StorageRelation relation, int forkNumber)
@@ -135,19 +138,19 @@ static RelationSegment* OpenSegment(struct StorageRelation relation, int forkNum
 	char* filePath;
 	int   fileDescriptor;
 
-	if (relation->Segments[forkNumber])
-		return relation->Segments[forkNumber];
+	if (relation.Segments[forkNumber])
+		return relation.Segments[forkNumber];
     
-	filePath = GenerateFilePath(relation->relationKey, relation->relationKey->backend, forkNumber);
-	fileDescriptor = ROpenFile(filePath, O_RDWR | PG_BINARY, 0600);
+	//filePath = GenerateFilePath(relation.relationKey, relation.relationKey.backend, forkNumber);
+	fileDescriptor = ROpenFile(filePath, O_RDWR, 0600);
 
 	if (fileDescriptor < 0)
-		Error("Could not open file %s", filePath);
+		;//Error("Could not open file %s", filePath);
 
     free(filePath);
 
     segment = (RelationSegment*)malloc(sizeof(RelationSegment));
-	relation->Segments[forkNumber] = segment;
+	relation.Segments[forkNumber] = segment;
 
     segment->fileDescriptor = fileDescriptor;
 	segment->segmentNumber = 0;
@@ -163,7 +166,7 @@ static int GetNumberOfBlocls(struct StorageRelation relation, int forkNumber, Re
     long length;
 	length = FileSeek(segment->fileDescriptor, 0, SEEK_END);
 	if (length < 0)
-       Error("Could not seek in file");
+       ;//Error("Could not seek in file");
     return length / BLOCK_SIZE;
 }
 
@@ -190,28 +193,28 @@ static RelationSegment* GetSegment(
                    long  seekPosition;
 				   int   bytesWritten;
 
-                   MemSet(newBuffer, 0, BLOCK_SIZE);
+                   memset(newBuffer, 0, BLOCK_SIZE);
 
 				   if (blockNumber == 1 << 32 - 1)
-	                   Error("Could not extend");
+	                   ;//Error("Could not extend");
                    
                    seekPosition = (long)BLOCK_SIZE*(blockNumber % RELATION_SEGMENT_SIZE);
 				   if (FileSeek(segment, seekPosition, seekPosition) != seekPosition)
-                       Error("Could not seek into block");
+                       ;//Error("Could not seek into block");
 
-				   if ((bytesWritten = FileWrite(segment, buffer, BLOCK_SIZE)) != BLOCK_SIZE)
-					   Error("Could not write into block");
+				   if ((bytesWritten = FileWrite(segment, 0, /* bufferId*/BLOCK_SIZE)) != BLOCK_SIZE)
+					   ;//Error("Could not write into block");
                    
                    free(newBuffer); 
 			   }
-			   segment->segmentNext = OpenSegment(relation, forknum);
+			   segment->segmentNext = OpenSegment(relation, forkNumber);
 		   }
 		   else
 		   {
-               segment->segmentNext = OpenSegment(relation, forknum);
+               segment->segmentNext = OpenSegment(relation, forkNumber);
 		   }
            if (segment->segmentNext == NULL)
-               Error("Could not open file");
+               ;//Error("Could not open file");
 	   }
 	   segment = segment->segmentNext;
 	}
@@ -224,16 +227,16 @@ void RelationWritesSync()
 	struct FSyncRequestItem* request;
 
 	HashSequenceInit(&hashSequence, &requestsTable);
-	while ((request = (FSyncRequestItem*)HashSequenceSearch(&hashSequence)) != NULL)
+	while ((request = (struct FSyncRequestItem*)HashSequenceSearch(&hashSequence)) != NULL)
 	{
 		request->SyncNumber = SyncNumber;
 	}
 
-	SyncNumber = SyncNumber + 1;
+	//SyncNumber++;
 	SyncInProgress = 1;
 
-	HashSequenceInit(&hashSequence, &requestsTable);
-	while ((request = (FSyncRequestItem*)HashSequenceSearch(&hashSequence)) != NULL)
+	//HashSequenceInit(&hashSequence, &requestsTable);
+	while ((request = (struct FSyncRequestItem*)HashSequenceSearch(&hashSequence)) != NULL)
 	{
 		Fork	fork;
 
@@ -242,10 +245,10 @@ void RelationWritesSync()
 
 		for (fork = 0; fork <= INIT_FORK; fork++)
 		{
-			Set*        requests = request->FSyncRequests[fork];
+			struct Set*        requests = request->FSyncRequests[fork];
 			int			segmentNumber;
 
-			request->FSyncRequestsv[fork] = NULL;
+			request->FSyncRequests[fork] = NULL;
 
 			while ((segmentNumber = Set_GetFirstMember(requests)) >= 0)
 			{
@@ -256,8 +259,8 @@ void RelationWritesSync()
 
 				for (failures = 0;;failures++) 
 				{
-					StorageRelation   storageRel;
-					RelationSegment*  segment;
+					struct StorageRelation   storageRel;
+					struct RelationSegment*  segment;
 
 					storageRel = RelationOpen(request->Key, -1);
 					segment = GetSegment(storageRel, 
@@ -274,5 +277,5 @@ void RelationWritesSync()
 		}
 	}	
 
-	SyncInProgress = 0;
+	//SyncInProgress = 0;
 }
