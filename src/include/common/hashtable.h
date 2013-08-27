@@ -2,7 +2,8 @@
 #include <io.h>
 #include <string.h>
 #include "error.h"
-#include "common.h"
+#include "memorymanager.h"
+
 
 #define MOD(x,y)			   ((x) & ((y)-1))
 
@@ -41,9 +42,9 @@ typedef struct SHashtable
 	HashCopyFunc            HashCopy;		
 	HashAllocFunc           HashAlloc;
 	char*                   Name;		            /* name */
-	int		                IsInSharedMemory;		/* is in shared memory */
-	int		                ProhibitEnlarge;  		
-	int		                ProhibitInserts;	    
+	Bool		            IsInSharedMemory;		/* is in shared memory */
+	Bool		            ProhibitEnlarge;  		
+	Bool		            ProhibitInserts;	    
 	uint	                KeyLength;		    
 	long		            SegmentSize;			
 	int			            SegmentShift;			
@@ -51,7 +52,7 @@ typedef struct SHashtable
 	struct HashItem**       StartSegment;		
 	int                     PartitionNumber;
 	struct HashItem***      Directory;
-} SHashtable, Hashtable;
+} SHashtable, *Hashtable;
 
 struct HashtableHeader
 {
@@ -69,10 +70,11 @@ struct HashtableHeader
 	int              ItemsNumToAllocAtOnce;
 };
 
-#define HASH_FUNCTION	0x010	
-#define HASH_COMPARE	0x400	
-#define HASH_KEYCOPY	0x800	
-#define HASH_ALLOC		0x100
+#define HASH_FUNCTION	0x001
+#define HASH_COMPARE	0x002
+#define HASH_SEGMENT	0x004
+#define HASH_KEYCOPY	0x008	
+#define HASH_ALLOC		0x010
 
 struct HashItem
 {
@@ -82,8 +84,8 @@ struct HashItem
 
 struct HashSequenceItem
 {
-	struct Hashtable*      Table;
-	unsigned int	CurrentBucket;
+	Hashtable              Table;
+	unsigned int	       CurrentBucket;
 	struct HashItem*       CurrentItem;		
 };
 
@@ -98,8 +100,8 @@ unsigned int HashForRelId(void* Key, unsigned long KeySize);
 
 int StringCmp(char* Key1, char* Key2, unsigned long KeySize);
 
-struct HashTable* HashTableCreate(
-	char* Name, 
-	long MaxItemsNum, 
-	struct HashTableSettings* Info, 
-	int Flags);
+ Hashtable createHashtable(
+	char*              name, 
+	long               maxItemsNum, 
+	HashtableSettings  settings, 
+	int                settingFlags);
