@@ -3,17 +3,7 @@
 #include <string.h>
 #include "error.h"
 #include "memorymanager.h"
-
-
-#define MOD(x,y)			   ((x) & ((y)-1))
-
-typedef unsigned int (*HashFunction) (void* Key, unsigned long KeySize);
-
-typedef int (*HashCompareFunc) (void* Key1, void* Key2, unsigned long KeySize);
-
-typedef void* (*HashCopyFunc) (void* Destination, void* Source, unsigned long KeySize);
-
-typedef void* (*HashAllocFunc) (unsigned int Size);
+#include "hashfunctions.h"
 
 typedef enum
 {
@@ -25,33 +15,33 @@ typedef enum
 
 typedef struct SHashtableSettings
 {
-	long             PartNumber;      /* Number of sets on which the whole data will be divided */
-	uint	         KeyLength;       /* hash key length in bytes */
-    uint             ValueLength;     /* hash table value size in bytes */
-	long		     SegmentSize;			
-	int			     SegmentShift;	
-	HashFunction     HashFunc;
-	HashCompareFunc  HashCompare;
-	HashCopyFunc     HashCopy;		 
+	ulong            partNum;      /* Number of sets on which the whole data will be divided */
+	uint	         keyLen;       /* hash key length in bytes */
+    uint             valLen;       /* hash table value size in bytes */
+	ulong		     segmSize;			
+	uint			 segmShift;	
+	hashFunc         hashFunc;
+	hashCmpFunc      hashCmp;
+	hashCpyFunc      hashCpy;		 
 } SHashtableSettings, *HashtableSettings;
 
 typedef struct SHashtable
 {
-	HashFunction            HashFunc;			    /* hash function */
-	HashCompareFunc         HashCompare;
-	HashCopyFunc            HashCopy;		
-	HashAllocFunc           HashAlloc;
-	char*                   Name;		            /* name */
-	Bool		            IsInSharedMemory;		/* is in shared memory */
-	Bool		            ProhibitEnlarge;  		
-	Bool		            ProhibitInserts;	    
-	uint	                KeyLength;		    
-	long		            SegmentSize;			
-	int			            SegmentShift;			
-    struct HashtableHeader* Header;
-	struct HashItem**       StartSegment;		
-	int                     PartitionNumber;
-	struct HashItem***      Directory;
+	char*                   name;		            /* name */
+	Bool		            isInShared;		/* is in shared memory */
+	Bool		            noEnlarge;  		
+	Bool		            noInserts;	    
+	uint	                keyLen;		    
+	ulong		            segmSize;			
+	uint			        segmShift;			
+    struct HashtableHeader* header;
+	struct HashItem**       startSegm;		
+	uint                    partNum;
+	struct HashItem***      dir;
+    hashFunc                hashFunc;			    /* hash function */
+	hashCmpFunc             hashCmp;
+	hashCpyFunc             hashCpy;		
+	hashAllocFunc           hashAlloc;
 } SHashtable, *Hashtable;
 
 struct HashtableHeader
@@ -70,10 +60,10 @@ struct HashtableHeader
 	int              ItemsNumToAllocAtOnce;
 };
 
-#define HASH_FUNCTION	0x001
-#define HASH_COMPARE	0x002
-#define HASH_SEGMENT	0x004
-#define HASH_KEYCOPY	0x008	
+#define HASH_FUNC	    0x001
+#define HASH_CMP	    0x002
+#define HASH_SEG	    0x004
+#define HASH_KEYCPY	    0x008	
 #define HASH_ALLOC		0x010
 
 struct HashItem
@@ -103,5 +93,5 @@ int StringCmp(char* Key1, char* Key2, unsigned long KeySize);
  Hashtable createHashtable(
 	char*              name, 
 	long               maxItemsNum, 
-	HashtableSettings  settings, 
-	int                settingFlags);
+	HashtableSettings  set, 
+	int                setFlags);

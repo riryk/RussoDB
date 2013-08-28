@@ -71,14 +71,14 @@ void RelationStorageInit()
 
 		memset(&hashTableSett, 0, sizeof(hashTableSett));
 
-		hashTableSett.KeyLength = sizeof(struct RelationFileInfo);
-		hashTableSett.ValueLength = sizeof(struct FSyncRequestItem);
-        hashTableSett.HashFunc = HashSimple;
+		hashTableSett.keyLen = sizeof(struct RelationFileInfo);
+		hashTableSett.valLen = sizeof(struct FSyncRequestItem);
+		hashTableSett.hashFunc = hashFuncFake;
 
 		requestsTable = createHashtable("Requests Table",
 									    100L,
 									    &hashTableSett,
-								        HASH_FUNCTION);
+								        HASH_FUNC);
 	}
 }
   
@@ -95,14 +95,14 @@ struct StorageRelation RelationOpen(struct RelationFileInfo fileInfo, int backen
 		
 		memset(&hashTableSett, 0, sizeof(hashTableSett));
 
-		hashTableSett.KeyLength = sizeof(struct RelationFileInfo);
-		hashTableSett.ValueLength = sizeof(struct StorageRelationData);
+		hashTableSett.keyLen = sizeof(struct RelationFileInfo);
+		hashTableSett.valLen = sizeof(struct StorageRelationData);
         //hashTableSett.HashFunc = TagHash;
 
 		storageRelationTable = createHashtable("Storage Relation Table",
 									    400,
 									    &hashTableSett,
-								        HASH_FUNCTION);
+								        HASH_FUNC);
 	}
 	
 	//fileBackend.fileInfo = fileInfo;

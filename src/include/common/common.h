@@ -1,11 +1,13 @@
 
 #include <stdlib.h>
+#include <string.h>
 
 #ifndef COMMON_H
 #define COMMON_H
 
-typedef unsigned int uint;
-typedef int          Bool;
+typedef unsigned int  uint;
+typedef unsigned long ulong;
+typedef int           Bool;
 
 #define True         1
 #define False        0

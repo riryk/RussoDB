@@ -43,7 +43,7 @@
 				Name="VCCLCompilerTool"
 				AdditionalOptions="/MP"
 				Optimization="0"
-				AdditionalIncludeDirectories="src/include/file;src/include/error;src/include/common;src/include/os/file;src/include/commands;src/include/commands/relation;src/include/memory;"
+				AdditionalIncludeDirectories="src/include/file;src/include/error;src/include/common;src/include/os/file;src/include/commands;src/include/commands/relation;src/include/memory;src/include/lib/unity;"
 				StringPooling="false"
 				RuntimeLibrary="3"
 				AssemblerOutput="0"
@@ -202,7 +202,7 @@
 						RelativePath="src\include\file\file.h"
 						>
 					</File>
-                              <File
+                    <File
 						RelativePath="src\include\file\relation_storage.h"
 						>
 					</File>
@@ -234,6 +234,10 @@
 						RelativePath="src\include\common\hashtable.h"
 						>
 					</File>
+					<File
+						RelativePath="src\include\common\hashfunctions.h"
+						>
+					</File>
                     <File
 						RelativePath="src\include\common\set.h"
 						>
@@ -243,6 +247,40 @@
 						>
 					</File>
 				</Filter>
+				
+				<Filter
+				    Name="lib"
+				    >
+				    <Filter
+				        Name="unity"
+				        >
+				        <File
+					        RelativePath="src\include\lib\unity\stdint.h"
+					    >
+					    </File> 
+					    <File
+					        RelativePath="src\include\lib\unity\unity.h"
+					    >
+					    </File>
+						<File
+					        RelativePath="src\include\lib\unity\unity_fixture.h"
+					    >
+					    </File>
+						<File
+					        RelativePath="src\include\lib\unity\unity_fixture_internals.h"
+					    >
+					    </File>
+						<File
+					        RelativePath="src\include\lib\unity\unity_fixture_malloc_overrides.h"
+					    >
+					    </File>
+						<File
+					        RelativePath="src\include\lib\unity\unity_internals.h"
+					    >
+					    </File>
+				    </Filter>
+			    </Filter>
+				
                 <Filter
 					Name="commands"
 					>
@@ -332,6 +370,10 @@
 					RelativePath="src\common\hashtable.c"
 					>
 				</File>
+				<File
+					RelativePath="src\common\hashfunctions.c"
+					>
+			    </File>
                 <File
 					RelativePath="src\common\set.c"
 					>
@@ -340,6 +382,23 @@
 					RelativePath="src\common\lock.c"
 					>
 				</File> 
+			</Filter>
+			
+			<Filter
+				Name="lib"
+				>
+				<Filter
+				    Name="unity"
+				    >
+				    <File
+					    RelativePath="src\lib\unity\unity.c"
+					    >
+					</File> 
+					<File
+					    RelativePath="src\lib\unity\unity_fixture.c"
+					    >
+					</File>
+				</Filter>
 			</Filter>
 			
 			<Filter
@@ -407,6 +466,51 @@
 						>
 					</File>
 				</Filter>	
+			</Filter>
+			
+			<Filter
+				Name="tests"
+				>
+				<Filter
+					Name="perfomance"
+					>
+				</Filter>
+				<Filter
+					Name="integration"
+					>
+				</Filter>
+				<Filter
+					Name="unit"
+					>
+					<File
+						RelativePath="src\tests\unit\unittestsrunner.c"
+						>
+					</File>
+					<Filter
+					    Name="common"
+					    >
+						<Filter
+					        Name="hashtable"
+					        >
+						    <Filter
+					            Name="create"
+					            >
+								<Filter
+					                Name="positive"
+					                >
+									<File
+						                RelativePath="src\tests\unit\common\hashtable\create\positive\when_create_hashtable.c"
+						                >
+					                </File>
+								</Filter>
+								<Filter
+					                Name="negative"
+					                >
+								</Filter>
+							</Filter>
+						</Filter>
+				    </Filter>
+				</Filter>
 			</Filter>
 			
 		</Filter>
