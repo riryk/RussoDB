@@ -25,6 +25,20 @@ typedef struct SHashtableSettings
 	hashCpyFunc      hashCpy;		 
 } SHashtableSettings, *HashtableSettings;
 
+
+struct HashItem
+{
+	struct HashItem*    Next;	    
+	unsigned int		Hash;		
+};
+
+/* A hash bucket is a linked list of HASHELEMENTs */
+typedef struct HashItem* HASHBUCKET;
+
+/* A hash segment is an array of bucket headers */
+typedef HASHBUCKET *HASHSEGMENT;
+
+
 typedef struct SHashtable
 {
 	char*                   name;		            /* name */
@@ -37,11 +51,16 @@ typedef struct SHashtable
     struct HashtableHeader* header;
 	struct HashItem**       startSegm;		
 	uint                    partNum;
-	struct HashItem***      dir;
+	HASHSEGMENT*            dir;			/* directory of segment starts */
+	//struct HashItem***      dir;
     hashFunc                hashFunc;			    /* hash function */
 	hashCmpFunc             hashCmp;
 	hashCpyFunc             hashCpy;		
 	hashAllocFunc           hashAlloc;
+
+	uint32		            max_bucket;		/* ID of maximum bucket in use */
+	uint32		            high_mask;		/* mask to modulo into entire table */
+	uint32		            low_mask;		/* mask to modulo into lower half of table */
 } SHashtable, *Hashtable;
 
 struct HashtableHeader
@@ -66,11 +85,6 @@ struct HashtableHeader
 #define HASH_KEYCPY	    0x008	
 #define HASH_ALLOC		0x010
 
-struct HashItem
-{
-	struct HashItem*    Next;	    
-	unsigned int		Hash;		
-};
 
 struct HashSequenceItem
 {
