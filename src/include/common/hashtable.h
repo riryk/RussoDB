@@ -5,6 +5,14 @@
 #include "memorymanager.h"
 #include "hashfunctions.h"
 
+
+#define SEQUENCE_MAX_SCANS           100
+#define DEFAULT_SEG_SIZE             256
+#define DEFAULT_SEG_SHIFT            8
+#define DEFAULT_HASH_LIST_SIZE       4
+#define DEFAULT_SEGS_AMOUNT          256
+#define NO_SEGS_AMOUNT_RESTRICTIONS  (-1)
+
 typedef enum
 {
 	FIND,
@@ -20,47 +28,61 @@ typedef struct SHashtableSettings
     uint             valLen;       /* hash table value size in bytes */
 	ulong		     segmSize;			
 	uint			 segmShift;	
+	uint             hashListSize;
+	uint             segmsAmount;
+    uint             maxSegmsAmount;
 	hashFunc         hashFunc;
 	hashCmpFunc      hashCmp;
 	hashCpyFunc      hashCpy;		 
 } SHashtableSettings, *HashtableSettings;
 
 
-struct HashItem
+typedef struct SHashItem
 {
-	struct HashItem*    Next;	    
-	unsigned int		Hash;		
-};
+	HashItem            next;	    
+	uint		        hash;		
+} SHashItem, *HashItem;
 
-/* A hash bucket is a linked list of HASHELEMENTs */
-typedef struct HashItem* HASHBUCKET;
+/* A name convention: if some struct has a link to another the same struct,
+ * we have a linked link. HashItem in this case is also a pointer to a head 
+ * of a linked list. All linked list start with LL prefix */
+typedef HashItem   LLHashItem;
+typedef LLHashItem HashList; /* A linked list of hashitems */
 
-/* A hash segment is an array of bucket headers */
-typedef HASHBUCKET *HASHSEGMENT;
+/* Sometimes it is very difficult to distinguish whether a pointer to some type
+ * is just a pointer or an array. All arrays start with 'A' prefix */
+typedef HashList*  AHashList;
+typedef AHashList  HashSegment; /* Hash segment is an array of HashLists */
 
+typedef HashSegment* AHashSegment; /* A array of HashSegments */
 
 typedef struct SHashtable
 {
-	char*                   name;		            /* name */
+	char*                   name;		    /* name */
 	Bool		            isInShared;		/* is in shared memory */
 	Bool		            noEnlarge;  		
 	Bool		            noInserts;	    
 	uint	                keyLen;		    
+
+    /* Each hashtable consists of an array os segments.
+	 * Each segment is a list of a hash items linked lists. */
+    AHashSegment            segments;	    
 	ulong		            segmSize;			
-	uint			        segmShift;			
+	uint			        segmShift;	
+	uint                    segmsAmount;
+    uint                    maxSegmsAmount;
+	uint                    nSegs;
+
+	uint                    hashListSize;
     struct HashtableHeader* header;
 	struct HashItem**       startSegm;		
 	uint                    partNum;
-	HASHSEGMENT*            dir;			/* directory of segment starts */
-	//struct HashItem***      dir;
-    hashFunc                hashFunc;			    /* hash function */
+    hashFunc                hashFunc;	    /* hash function */
 	hashCmpFunc             hashCmp;
 	hashCpyFunc             hashCpy;		
 	hashAllocFunc           hashAlloc;
-
-	uint32		            max_bucket;		/* ID of maximum bucket in use */
-	uint32		            high_mask;		/* mask to modulo into entire table */
-	uint32		            low_mask;		/* mask to modulo into lower half of table */
+	uint32		            highMask;		
+	uint32		            lowMask;		
 } SHashtable, *Hashtable;
 
 struct HashtableHeader
@@ -74,7 +96,7 @@ struct HashtableHeader
 	unsigned int	 HighMask;		
 	unsigned int	 LowMask;		
     long             Locker;
-	struct HashItem*        FreeList;
+	struct HashItem* FreeList;
 	int              DataItemSize;
 	int              ItemsNumToAllocAtOnce;
 };
@@ -84,7 +106,7 @@ struct HashtableHeader
 #define HASH_SEG	    0x004
 #define HASH_KEYCPY	    0x008	
 #define HASH_ALLOC		0x010
-
+#define HASH_LIST_SIZE  0x020
 
 struct HashSequenceItem
 {
@@ -93,18 +115,10 @@ struct HashSequenceItem
 	struct HashItem*       CurrentItem;		
 };
 
-
-#define SEQUENCE_MAX_SCANS 100
-
 static struct Hashtable* SequenceScans[SEQUENCE_MAX_SCANS];
 static int SequenceScansCount = 0;
 
-unsigned int HashSimple(void* Key, unsigned long KeySize);
-unsigned int HashForRelId(void* Key, unsigned long KeySize);
-
-int StringCmp(char* Key1, char* Key2, unsigned long KeySize);
-
- Hashtable createHashtable(
+Hashtable createHashtable(
 	char*              name, 
 	long               maxItemsNum, 
 	HashtableSettings  set, 
