@@ -36,11 +36,10 @@ typedef struct SHashtableSettings
 	hashCpyFunc      hashCpy;		 
 } SHashtableSettings, *HashtableSettings;
 
-
 typedef struct SHashItem
 {
-	HashItem            next;	    
-	uint		        hash;		
+	struct SHashItem*   next;	    
+	int		            hash;		
 } SHashItem, *HashItem;
 
 /* A name convention: if some struct has a link to another the same struct,
@@ -51,18 +50,20 @@ typedef LLHashItem HashList; /* A linked list of hashitems */
 
 /* Sometimes it is very difficult to distinguish whether a pointer to some type
  * is just a pointer or an array. All arrays start with 'A' prefix */
-typedef HashList*  AHashList;
+typedef HashList  *AHashList;
 typedef AHashList  HashSegment; /* Hash segment is an array of HashLists */
 
 typedef HashSegment* AHashSegment; /* A array of HashSegments */
 
 typedef struct SHashtable
 {
-	char*                   name;		    /* name */
 	Bool		            isInShared;		/* is in shared memory */
 	Bool		            noEnlarge;  		
 	Bool		            noInserts;	    
 	uint	                keyLen;		    
+    uint                    valLen;
+
+	char*                   name;		    /* name */
 
     /* Each hashtable consists of an array os segments.
 	 * Each segment is a list of a hash items linked lists. */
@@ -70,19 +71,20 @@ typedef struct SHashtable
 	ulong		            segmSize;			
 	uint			        segmShift;	
 	uint                    segmsAmount;
-    uint                    maxSegmsAmount;
+    int                     maxSegmsAmount;
 	uint                    nSegs;
 
 	uint                    hashListSize;
     struct HashtableHeader* header;
-	struct HashItem**       startSegm;		
+	HashItem*               startSegm;		
 	uint                    partNum;
     hashFunc                hashFunc;	    /* hash function */
 	hashCmpFunc             hashCmp;
 	hashCpyFunc             hashCpy;		
 	hashAllocFunc           hashAlloc;
-	uint32		            highMask;		
-	uint32		            lowMask;		
+	uint		            highMask;		
+	uint		            lowMask;		
+	uint                    numItemsToAlloc;
 } SHashtable, *Hashtable;
 
 struct HashtableHeader
@@ -96,7 +98,7 @@ struct HashtableHeader
 	unsigned int	 HighMask;		
 	unsigned int	 LowMask;		
     long             Locker;
-	struct HashItem* FreeList;
+	HashItem         FreeList;
 	int              DataItemSize;
 	int              ItemsNumToAllocAtOnce;
 };
@@ -107,16 +109,27 @@ struct HashtableHeader
 #define HASH_KEYCPY	    0x008	
 #define HASH_ALLOC		0x010
 #define HASH_LIST_SIZE  0x020
+#define HASH_ITEM		0x040
 
 struct HashSequenceItem
 {
 	Hashtable              Table;
 	unsigned int	       CurrentBucket;
-	struct HashItem*       CurrentItem;		
+	HashItem               CurrentItem;		
 };
 
 static struct Hashtable* SequenceScans[SEQUENCE_MAX_SCANS];
 static int SequenceScansCount = 0;
+
+/* This function computes a number of items to allocate
+ * when we need to extend a hashtable. For perfomance care 
+ * we need to allocate a large enough piece of memory 
+ * to avoid frequent malloc calls. 
+ * We need to alloc at least 32 items. 
+ * Suppose we are going to allocate (32 + k) hash items, where k >= 0
+ * A total size of memory that will be allocated should be a power of two.
+ */
+uint itemsNumToAlloc(uint elemSize);
 
 Hashtable createHashtable(
 	char*              name, 

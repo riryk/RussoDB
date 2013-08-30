@@ -56,4 +56,8 @@ typedef struct SName
 
 int nextPowerOf2(long num);
 
+/* Generate assempler code by writing ANCI C program
+ * gcc -Wall -S -masm=intel -m32 sub.c
+ */
+
 #endif

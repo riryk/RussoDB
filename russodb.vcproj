@@ -43,7 +43,7 @@
 				Name="VCCLCompilerTool"
 				AdditionalOptions="/MP"
 				Optimization="0"
-				AdditionalIncludeDirectories="src/include/file;src/include/error;src/include/common;src/include/os/file;src/include/commands;src/include/commands/relation;src/include/memory;src/include/lib/unity;"
+				AdditionalIncludeDirectories="src/include/file;src/include/error;src/include/common;src/include/os/file;src/include/commands;src/include/commands/relation;src/include/memory;src/include/lib/unity;src/include/tests/unit;"
 				StringPooling="false"
 				RuntimeLibrary="3"
 				AssemblerOutput="0"
@@ -326,8 +326,28 @@
 				    </Filter>	
 				</Filter>
 				
+				<Filter
+				    Name="tests"
+				    >
+				    <Filter
+					    Name="perfomance"
+					    >
+				    </Filter>
+				    <Filter
+					    Name="integration"
+					    >
+				    </Filter>
+				    <Filter
+					    Name="unit"
+					    >
+					    <File
+						    RelativePath="src\include\tests\unit\unittestsrunner.h"
+						    >
+					    </File>
+					</Filter>
+				</Filter>
 			</Filter>
-			
+				
 			<Filter
 				Name="file"
 				>
