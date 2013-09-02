@@ -43,7 +43,7 @@
 				Name="VCCLCompilerTool"
 				AdditionalOptions="/MP"
 				Optimization="0"
-				AdditionalIncludeDirectories="src/include/file;src/include/error;src/include/common;src/include/os/file;src/include/commands;src/include/commands/relation;src/include/memory;src/include/lib/unity;src/include/tests/unit;"
+				AdditionalIncludeDirectories="src/include/file;src/include/error;src/include/common;src/include/os/file;src/include/commands;src/include/commands/relation;src/include/memory;src/include/lib/unity;src/include/tests/unit;src/include/common/hashtable;src/include/tests/unit/memory;"
 				StringPooling="false"
 				RuntimeLibrary="3"
 				AssemblerOutput="0"
@@ -219,23 +219,39 @@
 					Name="memory"
 					>
 					<File
-						RelativePath="src\include\memory\memorymanager.h"
+						RelativePath="src\include\memory\imemorymanager.h"
+						>
+					</File>
+					<File
+						RelativePath="src\include\memory\trackmemmanager.h"
 						>
 					</File>
 				</Filter>
 				<Filter
 					Name="common"
 					>
+					<Filter
+					    Name="hashtable"
+					    >
+					    <File
+						    RelativePath="src\include\common\hashtable\hashtable.h"
+						    >
+					    </File>
+						<File
+						    RelativePath="src\include\common\hashtable\ihashtablemanager.h"
+						    >
+					    </File>
+						<File
+						    RelativePath="src\include\common\hashtable\hashtablemanager.h"
+						    >
+					    </File>
+					    <File
+						    RelativePath="src\include\common\hashtable\hashfunctions.h"
+						    >
+					    </File>	
+					</Filter>
 					<File
 						RelativePath="src\include\common\common.h"
-						>
-					</File>
-                    <File
-						RelativePath="src\include\common\hashtable.h"
-						>
-					</File>
-					<File
-						RelativePath="src\include\common\hashfunctions.h"
 						>
 					</File>
                     <File
@@ -344,6 +360,14 @@
 						    RelativePath="src\include\tests\unit\unittestsrunner.h"
 						    >
 					    </File>
+						<Filter
+					        Name="memory"
+					        >
+							<File
+						        RelativePath="src\include\tests\unit\memory\fakememmanager.h"
+						        >
+					        </File>
+						</Filter>
 					</Filter>
 				</Filter>
 			</Filter>
@@ -374,7 +398,7 @@
 				Name="memory"
 				>
 				<File
-					RelativePath="src\memory\memorymanager.c"
+					RelativePath="src\memory\trackmemmanager.c"
 					>
 				</File>
 			</Filter>
@@ -382,18 +406,26 @@
 			<Filter
 				Name="common"
 				>
+				<Filter
+				    Name="hashtable"
+				    >
+					<File
+					    RelativePath="src\common\hashtable\hashtable.c"
+					    >
+				    </File>
+				    <File
+					    RelativePath="src\common\hashtable\hashfunctions.c"
+					    >
+			        </File>
+					<File
+					    RelativePath="src\common\hashtable\hashtablemanager.c"
+					    >
+			        </File>
+				</Filter>
 				<File
 					RelativePath="src\common\common.c"
 					>
 				</File>
-                <File
-					RelativePath="src\common\hashtable.c"
-					>
-				</File>
-				<File
-					RelativePath="src\common\hashfunctions.c"
-					>
-			    </File>
                 <File
 					RelativePath="src\common\set.c"
 					>
@@ -530,6 +562,14 @@
 							</Filter>
 						</Filter>
 				    </Filter>
+					<Filter
+					    Name="memory"
+					    >
+						<File
+						    RelativePath="src\tests\unit\memory\fakememmanager.c"
+						    >
+					    </File>
+					</Filter>
 				</Filter>
 			</Filter>
 			

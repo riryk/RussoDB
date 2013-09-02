@@ -2,8 +2,12 @@
 #include <io.h>
 #include <string.h>
 #include "error.h"
-#include "memorymanager.h"
+#include "imemorymanager.h"
 #include "hashfunctions.h"
+
+
+#ifndef HASHTABLE_H
+#define HASHTABLE_H
 
 
 #define SEQUENCE_MAX_SCANS           100
@@ -121,18 +125,4 @@ struct HashSequenceItem
 static struct Hashtable* SequenceScans[SEQUENCE_MAX_SCANS];
 static int SequenceScansCount = 0;
 
-/* This function computes a number of items to allocate
- * when we need to extend a hashtable. For perfomance care 
- * we need to allocate a large enough piece of memory 
- * to avoid frequent malloc calls. 
- * We need to alloc at least 32 items. 
- * Suppose we are going to allocate (32 + k) hash items, where k >= 0
- * A total size of memory that will be allocated should be a power of two.
- */
-uint itemsNumToAlloc(uint elemSize);
-
-Hashtable createHashtable(
-	char*              name, 
-	long               maxItemsNum, 
-	HashtableSettings  set, 
-	int                setFlags);
+#endif
