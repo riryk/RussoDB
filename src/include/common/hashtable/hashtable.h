@@ -89,6 +89,9 @@ typedef struct SHashtable
 	uint		            highMask;		
 	uint		            lowMask;		
 	uint                    numItemsToAlloc;
+	/* Hashtable current state */
+	ulong                   numItems;
+    ulong                   numHashLists;
 } SHashtable, *Hashtable;
 
 struct HashtableHeader

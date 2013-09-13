@@ -23,6 +23,7 @@ typedef struct SRelAttribute
  * when a struct pointer can have an arbitrary name */
 typedef struct SRelation
 {
+   uint            id;
    uint		       refCount;
    uint            typeId;
    uint            attrCount;

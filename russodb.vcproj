@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="Windows-1252"?>
 <VisualStudioProject
 	ProjectType="Visual C++"
-	Version="9.00"
+	Version="9,00"
 	Name="russodb"
 	ProjectGUID="{D51DACE6-5062-4DF6-84F4-3B59FFC90ED2}"
 	TargetFrameworkVersion="0"
@@ -191,7 +191,6 @@
 		<Filter
 			Name="src"
 			>
-			
 			<Filter
 				Name="include"
 				>
@@ -202,7 +201,7 @@
 						RelativePath="src\include\file\file.h"
 						>
 					</File>
-                    <File
+					<File
 						RelativePath="src\include\file\relation_storage.h"
 						>
 					</File>
@@ -230,148 +229,144 @@
 				<Filter
 					Name="common"
 					>
-					<Filter
-					    Name="hashtable"
-					    >
-					    <File
-						    RelativePath="src\include\common\hashtable\hashtable.h"
-						    >
-					    </File>
-						<File
-						    RelativePath="src\include\common\hashtable\ihashtablemanager.h"
-						    >
-					    </File>
-						<File
-						    RelativePath="src\include\common\hashtable\hashtablemanager.h"
-						    >
-					    </File>
-					    <File
-						    RelativePath="src\include\common\hashtable\hashfunctions.h"
-						    >
-					    </File>	
-					</Filter>
 					<File
 						RelativePath="src\include\common\common.h"
-						>
-					</File>
-                    <File
-						RelativePath="src\include\common\set.h"
 						>
 					</File>
 					<File
 						RelativePath="src\include\common\lock.h"
 						>
 					</File>
+					<File
+						RelativePath="src\include\common\set.h"
+						>
+					</File>
+					<Filter
+						Name="hashtable"
+						>
+						<File
+							RelativePath="src\include\common\hashtable\hashfunctions.h"
+							>
+						</File>
+						<File
+							RelativePath="src\include\common\hashtable\hashtable.h"
+							>
+						</File>
+						<File
+							RelativePath="src\include\common\hashtable\hashtablemanager.h"
+							>
+						</File>
+						<File
+							RelativePath="src\include\common\hashtable\ihashtablemanager.h"
+							>
+						</File>
+					</Filter>
 				</Filter>
-				
 				<Filter
-				    Name="lib"
-				    >
-				    <Filter
-				        Name="unity"
-				        >
-				        <File
-					        RelativePath="src\include\lib\unity\stdint.h"
-					    >
-					    </File> 
-					    <File
-					        RelativePath="src\include\lib\unity\unity.h"
-					    >
-					    </File>
+					Name="lib"
+					>
+					<Filter
+						Name="unity"
+						>
 						<File
-					        RelativePath="src\include\lib\unity\unity_fixture.h"
-					    >
-					    </File>
+							RelativePath="src\include\lib\unity\stdint.h"
+							>
+						</File>
 						<File
-					        RelativePath="src\include\lib\unity\unity_fixture_internals.h"
-					    >
-					    </File>
+							RelativePath="src\include\lib\unity\unity.h"
+							>
+						</File>
 						<File
-					        RelativePath="src\include\lib\unity\unity_fixture_malloc_overrides.h"
-					    >
-					    </File>
+							RelativePath="src\include\lib\unity\unity_fixture.h"
+							>
+						</File>
 						<File
-					        RelativePath="src\include\lib\unity\unity_internals.h"
-					    >
-					    </File>
-				    </Filter>
-			    </Filter>
-				
-                <Filter
+							RelativePath="src\include\lib\unity\unity_fixture_internals.h"
+							>
+						</File>
+						<File
+							RelativePath="src\include\lib\unity\unity_fixture_malloc_overrides.h"
+							>
+						</File>
+						<File
+							RelativePath="src\include\lib\unity\unity_internals.h"
+							>
+						</File>
+					</Filter>
+				</Filter>
+				<Filter
 					Name="commands"
 					>
+					<File
+						RelativePath="src\include\commands\buffermanager.h"
+						>
+					</File>
+					<File
+						RelativePath="src\include\commands\freespacemanager.h"
+						>
+					</File>
 					<File
 						RelativePath="src\include\commands\modify.h"
 						>
 					</File>
-                    <File
-					    RelativePath="src\include\commands\freespacemanager.h"
-					    >
-				    </File>
-                    <File
-					    RelativePath="src\include\commands\tranlog.h"
-					    >
-				    </File>
-                    <File
-					    RelativePath="src\include\commands\buffermanager.h"
-					    >
-				    </File>
-                    <File
+					<File
 						RelativePath="src\include\commands\parser.h"
 						>
 					</File>
-					<Filter
-					    Name="relation"
-					    >
-						<File
-						    RelativePath="src\include\commands\relation\relationmanager.h"
+					<File
+						RelativePath="src\include\commands\tranlog.h"
 						>
-					    </File>
+					</File>
+					<Filter
+						Name="relation"
+						>
+						<File
+							RelativePath="src\include\commands\relation\relationmanager.h"
+							>
+						</File>
 					</Filter>
-                </Filter>					
+				</Filter>
 				<Filter
 					Name="os"
 					>
 					<Filter
-					    Name="file"
-					    >
-					    <File
-						    RelativePath="src\include\os\file\osfile.h"
-						    >
-					    </File>
-				    </Filter>	
+						Name="file"
+						>
+						<File
+							RelativePath="src\include\os\file\osfile.h"
+							>
+						</File>
+					</Filter>
 				</Filter>
-				
 				<Filter
-				    Name="tests"
-				    >
-				    <Filter
-					    Name="perfomance"
-					    >
-				    </Filter>
-				    <Filter
-					    Name="integration"
-					    >
-				    </Filter>
-				    <Filter
-					    Name="unit"
-					    >
-					    <File
-						    RelativePath="src\include\tests\unit\unittestsrunner.h"
-						    >
-					    </File>
+					Name="tests"
+					>
+					<Filter
+						Name="perfomance"
+						>
+					</Filter>
+					<Filter
+						Name="integration"
+						>
+					</Filter>
+					<Filter
+						Name="unit"
+						>
+						<File
+							RelativePath="src\include\tests\unit\unittestsrunner.h"
+							>
+						</File>
 						<Filter
-					        Name="memory"
-					        >
+							Name="memory"
+							>
 							<File
-						        RelativePath="src\include\tests\unit\memory\fakememmanager.h"
-						        >
-					        </File>
+								RelativePath="src\include\tests\unit\memory\fakememmanager.h"
+								>
+							</File>
 						</Filter>
 					</Filter>
 				</Filter>
 			</Filter>
-				
 			<Filter
 				Name="file"
 				>
@@ -379,12 +374,11 @@
 					RelativePath="src\file\file.c"
 					>
 				</File>
-                        <File
+				<File
 					RelativePath="src\file\relation_storage.c"
 					>
 				</File>
 			</Filter>
-			
 			<Filter
 				Name="error"
 				>
@@ -393,7 +387,6 @@
 					>
 				</File>
 			</Filter>
-			
 			<Filter
 				Name="memory"
 				>
@@ -402,57 +395,54 @@
 					>
 				</File>
 			</Filter>
-			
 			<Filter
 				Name="common"
 				>
-				<Filter
-				    Name="hashtable"
-				    >
-					<File
-					    RelativePath="src\common\hashtable\hashtable.c"
-					    >
-				    </File>
-				    <File
-					    RelativePath="src\common\hashtable\hashfunctions.c"
-					    >
-			        </File>
-					<File
-					    RelativePath="src\common\hashtable\hashtablemanager.c"
-					    >
-			        </File>
-				</Filter>
 				<File
 					RelativePath="src\common\common.c"
 					>
 				</File>
-                <File
-					RelativePath="src\common\set.c"
-					>
-				</File> 
 				<File
 					RelativePath="src\common\lock.c"
 					>
-				</File> 
+				</File>
+				<File
+					RelativePath="src\common\set.c"
+					>
+				</File>
+				<Filter
+					Name="hashtable"
+					>
+					<File
+						RelativePath="src\common\hashtable\hashfunctions.c"
+						>
+					</File>
+					<File
+						RelativePath="src\common\hashtable\hashtable.c"
+						>
+					</File>
+					<File
+						RelativePath="src\common\hashtable\hashtablemanager.c"
+						>
+					</File>
+				</Filter>
 			</Filter>
-			
 			<Filter
 				Name="lib"
 				>
 				<Filter
-				    Name="unity"
-				    >
-				    <File
-					    RelativePath="src\lib\unity\unity.c"
-					    >
-					</File> 
+					Name="unity"
+					>
 					<File
-					    RelativePath="src\lib\unity\unity_fixture.c"
-					    >
+						RelativePath="src\lib\unity\unity.c"
+						>
+					</File>
+					<File
+						RelativePath="src\lib\unity\unity_fixture.c"
+						>
 					</File>
 				</Filter>
 			</Filter>
-			
 			<Filter
 				Name="main"
 				>
@@ -461,28 +451,27 @@
 					>
 				</File>
 			</Filter>
-			
 			<Filter
 				Name="commands"
 				>
-				<File
-					RelativePath="src\commands\modify.c"
-					>
-				</File>
-                <File
-					RelativePath="src\commands\freespacemanager.c"
-					>
-				</File>
-                <File
-					RelativePath="src\commands\tranlog.c"
-					>
-				</File>
 				<File
 					RelativePath="src\commands\buffermanager.c"
 					>
 				</File>
 				<File
 					RelativePath="src\commands\bufferwriter.c"
+					>
+				</File>
+				<File
+					RelativePath="src\commands\createtable.c"
+					>
+				</File>
+				<File
+					RelativePath="src\commands\freespacemanager.c"
+					>
+				</File>
+				<File
+					RelativePath="src\commands\modify.c"
 					>
 				</File>
 				<File
@@ -494,19 +483,18 @@
 					>
 				</File>
 				<File
-					RelativePath="src\commands\createtable.c"
+					RelativePath="src\commands\tranlog.c"
 					>
 				</File>
 				<Filter
 					Name="relation"
 					>
-						<File
-						    RelativePath="src\commands\relation\relationmanager.c"
+					<File
+						RelativePath="src\commands\relation\relationmanager.c"
 						>
-					    </File>
+					</File>
 				</Filter>
-            </Filter>	
-			
+			</Filter>
 			<Filter
 				Name="windows"
 				>
@@ -517,9 +505,8 @@
 						RelativePath="src\windows\file\winfile.c"
 						>
 					</File>
-				</Filter>	
+				</Filter>
 			</Filter>
-			
 			<Filter
 				Name="tests"
 				>
@@ -539,40 +526,51 @@
 						>
 					</File>
 					<Filter
-					    Name="common"
-					    >
+						Name="common"
+						>
 						<Filter
-					        Name="hashtable"
-					        >
-						    <Filter
-					            Name="create"
-					            >
+							Name="hashtable"
+							>
+							<Filter
+								Name="create"
+								>
 								<Filter
-					                Name="positive"
-					                >
+									Name="positive"
+									>
 									<File
-						                RelativePath="src\tests\unit\common\hashtable\create\positive\when_create_hashtable.c"
-						                >
-					                </File>
+										RelativePath="src\tests\unit\common\hashtable\create\positive\when_create_hashtable.c"
+										>
+									</File>
 								</Filter>
 								<Filter
-					                Name="negative"
-					                >
+									Name="negative"
+									>
 								</Filter>
 							</Filter>
 						</Filter>
-				    </Filter>
+						<Filter
+							Name="hashfunc"
+							>
+							<File
+								RelativePath="src\tests\unit\common\hashfunc\when_gen_hash.c"
+								>
+							</File>
+                                         <File
+								RelativePath="src\tests\unit\common\hashfunc\when_mix_jerkins.c"
+								>
+							</File>
+						</Filter>
+					</Filter>
 					<Filter
-					    Name="memory"
-					    >
+						Name="memory"
+						>
 						<File
-						    RelativePath="src\tests\unit\memory\fakememmanager.c"
-						    >
-					    </File>
+							RelativePath="src\tests\unit\memory\fakememmanager.c"
+							>
+						</File>
 					</Filter>
 				</Filter>
 			</Filter>
-			
 		</Filter>
 	</Files>
 	<Globals>

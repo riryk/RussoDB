@@ -21,6 +21,11 @@ uint hashFuncTag   (void* key, ulong keySize);
 
 int hashCmpFuncStr (char* Key1, char* Key2, ulong keySize);
 
+uint getHashFast(register const unsigned char *key, register int keylen);
+uint getHashFastInt(uint num);
+uint getHashId(void* key, ulong keySize);
+
+double** AvalancheMatrix(int trials, int repetitions, int size, uint (*mix)(uint hash));
 
 #endif
 
