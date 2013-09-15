@@ -92,6 +92,10 @@ typedef struct SHashtable
 	/* Hashtable current state */
 	ulong                   numItems;
     ulong                   numHashLists;
+	/* This is a linked list of free elements.
+	 * It can be newly allocated items or removed items 
+	 * which were not freed but added into freeList to recycle */
+	HashItem                freeList;
 } SHashtable, *Hashtable;
 
 struct HashtableHeader
