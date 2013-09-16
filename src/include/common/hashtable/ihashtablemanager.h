@@ -15,6 +15,12 @@ typedef struct SIHashtableManager
 		long               maxItemsNum, 
 		HashtableSettings  set, 
 		int                setFlags);
+    
+	void      (*hashLookUp)(
+        void*              self,
+        Hashtable          tbl, 
+        void*              key,
+        EHashAction        act);
 } SIHashtableManager, *IHashtableManager;
 
 

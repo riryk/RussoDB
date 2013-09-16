@@ -547,6 +547,26 @@
 									>
 								</Filter>
 							</Filter>
+							<Filter
+								Name="insert"
+								>
+								<Filter
+									Name="positive"
+									>
+									<File
+										RelativePath="src\tests\unit\common\hashtable\insert\positive\when_insert_many_ids.c"
+										>
+									</File>
+									<File
+										RelativePath="src\tests\unit\common\hashtable\insert\positive\when_insert_id.c"
+										>
+									</File>
+								</Filter>
+								<Filter
+									Name="negative"
+									>
+								</Filter>
+							</Filter>
 						</Filter>
 						<Filter
 							Name="hashfunc"

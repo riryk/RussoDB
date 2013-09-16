@@ -70,6 +70,8 @@ static void runTestCase()
 }
 
 void UnityTestRunner(unityfunction* setup,
+        givenfunction * given,
+		whenfunction * when,
         unityfunction* testBody,
         unityfunction* teardown,
         const char * printableName,
@@ -95,7 +97,9 @@ void UnityTestRunner(unityfunction* setup,
         runTestCase();
         if (TEST_PROTECT())
         {
-            setup();
+			setup();
+			given();
+			when();
             testBody();
         }
         if (TEST_PROTECT())

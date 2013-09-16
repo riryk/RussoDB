@@ -19,10 +19,10 @@
 
 typedef enum
 {
-	FIND,
-	INSERT,
-	DELETE,
-	INSERT_NULL
+	HASH_FIND,
+	HASH_INSERT,
+	HASH_DELETE,
+	HASH_INSERT_NULL
 } EHashAction;
 
 typedef struct SHashtableSettings

@@ -17,7 +17,11 @@ typedef struct _UNITY_FIXTURE_T
 } UNITY_FIXTURE_T;
 
 typedef void unityfunction();
+typedef void givenfunction();
+typedef void whenfunction();
 void UnityTestRunner(unityfunction * setup,
+        givenfunction * given,
+        whenfunction * when,
         unityfunction * body,
         unityfunction * teardown,
         const char * printableName,

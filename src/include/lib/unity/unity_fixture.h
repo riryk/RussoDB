@@ -19,7 +19,11 @@ int UnityMain(int argc, char* argv[], void (*runAllTests)());
 #define TEST_GROUP(group)\
     int TEST_GROUP_##group = 0
 
-#define TEST_SETUP(group) void TEST_##group##_SETUP()
+#define SETUP_DEPENDENCIES(group) void TEST_##group##_SETUP()
+
+#define GIVEN(group) void GIVEN_##group##_()
+
+#define WHEN(group) void WHEN_##group##_()
 
 #define TEST_TEAR_DOWN(group) void TEST_##group##_TEAR_DOWN()
 
@@ -29,7 +33,9 @@ int UnityMain(int argc, char* argv[], void (*runAllTests)());
     void TEST_##group##_##name##_run()\
     {\
         UnityTestRunner(TEST_##group##_SETUP,\
-             TEST_##group##_##name##_,\
+            GIVEN_##group##_,\
+            WHEN_##group##_,\
+            TEST_##group##_##name##_,\
             TEST_##group##_TEAR_DOWN,\
             "TEST(" #group ", " #name ")",\
             #group, #name,\

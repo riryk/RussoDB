@@ -7,6 +7,7 @@
 extern const IHashtableManager hashtableManager;
 
 uint itemsNumToAlloc(uint elemSize);
+
 Hashtable createHashtable(
     void*              self,
 	char*              name, 
@@ -14,5 +15,10 @@ Hashtable createHashtable(
 	HashtableSettings  set, 
 	int                setFlags);
 
+void hashLookUp(
+    void*              self,
+    Hashtable          tbl, 
+    void*              key,
+    EHashAction        act);
 
 #endif
