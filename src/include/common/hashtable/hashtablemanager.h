@@ -15,7 +15,7 @@ Hashtable createHashtable(
 	HashtableSettings  set, 
 	int                setFlags);
 
-void hashLookUp(
+HashItem hashLookUp(
     void*              self,
     Hashtable          tbl, 
     void*              key,

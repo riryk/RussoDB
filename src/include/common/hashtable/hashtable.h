@@ -43,7 +43,9 @@ typedef struct SHashtableSettings
 typedef struct SHashItem
 {
 	struct SHashItem*   next;	    
-	int		            hash;		
+	uint		        hash;
+	void*               key;
+	void*               value;
 } SHashItem, *HashItem;
 
 /* A name convention: if some struct has a link to another the same struct,
