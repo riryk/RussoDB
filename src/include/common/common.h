@@ -27,6 +27,7 @@ typedef struct SName
 	char	   value[NAME_MAX_LENGTH];
 } SName, *Name;
 
+
 /* This macro is used to facilitate calculation 
  * and more easily reuse some memory.
  * For example: if ALIGN_VAL is 8. We want all memory 

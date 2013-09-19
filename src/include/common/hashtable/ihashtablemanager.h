@@ -16,7 +16,7 @@ typedef struct SIHashtableManager
 		HashtableSettings  set, 
 		int                setFlags);
     
-	HashItem      (*hashLookUp)(
+	void*     (*hashLookUp)(
         void*              self,
         Hashtable          tbl, 
         void*              key,

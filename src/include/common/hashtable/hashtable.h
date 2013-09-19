@@ -44,8 +44,6 @@ typedef struct SHashItem
 {
 	struct SHashItem*   next;	    
 	uint		        hash;
-	void*               key;
-	void*               value;
 } SHashItem, *HashItem;
 
 /* A name convention: if some struct has a link to another the same struct,
@@ -123,6 +121,12 @@ struct HashtableHeader
 #define HASH_ALLOC		0x010
 #define HASH_LIST_SIZE  0x020
 #define HASH_ITEM		0x040
+
+
+#define GET_HASH_KEY(item)           (char*)item + ALIGN(sizeof(SHashItem))
+#define GET_HASH_VALUE(key, keyLen)  (char*)key + ALIGN(keyLen)
+
+#define Max(x, y)		((x) > (y) ? (x) : (y))
 
 struct HashSequenceItem
 {
