@@ -565,6 +565,10 @@
 										RelativePath="src\tests\unit\common\hashtable\insert\positive\when_insert_many_ids_into_same_list.c"
 										>
 									</File>
+									<File
+										RelativePath="src\tests\unit\common\hashtable\insert\positive\when_insert_existed_id.c"
+										>
+									</File>
 								</Filter>
 								<Filter
 									Name="negative"
