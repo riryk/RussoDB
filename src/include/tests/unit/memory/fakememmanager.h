@@ -13,7 +13,7 @@ typedef struct SMemHistoryItem
 extern const SIMemoryManager sFakeMemManager;
 extern const IMemoryManager fakeMemManager;
 
-extern SMemHistoryItem fakeMemStorage[200];
+extern SMemHistoryItem fakeMemStorage[10000];
 extern uint fakeMemStorageCount;
 
 #endif
