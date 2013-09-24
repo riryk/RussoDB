@@ -15,10 +15,12 @@ Hashtable createHashtable(
 	HashtableSettings  set, 
 	int                setFlags);
 
-void* hashLookUp(
-    void*              self,
+void* hashFind(
+	Hashtable          tbl, 
+    void*              key);
+
+void* hashInsert(
     Hashtable          tbl, 
-    void*              key,
-    EHashAction        act);
+    void*              key);
 
 #endif
