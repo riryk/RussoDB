@@ -74,8 +74,10 @@ typedef struct SHashtable
     AHashSegment            segments;	    
 	ulong		            segmSize;			
 	uint			        segmShift;	
+	/* This is a total number of segments in the hash table */
 	uint                    segmsAmount;
     int                     maxSegmsAmount;
+	/* This is a current number of allocated segments */
 	uint                    nSegs;
 
 	uint                    hashListSize;
