@@ -38,6 +38,7 @@ typedef struct SHashtableSettings
 	hashFunc         hashFunc;
 	hashCmpFunc      hashCmp;
 	hashCpyFunc      hashCpy;		 
+	Bool             isWithoutExtention;
 } SHashtableSettings, *HashtableSettings;
 
 typedef struct SHashItem
@@ -98,6 +99,7 @@ typedef struct SHashtable
 	 * It can be newly allocated items or removed items 
 	 * which were not freed but added into freeList to recycle */
 	HashItem                freeList;
+	Bool                    isWithoutExtention;
 } SHashtable, *Hashtable;
 
 struct HashtableHeader
@@ -116,14 +118,14 @@ struct HashtableHeader
 	int              ItemsNumToAllocAtOnce;
 };
 
-#define HASH_FUNC	    0x001
-#define HASH_CMP	    0x002
-#define HASH_SEG	    0x004
-#define HASH_KEYCPY	    0x008	
-#define HASH_ALLOC		0x010
-#define HASH_LIST_SIZE  0x020
-#define HASH_ITEM		0x040
-
+#define HASH_FUNC	            0x001
+#define HASH_CMP	            0x002
+#define HASH_SEG	            0x004
+#define HASH_KEYCPY	            0x008	
+#define HASH_ALLOC		        0x010
+#define HASH_LIST_SIZE          0x020
+#define HASH_ITEM		        0x040
+#define HASH_WITHOUT_EXTENTION  0x080
 
 #define GET_HASH_KEY(item)           ((char*)item + ALIGN(sizeof(SHashItem)))
 #define GET_HASH_VALUE(key, keyLen)  ((char*)key + ALIGN(keyLen))
