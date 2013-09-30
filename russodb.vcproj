@@ -548,6 +548,22 @@
 								</Filter>
 							</Filter>
 							<Filter
+								Name="expand"
+								>
+								<Filter
+									Name="positive"
+									>
+									<File
+										RelativePath="src\tests\unit\common\hashtable\expand\positive\when_expand_table.c"
+										>
+									</File>
+								</Filter>
+								<Filter
+									Name="negative"
+									>
+								</Filter>
+							</Filter>
+							<Filter
 								Name="insert"
 								>
 								<Filter
@@ -583,7 +599,7 @@
 								RelativePath="src\tests\unit\common\hashfunc\when_gen_hash.c"
 								>
 							</File>
-                                         <File
+                            <File
 								RelativePath="src\tests\unit\common\hashfunc\when_mix_jerkins.c"
 								>
 							</File>
