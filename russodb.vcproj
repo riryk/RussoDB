@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="Windows-1252"?>
 <VisualStudioProject
 	ProjectType="Visual C++"
-	Version="9,00"
+	Version="9.00"
 	Name="russodb"
 	ProjectGUID="{D51DACE6-5062-4DF6-84F4-3B59FFC90ED2}"
 	TargetFrameworkVersion="0"
@@ -43,7 +43,7 @@
 				Name="VCCLCompilerTool"
 				AdditionalOptions="/MP"
 				Optimization="0"
-				AdditionalIncludeDirectories="src/include/file;src/include/error;src/include/common;src/include/os/file;src/include/commands;src/include/commands/relation;src/include/memory;src/include/lib/unity;src/include/tests/unit;src/include/common/hashtable;src/include/tests/unit/memory;"
+				AdditionalIncludeDirectories="src/include/file;src/include/error;src/include/common;src/include/os/file;src/include/commands;src/include/commands/relation;src/include/memory;src/include/lib/unity;src/include/tests/unit;src/include/common/hashtable;src/include/tests/unit/memory;src/include/tests/unit/common/hashtable;"
 				StringPooling="false"
 				RuntimeLibrary="3"
 				AssemblerOutput="0"
@@ -364,6 +364,18 @@
 								>
 							</File>
 						</Filter>
+						<Filter
+							Name="common"
+							>
+							<Filter
+								Name="hashtable"
+								>
+								<File
+									RelativePath="src\include\tests\unit\common\hashtable\hashtable_helper.h"
+									>
+								</File>
+							</Filter>
+						</Filter>
 					</Filter>
 				</Filter>
 			</Filter>
@@ -570,7 +582,11 @@
 									Name="positive"
 									>
 									<File
-										RelativePath="src\tests\unit\common\hashtable\insert\positive\when_insert_many_ids.c"
+										RelativePath="src\tests\unit\common\hashtable\hashtable_helper.c"
+										>
+									</File>
+									<File
+										RelativePath="src\tests\unit\common\hashtable\insert\positive\when_insert_existed_id.c"
 										>
 									</File>
 									<File
@@ -578,11 +594,11 @@
 										>
 									</File>
 									<File
-										RelativePath="src\tests\unit\common\hashtable\insert\positive\when_insert_many_ids_into_same_list.c"
+										RelativePath="src\tests\unit\common\hashtable\insert\positive\when_insert_many_ids.c"
 										>
 									</File>
 									<File
-										RelativePath="src\tests\unit\common\hashtable\insert\positive\when_insert_existed_id.c"
+										RelativePath="src\tests\unit\common\hashtable\insert\positive\when_insert_many_ids_into_same_list.c"
 										>
 									</File>
 								</Filter>
@@ -599,7 +615,7 @@
 								RelativePath="src\tests\unit\common\hashfunc\when_gen_hash.c"
 								>
 							</File>
-                            <File
+							<File
 								RelativePath="src\tests\unit\common\hashfunc\when_mix_jerkins.c"
 								>
 							</File>
