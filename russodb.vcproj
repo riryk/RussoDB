@@ -234,6 +234,10 @@
 						>
 					</File>
 					<File
+						RelativePath="src\include\common\icommon.h"
+						>
+					</File>
+					<File
 						RelativePath="src\include\common\lock.h"
 						>
 					</File>
@@ -582,10 +586,6 @@
 									Name="positive"
 									>
 									<File
-										RelativePath="src\tests\unit\common\hashtable\hashtable_helper.c"
-										>
-									</File>
-									<File
 										RelativePath="src\tests\unit\common\hashtable\insert\positive\when_insert_existed_id.c"
 										>
 									</File>
@@ -607,6 +607,10 @@
 									>
 								</Filter>
 							</Filter>
+							<File
+								RelativePath="src\tests\unit\common\hashtable\hashtable_helper.c"
+								>
+						    </File>
 						</Filter>
 						<Filter
 							Name="hashfunc"
