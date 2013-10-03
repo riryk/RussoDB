@@ -1,5 +1,6 @@
 #include "ihashtablemanager.h"
 #include "trackmemmanager.h"
+#include "common.h"
 
 #ifndef HASHTABLE_MANAGER_H
 #define HASHTABLE_MANAGER_H

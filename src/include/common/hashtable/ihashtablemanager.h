@@ -8,6 +8,7 @@
 typedef struct SIHashtableManager
 {
 	IMemoryManager memManager;
+	ICommon        commonHelper;
 
     Hashtable (*createHashtable)(
 		void*              self,

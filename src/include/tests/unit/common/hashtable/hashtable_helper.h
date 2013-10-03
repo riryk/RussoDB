@@ -19,5 +19,6 @@ extern int            listsCount;
 void clearHashLists();
 void calculateHashListsLens(Hashtable tbl, assertListCount assertFunc);
 void checkListCountDeviation(ListItemCount item);
+void fillTableToExpansion(Hashtable tbl, IHashtableManager man, int* currentKey);
 
 #endif

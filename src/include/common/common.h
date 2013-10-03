@@ -1,9 +1,13 @@
 
 #include <stdlib.h>
 #include <string.h>
+#include "icommon.h"
 
 #ifndef COMMON_H
 #define COMMON_H
+
+extern const SICommon sCommonHelper;
+extern const ICommon  commonHelper;
 
 typedef unsigned int  uint;
 typedef unsigned long ulong;
