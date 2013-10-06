@@ -261,7 +261,15 @@
 							>
 						</File>
 						<File
+							RelativePath="src\include\common\hashtable\hashtablehelper.h"
+							>
+						</File>
+						<File
 							RelativePath="src\include\common\hashtable\ihashtablemanager.h"
+							>
+						</File>
+						<File
+							RelativePath="src\include\common\hashtable\ihashtablehelper.h"
 							>
 						</File>
 					</Filter>
@@ -439,6 +447,10 @@
 					</File>
 					<File
 						RelativePath="src\common\hashtable\hashtablemanager.c"
+						>
+					</File>
+					<File
+						RelativePath="src\common\hashtable\hashtablehelper.c"
 						>
 					</File>
 				</Filter>

@@ -1,5 +1,6 @@
 #include "hashtable.h"
 #include "imemorymanager.h"
+#include "hashtablehelper.h"
 
 #ifndef IHASHTABLE_MANAGER_H
 #define IHASHTABLE_MANAGER_H
@@ -7,8 +8,9 @@
 
 typedef struct SIHashtableManager
 {
-	IMemoryManager memManager;
-	ICommon        commonHelper;
+	IMemoryManager   memManager;
+	ICommon          commonHelper;
+	IHashtableHelper hashtableHelper;
 
     Hashtable (*createHashtable)(
 		void*              self,
