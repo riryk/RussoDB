@@ -589,6 +589,10 @@
 										RelativePath="src\tests\unit\common\hashtable\expand\positive\when_expand_table1.c"
 										>
 									</File>
+									<File
+										RelativePath="src\tests\unit\common\hashtable\expand\positive\when_expand_table2.c"
+										>
+									</File>
 								</Filter>
 								<Filter
 									Name="negative"
