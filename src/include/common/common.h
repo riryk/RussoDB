@@ -9,9 +9,11 @@
 extern const SICommon sCommonHelper;
 extern const ICommon  commonHelper;
 
-typedef unsigned int  uint;
-typedef unsigned long ulong;
-typedef int           Bool;
+typedef unsigned char  uint8;
+typedef unsigned short uint16;
+typedef unsigned int   uint;
+typedef unsigned long  ulong;
+typedef int            Bool;
 
 #define True         1
 #define False        0
@@ -24,11 +26,22 @@ typedef int           Bool;
 #define Abs(x)			((x) >= 0 ? (x) : -(x))
 
 
+typedef struct SBlockId
+{
+	uint16		 high;
+	uint16		 low;
+} SBlockId, *BlockId;
+
+typedef struct SRowPointer
+{
+	SBlockId     block;
+	uint16       pos;
+} SRowPointer, *RowPointer
 
 /* This is the same char* but the length restrictions is provided */
 typedef struct SName
 {
-	char	   value[NAME_MAX_LENGTH];
+	char	    value[NAME_MAX_LENGTH];
 } SName, *Name;
 
 
@@ -53,11 +66,59 @@ typedef struct SName
 #define ALIGN(LEN)  \
 	(((int)(LEN) + ((ALIGN_VAL) - 1)) & ~((int)((ALIGN_VAL) - 1)))
 
+#define cat_rel_attr_count   8
 
 #define catalog_relation \
 { 1000, {"name"},      19, -1, False, False, False, 0 }, \
 { 1000, {"namespace"}, 26, -1, False, False, False, 0 }, \
 { 1000, {"type"},      26, -1, False, False, False, 0 }
+
+
+#define catalog_column \
+{ 1001, {"relid"},      26, -1, False, False, False, 0 }, \
+{ 1001, {"name"},       19, -1, False, False, False, 0 }, \
+{ 1001, {"type"},       26, -1, False, False, False, 0 }, \
+{ 1001, {"stattarget"}, 23, -1, False, False, False, 0 }, \
+{ 1001, {"length"},     21, -1, False, False, False, 0 }, \
+{ 1001, {"mode"},       23, -1, False, False, False, 0 }, \
+{ 1001, {"align"},      18, -1, False, False, False, 0 }, \
+{ 1001, {"notnull"},    16, -1, False, False, False, 0 }, \
+{ 1001, {"collation"},  26, -1, False, False, False, 0 }
+
+
+#define catalog_proc \
+{ 1002, {"name"},        19,   -1, False, False, False, 0 }, \
+{ 1002, {"namespace"},   26,   -1, False, False, False, 0 }, \
+{ 1002, {"owner"},       26,   -1, False, False, False, 0 }, \
+{ 1002, {"language"},    26,   -1, False, False, False, 0 }, \
+{ 1002, {"volatile"},    18,   -1, False, False, False, 0 }, \
+{ 1002, {"nargs"},       21,   -1, False, False, False, 0 }, \
+{ 1002, {"defaults"},    21,   -1, False, False, False, 0 }, \
+{ 1002, {"rettype"},     26,   -1, False, False, False, 0 }, \
+{ 1002, {"argtypes"},    30,   -1, False, False, False, 0 }, \
+{ 1002, {"argmodes"},    1002, -1, False, False, False, 0 }, \
+{ 1002, {"argnames"},    1009, -1, False, False, False, 0 }, \
+{ 1002, {"argdefaults"}, 194,  -1, False, False, False, 0 }, \
+{ 1002, {"src"},         25,   -1, False, False, False, 0 }, \
+{ 1002, {"bin"},         25,   -1, False, False, False, 0 }, \
+{ 1002, {"config"},      1009, -1, False, False, False, 0 }
+
+
+#define catalog_type \
+{ 1003, {"name"},        19,  -1, False, False, False, 0 }, \
+{ 1003, {"namespace"},   26,  -1, False, False, False, 0 }, \
+{ 1003, {"owner"},       26,  -1, False, False, False, 0 }, \
+{ 1003, {"length"},      21,  -1, False, False, False, 0 }, \
+{ 1003, {"type"},        18,  -1, False, False, False, 0 }, \
+{ 1003, {"category"},    18,  -1, False, False, False, 0 }, \
+{ 1003, {"isdefined"},   16,  -1, False, False, False, 0 }, \
+{ 1003, {"notnull"},     16,  -1, False, False, False, 0 }, \
+{ 1003, {"basetype"},    26,  -1, False, False, False, 0 }, \
+{ 1003, {"mode"},        23,  -1, False, False, False, 0 }, \
+{ 1003, {"collation"},   26,  -1, False, False, False, 0 }, \
+{ 1003, {"defaultbin"},  194, -1, False, False, False, 0 }, \
+{ 1003, {"default"},     25,  -1, False, False, False, 0 }
+
 
 int nextPowerOf2(long num);
 

@@ -17,8 +17,6 @@ typedef struct SRelAttribute
    uint      collation;
 } SRelAttribute;
 
-
-
 /* Name convetion is applied: Any struct's name starts with 'S'
  * when a struct pointer can have an arbitrary name */
 typedef struct SRelation
@@ -30,12 +28,57 @@ typedef struct SRelation
    SRelAttribute*  attributes;
 } SRelation, *Relation;
 
-
+/* This struct is used to insert a relation into a hash table */
 typedef struct SRelCacheItem
 {
-	uint		   id;
-	Relation	   relation;
-} SRelCacheItem;
+   uint		       id;
+   Relation	       relation;
+} SRelCacheItem, *RelCacheItem;
+
+
+typedef struct SRowFields
+{
+	uint          tranMin;		
+	uint          tranMax;
+	union
+	{
+		uint	  cmdId;		
+		uint      tranVac;	
+	}             field3;
+} SRowFields, *RowFields;
+
+
+typedef struct SDataFields
+{
+	uint		  len;
+	uint		  typeMod;
+	uint		  typeId;
+} SDataFields, *DataFields;
+
+
+typedef struct SRelRowHeader
+{
+	union
+	{
+		SRowFields   fiels;
+		SDataFields  data;
+	}          typeData;
+
+	SRowPointer      curr;		
+	uint16		     mask2;	
+	uint16		     mask;	
+	uint8		     hdrSize;
+    uint8            nullBits;
+} SRelRowHeader, *RelRowHeader;
+
+typedef struct SRelRow
+{ 
+    uint             len;
+    SRowPointer      self;
+    uint		 	 tblId;
+    SRelRowHeader    data;
+} SRelRow, *RelRow
+
 
 Hashtable RelationCache;
 
@@ -45,5 +88,6 @@ void createRelation(
 	uint           attrCount, 
 	SRelAttribute* attributes);
 
+void createRelationCache();
 
 #endif

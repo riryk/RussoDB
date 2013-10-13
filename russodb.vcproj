@@ -336,6 +336,10 @@
 							RelativePath="src\include\commands\relation\relationmanager.h"
 							>
 						</File>
+						<File
+							RelativePath="src\include\commands\relation\irelationmanager.h"
+							>
+						</File>
 					</Filter>
 				</Filter>
 				<Filter
