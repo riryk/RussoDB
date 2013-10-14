@@ -52,6 +52,9 @@ typedef union SCol_4b
 #define IS_4B(p) \
     ((((Col_1b)(p))->header & 0x03) == 0x00)
 
+#define IS_1B(p) \
+	((((Col_1b)(p))->header & 0x01) == 0x01)
+
 #define VARSIZE_4B(p) \
 	((((Col_4b)(p))->col_4byte.header >> 2) & 0x3FFFFFFF)
 
@@ -59,8 +62,8 @@ typedef union SCol_4b
 	(IS_4B(p) && \
 	 (VARSIZE_4B(p) - (int)sizeof(int) + 1) <= 0x7F)
 
-#define SHORT_SIZE(PTR) \
-	(VARSIZE(PTR) - VARHDRSZ + VARHDRSZ_SHORT)
+#define SHORT_SIZE(p) \
+	 (VARSIZE_4B(p) - (int)sizeof(int) + 1)
 
 typedef struct SBlockId
 {
