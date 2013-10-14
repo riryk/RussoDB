@@ -11,6 +11,7 @@ extern const ICommon  commonHelper;
 
 typedef unsigned char  uint8;
 typedef unsigned short uint16;
+typedef signed short   int16;
 typedef unsigned int   uint;
 typedef unsigned long  ulong;
 typedef int            Bool;
@@ -25,6 +26,41 @@ typedef int            Bool;
 #define Min(x, y)		((x) < (y) ? (x) : (y))
 #define Abs(x)			((x) >= 0 ? (x) : -(x))
 
+
+typedef struct SCol_1b
+{
+	uint8		header;
+	char		data;		/* Data begins here */
+} SCol_1b, *Col_1b;
+
+
+typedef union SCol_4b
+{
+	struct					
+	{
+		uint32		header;
+		char		data;
+	} col_4byte;
+	struct						
+	{
+		uint32		header;
+		uint32		size; 
+		char		data; 
+	} compressed;
+} SCol_4b, *Col_4b;
+
+#define IS_4B(p) \
+    ((((Col_1b)(p))->header & 0x03) == 0x00)
+
+#define VARSIZE_4B(p) \
+	((((Col_4b)(p))->col_4byte.header >> 2) & 0x3FFFFFFF)
+
+#define CAN_MAKE_SHORT(p) \
+	(IS_4B(p) && \
+	 (VARSIZE_4B(p) - (int)sizeof(int) + 1) <= 0x7F)
+
+#define SHORT_SIZE(PTR) \
+	(VARSIZE(PTR) - VARHDRSZ + VARHDRSZ_SHORT)
 
 typedef struct SBlockId
 {

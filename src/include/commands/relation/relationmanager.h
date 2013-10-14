@@ -11,10 +11,37 @@ typedef struct SRelAttribute
    Name      name;
    uint      typeId;
    uint      typeParam;   //For varchar type it is the max value
+   int16     len;
    Bool      notNull;
    Bool      hasDefault;
    Bool      isInvisible;
    uint      collation;
+   /*----------
+	 * attstorage tells for VARLENA attributes, what the heap access
+	 * methods can do to it if a given tuple doesn't fit into a page.
+	 * Possible values are
+	 *		'p': Value must be stored plain always
+	 *		'e': Value can be stored in "secondary" relation (if relation
+	 *			 has one, see pg_class.reltoastrelid)
+	 *		'm': Value can be stored compressed inline
+	 *		'x': Value can be stored compressed inline or in "secondary"
+	 * Note that 'm' fields can also be moved out to secondary storage,
+	 * but only as a last resort ('e' and 'x' fields are moved first).
+	 *----------
+	 */
+
+   /* storageStrategy tells what to do with a row, when it does not fit 
+    * into a page. The possible strategies are:
+	*       'o', 'ordinary': value must be stored in common, ordinary, plain way.
+	*                        It means that one part of the row, which fits into a table,
+	*                        goes into one page, whereas another part goes to another part.
+	*                        It can cause a large perfomance gap because we need to load 
+	*                        two pages into memory.
+	*       's': 'secondary' value will be stored in "secondary" table provided the table has one
+    *       'c': 'compressed' value can be stored compressed inline
+	*       'm': 'mixed' value can be stored compressed inline or in "secondary"
+	*/
+   char		 storageStrategy;
 } SRelAttribute;
 
 /* Name convetion is applied: Any struct's name starts with 'S'
