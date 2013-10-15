@@ -97,6 +97,13 @@ typedef struct SBlockId
 	uint16		 low;
 } SBlockId, *BlockId;
 
+
+#define BlockIdSet(blockId, blockNumber) \
+( \
+	(blockId)->high = (blockNumber) >> 16, \
+	(blockId)->low = (blockNumber) & 0xffff \
+)
+
 typedef struct SRowPointer
 {
 	SBlockId     block;
