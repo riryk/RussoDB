@@ -21,6 +21,9 @@ typedef int            Bool;
 
 #define NAME_MAX_LENGTH  64
 #define ALIGN_VAL        8
+#define ALIGN_INT        4
+#define ALIGN_DOUBLE     8
+#define ALIGN_SHORT      2
 
 #define Max(x, y)		((x) > (y) ? (x) : (y))
 #define Min(x, y)		((x) < (y) ? (x) : (y))
@@ -30,9 +33,15 @@ typedef int            Bool;
 typedef struct SCol_1b
 {
 	uint8		header;
-	char		data;		/* Data begins here */
+	char		data;		
 } SCol_1b, *Col_1b;
 
+typedef struct SCol_1b_e
+{
+	uint8		header;		
+	uint8		len;		
+	char		data;		
+} SCol_1b_e, *Col_1b_e;
 
 typedef union SCol_4b
 {
@@ -55,6 +64,15 @@ typedef union SCol_4b
 #define IS_1B(p) \
 	((((Col_1b)(p))->header & 0x01) == 0x01)
 
+#define IS_1B_E(p) \
+	((((Col_1b)(p))->header) == 0x01)
+
+#define VARSIZE_1B(p) \
+	((((Col_1b)(p))->header >> 1) & 0x7F)
+
+#define VARSIZE_1B_E(p) \
+	(((Col_1b)(p))->len)
+
 #define VARSIZE_4B(p) \
 	((((Col_4b)(p))->col_4byte.header >> 2) & 0x3FFFFFFF)
 
@@ -64,6 +82,14 @@ typedef union SCol_4b
 
 #define SHORT_SIZE(p) \
 	 (VARSIZE_4B(p) - (int)sizeof(int) + 1)
+
+
+#define VARSIZE_ANY(PTR) \
+	(VARATT_IS_1B_E(PTR) ? VARSIZE_1B_E(PTR) : \
+	 (VARATT_IS_1B(PTR) ? VARSIZE_1B(PTR) : \
+	  VARSIZE_4B(PTR)))
+
+
 
 typedef struct SBlockId
 {
@@ -104,6 +130,9 @@ typedef struct SName
  */
 #define ALIGN(LEN)  \
 	(((int)(LEN) + ((ALIGN_VAL) - 1)) & ~((int)((ALIGN_VAL) - 1)))
+
+#define ALIGN_TYPE(VAL,LEN)  \
+	(((int)(LEN) + ((VAL) - 1)) & ~((int)((VAL) - 1)))
 
 #define cat_rel_attr_count   8
 

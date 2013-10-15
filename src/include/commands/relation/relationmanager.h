@@ -42,6 +42,7 @@ typedef struct SRelAttribute
 	*       'm': 'mixed' value can be stored compressed inline or in "secondary"
 	*/
    char		 storageStrategy;
+   char      align;
 } SRelAttribute;
 
 /* Name convetion is applied: Any struct's name starts with 'S'
