@@ -5,6 +5,12 @@
 #include "common.h"
 #include "hashtable.h"
 
+#define NATTS_MASK			0x07FF
+
+#define ROW_HASNULL			0x0001	
+#define ROW_HASVARWIDTH		0x0002	
+#define ROW_HASEXTERNAL		0x0004	
+
 typedef struct SRelAttribute
 {
    uint		 id;
@@ -16,20 +22,6 @@ typedef struct SRelAttribute
    Bool      hasDefault;
    Bool      isInvisible;
    uint      collation;
-   /*----------
-	 * attstorage tells for VARLENA attributes, what the heap access
-	 * methods can do to it if a given tuple doesn't fit into a page.
-	 * Possible values are
-	 *		'p': Value must be stored plain always
-	 *		'e': Value can be stored in "secondary" relation (if relation
-	 *			 has one, see pg_class.reltoastrelid)
-	 *		'm': Value can be stored compressed inline
-	 *		'x': Value can be stored compressed inline or in "secondary"
-	 * Note that 'm' fields can also be moved out to secondary storage,
-	 * but only as a last resort ('e' and 'x' fields are moved first).
-	 *----------
-	 */
-
    /* storageStrategy tells what to do with a row, when it does not fit 
     * into a page. The possible strategies are:
 	*       'o', 'ordinary': value must be stored in common, ordinary, plain way.
@@ -43,6 +35,7 @@ typedef struct SRelAttribute
 	*/
    char		 storageStrategy;
    char      align;
+   Bool      byVal;
 } SRelAttribute;
 
 /* Name convetion is applied: Any struct's name starts with 'S'
@@ -95,7 +88,7 @@ typedef struct SRelRowHeader
 	SRowPointer      curr;		
 	uint16		     mask2;	
 	uint16		     mask;	
-	uint8		     hdrSize;
+	uint8		     offset;
     uint8            nullBits;
 } SRelRowHeader, *RelRowHeader;
 
