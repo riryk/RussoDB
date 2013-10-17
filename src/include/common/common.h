@@ -83,13 +83,16 @@ typedef union SCol_4b
 #define SHORT_SIZE(p) \
 	 (VARSIZE_4B(p) - (int)sizeof(int) + 1)
 
-
 #define VARSIZE_ANY(PTR) \
 	(VARATT_IS_1B_E(PTR) ? VARSIZE_1B_E(PTR) : \
 	 (VARATT_IS_1B(PTR) ? VARSIZE_1B(PTR) : \
 	  VARSIZE_4B(PTR)))
 
+#define SET_VARSIZE_1B(p,len) \
+	(((Col_1b)p)->header = (((uint8)len) << 1) | 0x01)
 
+#define VARDATA_4B(p) \
+	(((Col_4b)p)->col_4byte.data)
 
 typedef struct SBlockId
 {
