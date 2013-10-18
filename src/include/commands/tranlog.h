@@ -1,6 +1,6 @@
 
 #include <io.h>
-
+#include "common.h"
 
 #ifndef NEW_H
 #define NEW_H
@@ -14,11 +14,11 @@
 
 typedef unsigned long long int uint64;
 
-typedef struct BlockId
+/*typedef struct BlockId
 {
 	unsigned short		high;
 	unsigned short		low;
-} BlockId;
+} BlockId;*/
 
 struct tran_log_insert
 {

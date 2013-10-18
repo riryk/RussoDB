@@ -108,10 +108,10 @@ struct StorageRelation RelationOpen(struct RelationFileInfo fileInfo, int backen
 	//fileBackend.fileInfo = fileInfo;
 	fileBackend.backend = backend;
 
-	relation = HashSearch(storageRelationTable, 
+	relation = NULL; /*HashSearch(storageRelationTable, 
 		                  (void*)&fileBackend,
-		                  1 /*HASH_ENTER*/,
-		                  &found);
+		                  1,
+		                  &found);*/
 
 	/* If this item exists in the hash table found will be true */
 	if (!found)

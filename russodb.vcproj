@@ -43,7 +43,7 @@
 				Name="VCCLCompilerTool"
 				AdditionalOptions="/MP"
 				Optimization="0"
-				AdditionalIncludeDirectories="src/include/file;src/include/error;src/include/common;src/include/os/file;src/include/commands;src/include/commands/relation;src/include/memory;src/include/lib/unity;src/include/tests/unit;src/include/common/hashtable;src/include/tests/unit/memory;src/include/tests/unit/common/hashtable;"
+				AdditionalIncludeDirectories="src/include/file;src/include/error;src/include/common;src/include/os/file;src/include/commands;src/include/commands/relation;src/include/memory;src/include/lib/unity;src/include/tests/unit;src/include/common/hashtable;src/include/tests/unit/memory;src/include/tests/unit/common/hashtable;src/include/commands/relation/row;"
 				StringPooling="false"
 				RuntimeLibrary="3"
 				AssemblerOutput="0"
@@ -245,6 +245,10 @@
 						RelativePath="src\include\common\set.h"
 						>
 					</File>
+					<File
+						RelativePath="src\include\common\types.h"
+						>
+					</File>
 					<Filter
 						Name="hashtable"
 						>
@@ -332,12 +336,32 @@
 					<Filter
 						Name="relation"
 						>
+						<Filter
+						    Name="row"
+						    >
+							<File
+							    RelativePath="src\include\commands\relation\row\irelrowmanager.h"
+							    >
+						    </File>
+							<File
+							    RelativePath="src\include\commands\relation\row\relrow.h"
+							    >
+						    </File>
+							<File
+							    RelativePath="src\include\commands\relation\row\relrowmanager.h"
+							    >
+						    </File>
+						</Filter>
 						<File
 							RelativePath="src\include\commands\relation\relationmanager.h"
 							>
 						</File>
 						<File
 							RelativePath="src\include\commands\relation\irelationmanager.h"
+							>
+						</File>
+						<File
+							RelativePath="src\include\commands\relation\rel.h"
 							>
 						</File>
 					</Filter>
@@ -521,6 +545,14 @@
 				<Filter
 					Name="relation"
 					>
+					<Filter
+					    Name="row"
+					    >
+						<File
+						    RelativePath="src\commands\relation\row\relrowmanager.c"
+						    >
+					    </File>
+					</Filter>
 					<File
 						RelativePath="src\commands\relation\relationmanager.c"
 						>
