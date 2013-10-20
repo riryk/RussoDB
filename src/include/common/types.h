@@ -45,7 +45,7 @@ typedef union SCol_4b
 	((((Col_1b)(p))->header >> 1) & 0x7F)
 
 #define VARSIZE_1B_E(p) \
-	(((Col_1b)(p))->len)
+	(((Col_1b_e)(p))->len)
 
 #define VARSIZE_4B(p) \
 	((((Col_4b)(p))->col_4byte.header >> 2) & 0x3FFFFFFF)

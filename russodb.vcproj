@@ -261,19 +261,19 @@
 							>
 						</File>
 						<File
-							RelativePath="src\include\common\hashtable\hashtablemanager.h"
-							>
-						</File>
-						<File
 							RelativePath="src\include\common\hashtable\hashtablehelper.h"
 							>
 						</File>
 						<File
-							RelativePath="src\include\common\hashtable\ihashtablemanager.h"
+							RelativePath="src\include\common\hashtable\hashtablemanager.h"
 							>
 						</File>
 						<File
 							RelativePath="src\include\common\hashtable\ihashtablehelper.h"
+							>
+						</File>
+						<File
+							RelativePath="src\include\common\hashtable\ihashtablemanager.h"
 							>
 						</File>
 					</Filter>
@@ -336,26 +336,6 @@
 					<Filter
 						Name="relation"
 						>
-						<Filter
-						    Name="row"
-						    >
-							<File
-							    RelativePath="src\include\commands\relation\row\irelrowmanager.h"
-							    >
-						    </File>
-							<File
-							    RelativePath="src\include\commands\relation\row\relrow.h"
-							    >
-						    </File>
-							<File
-							    RelativePath="src\include\commands\relation\row\relrowmanager.h"
-							    >
-						    </File>
-						</Filter>
-						<File
-							RelativePath="src\include\commands\relation\relationmanager.h"
-							>
-						</File>
 						<File
 							RelativePath="src\include\commands\relation\irelationmanager.h"
 							>
@@ -364,6 +344,26 @@
 							RelativePath="src\include\commands\relation\rel.h"
 							>
 						</File>
+						<File
+							RelativePath="src\include\commands\relation\relationmanager.h"
+							>
+						</File>
+						<Filter
+							Name="row"
+							>
+							<File
+								RelativePath="src\include\commands\relation\row\irelrowmanager.h"
+								>
+							</File>
+							<File
+								RelativePath="src\include\commands\relation\row\relrow.h"
+								>
+							</File>
+							<File
+								RelativePath="src\include\commands\relation\row\relrowmanager.h"
+								>
+							</File>
+						</Filter>
 					</Filter>
 				</Filter>
 				<Filter
@@ -474,11 +474,11 @@
 						>
 					</File>
 					<File
-						RelativePath="src\common\hashtable\hashtablemanager.c"
+						RelativePath="src\common\hashtable\hashtablehelper.c"
 						>
 					</File>
 					<File
-						RelativePath="src\common\hashtable\hashtablehelper.c"
+						RelativePath="src\common\hashtable\hashtablemanager.c"
 						>
 					</File>
 				</Filter>
@@ -545,18 +545,18 @@
 				<Filter
 					Name="relation"
 					>
-					<Filter
-					    Name="row"
-					    >
-						<File
-						    RelativePath="src\commands\relation\row\relrowmanager.c"
-						    >
-					    </File>
-					</Filter>
 					<File
 						RelativePath="src\commands\relation\relationmanager.c"
 						>
 					</File>
+					<Filter
+						Name="row"
+						>
+						<File
+							RelativePath="src\commands\relation\row\relrowmanager.c"
+							>
+						</File>
+					</Filter>
 				</Filter>
 			</Filter>
 			<Filter
@@ -595,6 +595,10 @@
 						<Filter
 							Name="hashtable"
 							>
+							<File
+								RelativePath="src\tests\unit\common\hashtable\hashtable_helper.c"
+								>
+							</File>
 							<Filter
 								Name="create"
 								>
@@ -667,10 +671,6 @@
 									>
 								</Filter>
 							</Filter>
-							<File
-								RelativePath="src\tests\unit\common\hashtable\hashtable_helper.c"
-								>
-						    </File>
 						</Filter>
 						<Filter
 							Name="hashfunc"

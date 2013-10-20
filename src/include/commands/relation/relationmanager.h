@@ -4,6 +4,7 @@
 
 #include "hashtablemanager.h"
 #include "rel.h"
+#include "irelationmanager.h"
 
 Hashtable RelationCache;
 

@@ -5,7 +5,8 @@
 #ifndef HASHTABLE_MANAGER_H
 #define HASHTABLE_MANAGER_H
 
-extern const IHashtableManager hashtableManager;
+extern const SIHashtableManager sHashtableManager;
+extern const IHashtableManager  hashtableManager;
 
 uint itemsNumToAlloc(uint elemSize);
 

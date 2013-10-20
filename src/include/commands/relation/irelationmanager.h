@@ -10,12 +10,13 @@ typedef struct SIRelationManager
 	IHashtableManager hashtableManager;
 
 	void (*createRelation)(
-	     char*          relName, 
-	     uint           relTypeId, 
-	     uint           attrCount, 
-	     RelAttribute   attributes);
+	     void*            self,
+	     char*            relName, 
+	     uint             relTypeId, 
+	     uint             attrCount, 
+	     RelAttribute     attributes);
 
-    void createRelationCache();
+	void (*createRelationCache)(void* self);
 
 } SIRelationManager, *IRelationManager;
 
