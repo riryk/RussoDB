@@ -684,6 +684,10 @@
 								>
 							</File>
 						</Filter>
+						<File
+							RelativePath="src\tests\unit\common\types_tests.c"
+							>
+						</File>
 					</Filter>
 					<Filter
 						Name="memory"

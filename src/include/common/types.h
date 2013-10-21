@@ -4,11 +4,11 @@
 
 #include "common.h"
 
-typedef struct SCol_1b
+typedef struct SType_1b
 {
 	uint8		header;
-	char		data;		
-} SCol_1b, *Col_1b;
+	char		data[1];		
+} SType_1b, *Type_1b;
 
 typedef struct SCol_1b_e
 {
@@ -17,41 +17,67 @@ typedef struct SCol_1b_e
 	char		data;		
 } SCol_1b_e, *Col_1b_e;
 
-typedef union SCol_4b
+typedef union SType_4b
 {
 	struct					
 	{
 		uint		header;
-		char		data;
-	} col_4byte;
+		char		data[1];
+	} value;
 	struct						
 	{
 		uint		header;
 		uint		size; 
-		char		data; 
+		char		data[1]; 
 	} compressed;
-} SCol_4b, *Col_4b;
+} SType_4b, *Type_4b;
 
-#define IS_4B(p) \
-    ((((Col_1b)(p))->header & 0x03) == 0x00)
+/* Let's take some number: 0001 1100 0100.
+ * If we convert it to Type_1b we will receive:
+ *    header = 1100 0100, 
+ *    data   = 00...0001
+ *    0x03 = 00...0011 
+ *    header & 0x03 =  1100 0100 = 0 
+ *                     0000 0011 
+ * If at least one of the first 2 bits is 1, the macros will
+ * return false. For example:
+ *    1100 0101 = 0000 0001
+ *    0000 0011
+ */
+#define ARE_FIRST_2_BITS_ZEROS(p) \
+    ((((Type_1b)(p))->header & 0x03) == 0x00)
 
 #define IS_1B(p) \
-	((((Col_1b)(p))->header & 0x01) == 0x01)
+	((((Type_1b)(p))->header & 0x01) == 0x01)
 
 #define IS_1B_E(p) \
-	((((Col_1b)(p))->header) == 0x01)
+	((((Type_1b)(p))->header) == 0x01)
 
 #define VARSIZE_1B(p) \
-	((((Col_1b)(p))->header >> 1) & 0x7F)
+	((((Type_1b)(p))->header >> 1) & 0x7F)
 
 #define VARSIZE_1B_E(p) \
 	(((Col_1b_e)(p))->len)
 
-#define VARSIZE_4B(p) \
-	((((Col_4b)(p))->col_4byte.header >> 2) & 0x3FFFFFFF)
+
+#define TWO 2
+
+/* In Binary system it looks like:  
+ * 0011 1111 1111 1111 1111 1111 1111 1111
+ */
+#define ONLY_FIRST_30_BITS_PATTERN 0x3FFFFFFF
+/*    If we have a 4 byte integer value: 
+ *      Bin        = 1101 1100 1011 1001 1101 1100 1011 1001
+ *      Bin >> 2   = 0011 0111 0010 1110 0111 0111 0010 1110   
+ *      0x3FFFFFFF = 0011 1111 1111 1111 1111 1111 1111 1111
+ *    Bitwise anding with 0x3FFFFFFF is needed when we have 8 byte number.
+ *    We shorten it to 30 bits provided that the last 2 bits are zeros.
+ */
+#define CUT_LAST_2_BITS_AND_TAKE_30_NEXT_BITS(p) \
+	((((Type_4b)(p))->value.header >> TWO) & ONLY_FIRST_30_BITS_PATTERN)
 
 #define CAN_MAKE_SHORT(p) \
-	(IS_4B(p) && \
+	(ARE_FIRST_2_BITS_ZEROS(p) && \
 	 (VARSIZE_4B(p) - (int)sizeof(int) + 1) <= 0x7F)
 
 #define SHORT_SIZE(p) \
@@ -63,10 +89,10 @@ typedef union SCol_4b
 	  VARSIZE_4B(PTR)))
 
 #define SET_VARSIZE_1B(p,len) \
-	(((Col_1b)p)->header = (((uint8)len) << 1) | 0x01)
+	(((Type_1b)p)->header = (((uint8)len) << 1) | 0x01)
 
 #define VARDATA_4B(p) \
-	(((Col_4b)p)->col_4byte.data)
+	(((Type_4b)p)->value.data)
 
 
 #endif
