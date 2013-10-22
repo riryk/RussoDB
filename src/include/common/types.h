@@ -76,17 +76,31 @@ typedef union SType_4b
 #define CUT_LAST_2_BITS_AND_TAKE_30_NEXT_BITS(p) \
 	((((Type_4b)(p))->value.header >> TWO) & ONLY_FIRST_30_BITS_PATTERN)
 
-#define CAN_MAKE_SHORT(p) \
-	(ARE_FIRST_2_BITS_ZEROS(p) && \
-	 (VARSIZE_4B(p) - (int)sizeof(int) + 1) <= 0x7F)
-
+/* On most computers sizeof(int) = 4. sizeof(int) - 1 = 3.
+ * We cut the first 2 bits and convert the number to 30 bit number.
+ * After we substract 3.
+ */
 #define SHORT_SIZE(p) \
-	 (VARSIZE_4B(p) - (int)sizeof(int) + 1)
+	 (CUT_LAST_2_BITS_AND_TAKE_30_NEXT_BITS(p) - ((int)sizeof(int) - 1))
+
+/* short integer occupies 2 bytes, 16 bits.
+ * For signed integer we have: -127 <= x <= 127 
+ * We consider 127 as the maximum allowed number:
+ * In Binary system it looks like: 0111 1111 */
+#define MAX_SHORT 0x7F
+
+/* We can convert integer value to short 
+ * when the first 2 bits are zeros and the short size
+ * of this number is less or equal 127.
+ */
+#define CAN_COMPRESS_TO_SHORT(p) \
+	(ARE_FIRST_2_BITS_ZEROS(p) && SHORT_SIZE(p) <= MAX_SHORT)
+
 
 #define VARSIZE_ANY(PTR) \
 	(VARATT_IS_1B_E(PTR) ? VARSIZE_1B_E(PTR) : \
 	 (VARATT_IS_1B(PTR) ? VARSIZE_1B(PTR) : \
-	  VARSIZE_4B(PTR)))
+	  CUT_LAST_2_BITS_AND_TAKE_30_NEXT_BITS(PTR)))
 
 #define SET_VARSIZE_1B(p,len) \
 	(((Type_1b)p)->header = (((uint8)len) << 1) | 0x01)

@@ -590,6 +590,22 @@
 						>
 					</File>
 					<Filter
+						Name="commands"
+						>
+						<Filter
+						    Name="relation"
+						    >
+							<Filter
+						        Name="row"
+						        >
+							    <File
+								    RelativePath="src\tests\unit\commands\relation\row\relrow_tests.c"
+								    >
+							    </File>	
+							</Filter>
+						</Filter>
+					</Filter>
+					<Filter
 						Name="common"
 						>
 						<Filter

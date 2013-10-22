@@ -19,11 +19,11 @@ typedef int            Bool;
 #define True         1
 #define False        0
 
-#define NAME_MAX_LENGTH  64
-#define ALIGN_VAL        8
-#define ALIGN_INT        4
-#define ALIGN_DOUBLE     8
-#define ALIGN_SHORT      2
+#define NAME_MAX_LENGTH     64
+#define ALIGN_DEFAULT_VAL   8
+#define ALIGN_INT_VAL       4
+#define ALIGN_DOUBLE_VAL    8
+#define ALIGN_SHORT_VAL     2
 
 #define Max(x, y)		((x) > (y) ? (x) : (y))
 #define Min(x, y)		((x) < (y) ? (x) : (y))
@@ -50,6 +50,9 @@ typedef struct SName
 } SName, *Name;
 
 
+#define ALIGN(VAL,LEN)  \
+	(((int)(LEN) + ((VAL) - 1)) & ~((int)((VAL) - 1)))
+
 /* This macro is used to facilitate calculation 
  * and more easily reuse some memory.
  * For example: if ALIGN_VAL is 8. We want all memory 
@@ -68,11 +71,11 @@ typedef struct SName
  * = 8(n + 1) + (k - 1), 0 <= k - 1 <= 8. We clear k - 1 and 
  * receive 8(n + 1) 
  */
-#define ALIGN(LEN)  \
-	(((int)(LEN) + ((ALIGN_VAL) - 1)) & ~((int)((ALIGN_VAL) - 1)))
+#define ALIGN_DEFAULT(LEN) ALIGN(ALIGN_DEFAULT_VAL,LEN)
+#define ALIGN_INT(LEN)     ALIGN(ALIGN_INT_VAL,LEN) 
+#define ALIGN_DOUBLE(LEN)  ALIGN(ALIGN_DOUBLE_VAL,LEN) 
+#define ALIGN_SHORT(LEN)   ALIGN(ALIGN_SHORT_VAL,LEN) 
 
-#define ALIGN_TYPE(VAL,LEN)  \
-	(((int)(LEN) + ((VAL) - 1)) & ~((int)((VAL) - 1)))
 
 #define cat_rel_attr_count   8
 

@@ -73,4 +73,18 @@ typedef struct SRelRow
 #define ATT_CAN_PACK(att) \
 	((att)->len == -1 && (att)->storageStrategy != 'o')
 
+/* each attribute has type
+ * 'i' means integer and should be aligned as an integer value.
+ * 'd' means double and should be aligned as a double value.
+ * 's' means short and should be aligned as a short value.
+ * 'o' means ordinary, plain. An attribute will be stored without 
+ * alignment.
+ */
+#define ATT_ALIGN(offset, type) \
+( \
+	((type) == 'i') ? ALIGN_INT(offset) : \
+	 (((type) == 'o') ? (int)(offset) : \
+	  (((type) == 'd') ? ALIGN_DOUBLE(offset) : ALIGN_SHORT(offset))) \
+)
+
 #endif
