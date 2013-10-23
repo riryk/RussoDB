@@ -127,8 +127,8 @@ struct HashtableHeader
 #define HASH_ITEM		        0x040
 #define HASH_WITHOUT_EXTENTION  0x080
 
-#define GET_HASH_KEY(item)           ((char*)item + ALIGN(sizeof(SHashItem)))
-#define GET_HASH_VALUE(key, keyLen)  ((char*)key + ALIGN(keyLen))
+#define GET_HASH_KEY(item)           ((char*)item + ALIGN_DEFAULT(sizeof(SHashItem)))
+#define GET_HASH_VALUE(key, keyLen)  ((char*)key + ALIGN_DEFAULT(keyLen))
 
 #define Max(x, y)		((x) > (y) ? (x) : (y))
 

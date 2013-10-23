@@ -593,21 +593,25 @@
 						Name="commands"
 						>
 						<Filter
-						    Name="relation"
-						    >
+							Name="relation"
+							>
 							<Filter
-						        Name="row"
-						        >
-							    <File
-								    RelativePath="src\tests\unit\commands\relation\row\relrow_tests.c"
-								    >
-							    </File>	
+								Name="row"
+								>
+								<File
+									RelativePath="src\tests\unit\commands\relation\row\relrow_tests.c"
+									>
+								</File>
 							</Filter>
 						</Filter>
 					</Filter>
 					<Filter
 						Name="common"
 						>
+						<File
+							RelativePath="src\tests\unit\common\types_tests.c"
+							>
+						</File>
 						<Filter
 							Name="hashtable"
 							>
@@ -700,10 +704,6 @@
 								>
 							</File>
 						</Filter>
-						<File
-							RelativePath="src\tests\unit\common\types_tests.c"
-							>
-						</File>
 					</Filter>
 					<Filter
 						Name="memory"

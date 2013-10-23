@@ -47,10 +47,17 @@ typedef union SType_4b
 #define ARE_FIRST_2_BITS_ZEROS(p) \
     ((((Type_1b)(p))->header & 0x03) == 0x00)
 
-#define IS_1B(p) \
+/* This macros checks if the first bit is 1. */
+#define IS_FIRST_BIT_1(p) \
 	((((Type_1b)(p))->header & 0x01) == 0x01)
 
-#define IS_1B_E(p) \
+#define IS_FIRST_BIT_0(p) \
+	((((Type_1b)(p))->header & 0x01) == 0x00)
+
+/* If we have a number and the first 8 bits are: 0000 0001,
+ * then this macro will return 0, otherwise false. 
+ */
+#define IS_FIRST_BYTE_1(p) \
 	((((Type_1b)(p))->header) == 0x01)
 
 #define VARSIZE_1B(p) \

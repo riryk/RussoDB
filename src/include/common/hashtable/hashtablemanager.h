@@ -25,4 +25,11 @@ void* hashInsert(
     Hashtable          tbl, 
     void*              key);
 
+#define HASH_ELEM_SIZE(tbl) \
+( \
+    ALIGN_DEFAULT(sizeof(SHashItem)) \
+  + ALIGN_DEFAULT((tbl)->keyLen) \
+  + ALIGN_DEFAULT((tbl)->valLen) \
+)
+
 #endif

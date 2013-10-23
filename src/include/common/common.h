@@ -71,10 +71,10 @@ typedef struct SName
  * = 8(n + 1) + (k - 1), 0 <= k - 1 <= 8. We clear k - 1 and 
  * receive 8(n + 1) 
  */
-#define ALIGN_DEFAULT(LEN) ALIGN(ALIGN_DEFAULT_VAL,LEN)
-#define ALIGN_INT(LEN)     ALIGN(ALIGN_INT_VAL,LEN) 
-#define ALIGN_DOUBLE(LEN)  ALIGN(ALIGN_DOUBLE_VAL,LEN) 
-#define ALIGN_SHORT(LEN)   ALIGN(ALIGN_SHORT_VAL,LEN) 
+#define ALIGN_DEFAULT(LEN)     ALIGN(ALIGN_DEFAULT_VAL, (LEN))
+#define ALIGN_INT(LEN)         ALIGN(ALIGN_INT_VAL, (LEN)) 
+#define ALIGN_DOUBLE(LEN)      ALIGN(ALIGN_DOUBLE_VAL, (LEN)) 
+#define ALIGN_SHORT(LEN)       ALIGN(ALIGN_SHORT_VAL, (LEN)) 
 
 
 #define cat_rel_attr_count   8
