@@ -10,12 +10,12 @@ typedef struct SType_1b
 	char		data[1];		
 } SType_1b, *Type_1b;
 
-typedef struct SCol_1b_e
+typedef struct SType_2b
 {
 	uint8		header;		
-	uint8		len;		
+	uint8		byte2;		
 	char		data;		
-} SCol_1b_e, *Col_1b_e;
+} SType_2b, *Type_2b;
 
 typedef union SType_4b
 {
@@ -60,12 +60,22 @@ typedef union SType_4b
 #define IS_FIRST_BYTE_1(p) \
 	((((Type_1b)(p))->header) == 0x01)
 
-#define VARSIZE_1B(p) \
-	((((Type_1b)(p))->header >> 1) & 0x7F)
+#define ONE 1
 
-#define VARSIZE_1B_E(p) \
-	(((Col_1b_e)(p))->len)
+/* In Binary system it looks like:  
+ * 0111 1111
+ */
+#define ONLY_FIRST_7_BITS_PATTERN 0x7F
 
+#define CUT_THE_LAST_BIT_AND_TAKE_7_BITS(p) \
+	((((Type_1b)(p))->header >> ONE) & ONLY_FIRST_7_BITS_PATTERN)
+
+/* Retrieves the second byte from a number.
+ * For example if we have 16 bits number: 1011 1100 0011 0001
+ * Bits from position 8 to position 16 will be returned.
+ */
+#define GET_SECOND_BYTE(p) \
+   	(((Type_2b)(p))->byte2)
 
 #define TWO 2
 
@@ -88,7 +98,7 @@ typedef union SType_4b
  * After we substract 3.
  */
 #define SHORT_SIZE(p) \
-	 (CUT_LAST_2_BITS_AND_TAKE_30_NEXT_BITS(p) - ((int)sizeof(int) - 1))
+	(CUT_LAST_2_BITS_AND_TAKE_30_NEXT_BITS(p) - ((int)sizeof(int) - 1))
 
 /* short integer occupies 2 bytes, 16 bits.
  * For signed integer we have: -127 <= x <= 127 
