@@ -14,7 +14,7 @@ typedef struct SType_2b
 {
 	uint8		header;		
 	uint8		byte2;		
-	char		data;		
+	char		data[1];		
 } SType_2b, *Type_2b;
 
 typedef union SType_4b
@@ -67,6 +67,10 @@ typedef union SType_4b
  */
 #define ONLY_FIRST_7_BITS_PATTERN 0x7F
 
+/* For example we have an arbitrary number:
+ * 5717 = 0001 0110 0101 0101
+ * 0101 010 = 42 number will be returned.
+ */
 #define CUT_THE_LAST_BIT_AND_TAKE_7_BITS(p) \
 	((((Type_1b)(p))->header >> ONE) & ONLY_FIRST_7_BITS_PATTERN)
 
@@ -113,11 +117,14 @@ typedef union SType_4b
 #define CAN_COMPRESS_TO_SHORT(p) \
 	(ARE_FIRST_2_BITS_ZEROS(p) && SHORT_SIZE(p) <= MAX_SHORT)
 
-
-#define VARSIZE_ANY(PTR) \
-	(VARATT_IS_1B_E(PTR) ? VARSIZE_1B_E(PTR) : \
-	 (VARATT_IS_1B(PTR) ? VARSIZE_1B(PTR) : \
-	  CUT_LAST_2_BITS_AND_TAKE_30_NEXT_BITS(PTR)))
+/* If the first byte is 1 we take the second byte.
+ * else if the first bit is 1 we take bits from 8 to 1
+ * else we take bits from 32 to 2.
+ */
+#define SIZE(p) \
+	(IS_FIRST_BYTE_1(p) ? GET_SECOND_BYTE(p) \
+	                    : (IS_FIRST_BIT_1(p) ? CUT_THE_LAST_BIT_AND_TAKE_7_BITS(p) \
+						                     : CUT_LAST_2_BITS_AND_TAKE_30_NEXT_BITS(p)))
 
 #define SET_VARSIZE_1B(p,len) \
 	(((Type_1b)p)->header = (((uint8)len) << 1) | 0x01)

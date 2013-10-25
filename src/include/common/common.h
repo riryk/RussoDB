@@ -36,8 +36,13 @@ typedef struct SBlockId
 	uint16		 low;
 } SBlockId, *BlockId;
 
+/* Invalid block id is a 32-bit number where all bits are 1
+ * 1111 1111 1111 1111  1111 1111 1111 1111 
+ */
+#define INVALID_BLOCK_ID ((uint)0xFFFFFFFF)
 
-#define BlockIdSet(blockId, blockNumber) \
+/*  */
+#define SET_BLOCK_ID(blockId, blockNumber) \
 ( \
 	(blockId)->high = (blockNumber) >> 16, \
 	(blockId)->low = (blockNumber) & 0xffff \

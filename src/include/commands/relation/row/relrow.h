@@ -49,7 +49,7 @@ typedef struct SRelRowHeader
 typedef struct SRelRow
 { 
     uint             len;
-    SRowPointer      self;
+    SRowPointer      self; /* Pointer  */
     uint		 	 tblId;
     RelRowHeader     data;
 } SRelRow, *RelRow;
