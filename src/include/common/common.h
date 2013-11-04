@@ -29,6 +29,8 @@ typedef int            Bool;
 #define Min(x, y)		((x) < (y) ? (x) : (y))
 #define Abs(x)			((x) >= 0 ? (x) : -(x))
 
+#define BLOCK_SIZE 8192
+#define MAX_BLOCK_SIZE (1 << 15)
 
 typedef struct SBlockId
 {
@@ -41,7 +43,9 @@ typedef struct SBlockId
  */
 #define INVALID_BLOCK_ID ((uint)0xFFFFFFFF)
 
-/*  */
+/* This macros divides 32bit block number to
+ * a high and low 16 bit parts
+ */
 #define SET_BLOCK_ID(blockId, blockNumber) \
 ( \
 	(blockId)->high = (blockNumber) >> 16, \
@@ -57,6 +61,15 @@ typedef struct SName
 
 #define ALIGN(VAL,LEN)  \
 	(((int)(LEN) + ((VAL) - 1)) & ~((int)((VAL) - 1)))
+
+/* Aligns a number to the lower value. 
+ * For example:
+ *  VAL       = 8. ~(VAL - 1) = ~(00..00111) = 111...111000
+ *  LEN & VAL clears a reminder of dividing on 8.
+ *  LEN = 20 = 10100 & 11000 = 10000 = 16
+ */
+#define ALIGN_DOWN(VAL,LEN)  \
+	(((int)(LEN)) & ~((int)((VAL) - 1)))
 
 /* This macro is used to facilitate calculation 
  * and more easily reuse some memory.
@@ -76,10 +89,20 @@ typedef struct SName
  * = 8(n + 1) + (k - 1), 0 <= k - 1 <= 8. We clear k - 1 and 
  * receive 8(n + 1) 
  */
-#define ALIGN_DEFAULT(LEN)     ALIGN(ALIGN_DEFAULT_VAL, (LEN))
-#define ALIGN_INT(LEN)         ALIGN(ALIGN_INT_VAL, (LEN)) 
-#define ALIGN_DOUBLE(LEN)      ALIGN(ALIGN_DOUBLE_VAL, (LEN)) 
-#define ALIGN_SHORT(LEN)       ALIGN(ALIGN_SHORT_VAL, (LEN)) 
+#define ALIGN_DEFAULT(LEN)      ALIGN(ALIGN_DEFAULT_VAL, (LEN))
+#define ALIGN_INT(LEN)          ALIGN(ALIGN_INT_VAL, (LEN)) 
+#define ALIGN_DOUBLE(LEN)       ALIGN(ALIGN_DOUBLE_VAL, (LEN)) 
+#define ALIGN_SHORT(LEN)        ALIGN(ALIGN_SHORT_VAL, (LEN)) 
+
+#define ALIGN_DOWN_DEFAULT(LEN) ALIGN_DOWN(ALIGN_DEFAULT_VAL, (LEN))
+
+#define GET_1_BYTE(val) (((uint)(val)) & 0x000000ff)
+#define GET_2_BYTES(val) (((uint)(val)) & 0x0000ffff)
+#define GET_4_BYTES(val) (((uint)(val)) & 0xffffffff)
+
+#define SET_1_BYTE(val) (((uint)(val)) & 0x000000ff)
+#define SET_2_BYTES(val) (((uint)(val)) & 0x0000ffff)
+#define SET_4_BYTES(val) (((uint)(val)) & 0xffffffff)
 
 
 #define cat_rel_attr_count   8

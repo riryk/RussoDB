@@ -11,7 +11,13 @@ typedef struct SIRelRowManager
 					        RelAttribute    relAttrs,
 					        Bool		    hasId,
 				            uint*           values,
-				            Bool*           isnull);
+	 			            Bool*           isnull);
+
+	 void (*shortenRow)(RelRow          row,
+				        RelRow          oldRow,
+				        int             relAttrsCount,
+			            RelAttribute    relAttrs);
+
 } SIRelRowManager, *IRelRowManager;
 
 

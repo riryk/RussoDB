@@ -8,6 +8,7 @@
 typedef struct SIRelationManager
 {   
 	IHashtableManager hashtableManager;
+	IRelRowManager    relRowManager;
 
 	void (*createRelation)(
 	     void*            self,

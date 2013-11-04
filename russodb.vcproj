@@ -43,7 +43,7 @@
 				Name="VCCLCompilerTool"
 				AdditionalOptions="/MP"
 				Optimization="0"
-				AdditionalIncludeDirectories="src/include/file;src/include/error;src/include/common;src/include/os/file;src/include/commands;src/include/commands/relation;src/include/memory;src/include/lib/unity;src/include/tests/unit;src/include/common/hashtable;src/include/tests/unit/memory;src/include/tests/unit/common/hashtable;src/include/commands/relation/row;"
+				AdditionalIncludeDirectories="src/include/file;src/include/error;src/include/common;src/include/os/file;src/include/commands;src/include/commands/relation;src/include/memory;src/include/lib/unity;src/include/tests/unit;src/include/common/hashtable;src/include/tests/unit/memory;src/include/tests/unit/common/hashtable;src/include/commands/relation/row;src/include/tests/unit/commands/relation/row;src/include/commands/relation/buffer;"
 				StringPooling="false"
 				RuntimeLibrary="3"
 				AssemblerOutput="0"
@@ -202,7 +202,19 @@
 						>
 					</File>
 					<File
+						RelativePath="src\include\file\relfile.h"
+						>
+					</File>
+					<File
 						RelativePath="src\include\file\relation_storage.h"
+						>
+					</File>
+					<File
+						RelativePath="src\include\file\irelfilemanager.h"
+						>
+					</File>
+					<File
+						RelativePath="src\include\file\relfilemanager.h"
 						>
 					</File>
 				</Filter>
@@ -341,6 +353,10 @@
 							>
 						</File>
 						<File
+							RelativePath="src\include\commands\relation\page.h"
+							>
+						</File>
+						<File
 							RelativePath="src\include\commands\relation\rel.h"
 							>
 						</File>
@@ -361,6 +377,22 @@
 							</File>
 							<File
 								RelativePath="src\include\commands\relation\row\relrowmanager.h"
+								>
+							</File>
+						</Filter>
+						<Filter
+							Name="buffer"
+							>
+							<File
+								RelativePath="src\include\commands\relation\buffer\buffer.h"
+								>
+							</File>
+							<File
+								RelativePath="src\include\commands\relation\buffer\buffermanager.h"
+								>
+							</File>
+							<File
+								RelativePath="src\include\commands\relation\buffer\ibuffermanager.h"
 								>
 							</File>
 						</Filter>
@@ -405,6 +437,22 @@
 							</File>
 						</Filter>
 						<Filter
+							Name="commands"
+							>
+							<Filter
+								Name="relation"
+								>
+								<Filter
+									Name="row"
+									>
+									<File
+										RelativePath="src\include\tests\unit\commands\relation\row\relrow_helper.h"
+										>
+									</File>
+								</Filter>
+							</Filter>
+						</Filter>
+						<Filter
 							Name="common"
 							>
 							<Filter
@@ -430,6 +478,10 @@
 					RelativePath="src\file\relation_storage.c"
 					>
 				</File>
+				<File
+					RelativePath="src\file\relfilemanager.c"
+					>
+			    </File>
 			</Filter>
 			<Filter
 				Name="error"
@@ -557,6 +609,14 @@
 							>
 						</File>
 					</Filter>
+					<Filter
+						Name="buffer"
+						>
+						<File
+							RelativePath="src\commands\relation\buffer\buffermanager.c"
+							>
+						</File>
+					</Filter>
 				</Filter>
 			</Filter>
 			<Filter
@@ -599,9 +659,77 @@
 								Name="row"
 								>
 								<File
+									RelativePath="src\tests\unit\commands\relation\row\relrow_helper.c"
+									>
+								</File>
+								<File
 									RelativePath="src\tests\unit\commands\relation\row\relrow_tests.c"
 									>
 								</File>
+								<Filter
+									Name="build_row"
+									>
+									<Filter
+										Name="positive"
+										>
+										<File
+											RelativePath="src\tests\unit\commands\relation\row\build_row\positive\when_build_row_with_fixed_size_attrs.c"
+											>
+										</File>
+										<File
+											RelativePath="src\tests\unit\commands\relation\row\build_row\positive\when_build_row_with_long_var_size_attr.c"
+											>
+										</File>
+										<File
+											RelativePath="src\tests\unit\commands\relation\row\build_row\positive\when_build_row_with_shortable_var_size_attr.c"
+											>
+										</File>
+										<File
+											RelativePath="src\tests\unit\commands\relation\row\build_row\positive\when_build_row_with_var_size_attr_with_the_first_bit_1.c"
+											>
+										</File>
+										<File
+											RelativePath="src\tests\unit\commands\relation\row\build_row\positive\when_build_row_with_var_size_attr_with_the_first_byte_1.c"
+											>
+										</File>
+									</Filter>
+									<Filter
+										Name="negative"
+										>
+									</Filter>
+								</Filter>
+								<Filter
+									Name="compute_row_size"
+									>
+									<Filter
+										Name="positive"
+										>
+										<File
+											RelativePath="src\tests\unit\commands\relation\row\compute_row_size\positive\when_compute_size_for_long_var_size_attr.c"
+											>
+										</File>
+										<File
+											RelativePath="src\tests\unit\commands\relation\row\compute_row_size\positive\when_compute_size_for_row_with_fixed_size_attrs.c"
+											>
+										</File>
+										<File
+											RelativePath="src\tests\unit\commands\relation\row\compute_row_size\positive\when_compute_size_for_shortable_var_size_attr.c"
+											>
+										</File>
+										<File
+											RelativePath="src\tests\unit\commands\relation\row\compute_row_size\positive\when_compute_size_for_var_size_attr_with_the_first_bit_1.c"
+											>
+										</File>
+										<File
+											RelativePath="src\tests\unit\commands\relation\row\compute_row_size\positive\when_compute_size_for_var_size_attr_with_the_first_byte_1.c"
+											>
+										</File>
+									</Filter>
+									<Filter
+										Name="negative"
+										>
+									</Filter>
+								</Filter>
 							</Filter>
 						</Filter>
 					</Filter>
