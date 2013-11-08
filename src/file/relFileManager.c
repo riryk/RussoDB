@@ -1,24 +1,40 @@
 
 #include "relfilemanager.h"
 
-char* getFilePath(SRelFileInfo relFile, int backend, int part)
+const SIRelFileManager sRelFileManager = 
+{ 
+	&sFileManager,
+	&sTrackMemManager,
+    getBlocksNum
+};
+
+const IRelFileManager relFileManager = &sRelFileManager;
+
+char* getFilePath(
+    void*         self,
+	SRelFileInfo  relFile, 
+	int           backend, 
+	int           part)
 {
-	char*    path;
-	int      pathLen;
+	IRelFileManager  _ = (IRelFileManager)self;
+	char*            path;
+	int              pathLen;
 
 	/* table space id 1 means a global space. */
 	if (relFile.tblSpaceId == GLOBAL_TBL_SPACE)
 	{
 		pathLen = 24;
-		path    = (char*)malloc(pathLen);
+		path    = (char*)_->memManager->alloc(pathLen);
 
 		if (part != FILE_PART_MAIN)
 		{
-            _snprintf_s(path, pathLen, "GlobalTableSpace/%u_%s", relFile.relId, forkNames[part]);
+            _snprintf_s(path, pathLen, "GlobalTableSpace/%u_%s", 
+				        relFile.relId, filePartNames[part]);
 			return path;
 		}
 
-		_snprintf_s(path, pathlen, "GlobalTableSpace/%u", relFile.relId);
+		_snprintf_s(path, pathLen, "GlobalTableSpace/%u", 
+			        relFile.relId);
 		return path;
 	}
 
@@ -27,75 +43,80 @@ char* getFilePath(SRelFileInfo relFile, int backend, int part)
 		if (backend == INVALID_BACK_ID)
 		{
             pathLen  = 33;
-			path     = (char*)malloc(pathLen);
+			path     = (char*)_->memManager->alloc(pathLen);
 
 			if (part != FILE_PART_MAIN)
 			{
-				_snprintf_s(path, pathLen, "DefaultTableSpace/%u/%u_%s", relFile.databaseId, relFile.relId, forkNames[part]);
+				_snprintf_s(path, pathLen, "DefaultTableSpace/%u/%u_%s", 
+					        relFile.databaseId, relFile.relId, filePartNames[part]);
                 return path;
 			}
 
-		    _snprintf_s(path, pathLen, "DefaultTableSpace/%u/%u", relFile.databaseId, relFile.relId);
+		    _snprintf_s(path, pathLen, "DefaultTableSpace/%u/%u", 
+				        relFile.databaseId, relFile.relId);
 			return path;
 		}
 
-	    filePathLength = 5 + 10 + 2 + 10 + 1 + 10 + 1 + 5 + 1;
-			filePath = (char*)malloc(filePathLength);
-			if (fork != 2) //MAIN_FORK)
-				_snprintf_s(filePath, filePathLength, "DefaultTableSpace/%u/t%d_%u_%s",
-						 relFileInfo.databaseId, backend, relFileInfo.relationId,
-						 forkNames[fork]);
-			else
-				_snprintf_s(filePath, filePathLength, "DefaultTableSpace/%u/t%d_%u",
-						 relFileInfo.databaseId, backend, relFileInfo.relationId);
-		
+	    pathLen   = 45;
+	    path      = (char*)_->memManager->alloc(pathLen);
+
+		if (part != FILE_PART_MAIN)
+		{
+		    _snprintf_s(path, pathLen, "DefaultTableSpace/%u/t%d_%u_%s",
+				        relFile.databaseId, backend, relFile.relId, filePartNames[part]);
+			return path;
+		}
+
+		_snprintf_s(path, pathLen, "DefaultTableSpace/%u/t%d_%u",
+			        relFile.databaseId, backend, relFile.relId);
+		return path;
 	}
-	else
+
+	if (backend == -1)
 	{
-		/* All other tablespaces are accessed via symlinks */
-		if (backend == -1)
+		pathLen  = 50;
+		path     = (char*)_->memManager->alloc(pathLen);
+
+		if (part != FILE_PART_MAIN)
 		{
-			filePathLength = 9 + 1 + 10 + 1
-				+ 1 + 10 + 1
-				+ 10 + 1 + 5 + 1;
-			filePath = (char*)malloc(filePathLength);
-			if (fork != 2) // MAIN_FORK)
-				_snprintf_s(filePath, filePathLength, "TableSpaces/%s/%u/%u_%s",
-				relFileInfo.tableSpaceId, 
-						 relFileInfo.databaseId, 
-						 relFileInfo.relationId,
-						 forkNames[fork]);
-			else
-				_snprintf_s(filePath, filePathLength, "TableSpaces/%s/%u/%u",
-						 relFileInfo.tableSpaceId,
-						 relFileInfo.databaseId, 
-						 relFileInfo.relationId);
+			_snprintf_s(path, pathLen, "TableSpaces/%s/%u/%u_%s",
+			            relFile.tblSpaceId, relFile.databaseId, 
+						relFile.relId, filePartNames[part]);
+            return path;
 		}
-		else
-		{
-			filePathLength = 9 + 1 + 10 + 1
-				+ 1 + 10 + 2
-				+ 10 + 1 + 10 + 1 + 5 + 1;
-			filePath = (char*)malloc(filePathLength);
-			if (fork != 1) //MAIN_FORKNUM)
-				_snprintf_s(filePath, filePathLength, "TableSpaces/%s/%u/t%d_%u_%s",
-						 relFileInfo.tableSpaceId, 
-						 relFileInfo.databaseId, 
-						 backend, 
-						 relFileInfo.relationId,
-						 forkNames[fork]);
-			else
-				_snprintf_s(filePath, filePathLength, "TableSpaces/%s/%u/t%d_%u",
-						 relFileInfo.tableSpaceId, 
-						 relFileInfo.databaseId, 
-						 backend, 
-						 relFileInfo.relationId);
-		}
+
+		_snprintf_s(path, pathLen, "TableSpaces/%s/%u/%u",
+			        relFile.tblSpaceId, relFile.databaseId, 
+					relFile.relId);
+        return path;
 	}
+		
+	pathLen  = 62;
+	path     = (char*)_->memManager->alloc(pathLen);
+
+	if (part != FILE_PART_MAIN)
+    { 
+	   _snprintf_s(path, pathLen, "TableSpaces/%s/%u/t%d_%u_%s",
+		           relFile.tblSpaceId, relFile.databaseId, 
+				   backend, relFile.relId, filePartNames[part]);
+       return path;
+	}
+       
+	_snprintf_s(path, pathLen, "TableSpaces/%s/%u/t%d_%u",
+		        relFile.tblSpaceId, relFile.databaseId, 
+				backend, relFile.relId);
+	return path;
 }
 
-FileSeg fileRelOpen(RelData rel, FilePartNumber partnum, ExtensionBehavior behavior)
+FileSeg fileRelOpen(
+    void*              self,
+	RelData            rel, 
+	FilePartNumber     partnum)
 {
+	IRelFileManager  _ = (IRelFileManager)self;
+	FileSeg          fileSeg;
+    char*            path;
+	int              fileDesc;
     /* if partnum-th part is not null, that means that
 	 * this part is already open. We do nothing in this case and 
 	 * simply return this file handler.
@@ -103,10 +124,91 @@ FileSeg fileRelOpen(RelData rel, FilePartNumber partnum, ExtensionBehavior behav
 	if (rel->parts[partnum])
         return rel->parts[partnum];
 
-    path = relpath(reln->smgr_rnode, forknum);
+    path     = getFilePath(_, rel->relKey.node, rel->relKey.backend, partnum);
+	fileDesc = _->fileManager->openFile(path, O_RDWR | O_BINARY, 0600);
+
+	_->memManager->free(path);
+
+	fileSeg = (FileSeg)_->memManager->alloc(sizeof(SFileSeg));
+	rel->parts[partnum] = fileSeg;
+
+	fileSeg->fileDesc = fileDesc;
+	fileSeg->segNum   = 0;
+	fileSeg->segNext  = NULL;
 }
 
-int getBlocksNum(RelData rel, FilePartNumber partnum)
+FileSeg openRelSegm(
+    void*              self,
+	RelData            rel, 
+	FilePartNumber     partnum,
+	uint               segnum,
+	int                flags)
 {
-    MdfdVec    *v = mdopen(reln, forknum, EXTENSION_FAIL);      
+	IRelFileManager  _   = (IRelFileManager)self;
+	FileSeg          fileSeg;
+	char*            path = getFilePath(
+		                 _,
+	                     rel->relKey.node, 
+	                     rel->relKey.backend, 
+	                     partnum);
+
+	int              fileDesc = _->fileManager->openFile(
+		                 path, 
+						 O_RDWR | O_BINARY | flags, 
+						 0600);
+
+    _->memManager->free(path);
+	if (fileDesc < 0)
+		return NULL;
+
+    fileSeg = (FileSeg)_->memManager->alloc(sizeof(SFileSeg));
+
+	fileSeg->fileDesc = fileDesc;
+	fileSeg->segNum   = segnum;
+	fileSeg->segNext  = NULL;
+
+	return fileSeg;
+} 
+
+int calculateBlocks(
+    void*            self,
+	RelData          rel,
+	FilePartNumber   partnum,
+	FileSeg          seg)
+{
+    IRelFileManager  _   = (IRelFileManager)self;
+	long             len = _->fileManager->restoreFilePos(seg->fileDesc, 0, SEEK_END);
+	if (len < 0)
+		;// We need to report an error
+    return len / BLOCK_SIZE;
+}
+
+int getBlocksNum(
+    void*            self,
+	RelData          rel, 
+	FilePartNumber   partnum)
+{
+	FileSeg          fileSeg = fileRelOpen(self, rel, partnum);
+	uint             blocksCount;
+    uint             segmNum;
+
+	/* We have (n-1) full segments in a relation and  */
+	while (fileSeg->segNext != NULL)
+	{
+		segmNum++;
+		fileSeg = fileSeg->segNext;
+	}
+
+    blocksCount = calculateBlocks(self, rel, partnum, fileSeg);
+	if (blocksCount < REL_SEGM_SIZE)
+        return segmNum * REL_SEGM_SIZE + blocksCount;
+        
+    /* If the last segment is full, we need to create another one. */
+    segmNum++;
+	
+    /* By using O_CREAT flag we create a new segment file of size 0 */
+	fileSeg->segNext = openRelSegm(self, rel, partnum, segmNum, O_CREAT);
+    blocksCount = calculateBlocks(self, rel, partnum, fileSeg);
+
+    return segmNum * REL_SEGM_SIZE + blocksCount;
 }

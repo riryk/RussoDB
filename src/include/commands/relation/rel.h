@@ -5,6 +5,7 @@
 #include "common.h"
 #include "page.h"
 #include "relfile.h"
+#include "types.h"
 
 #define REL_MIN_FILL_PERCENT         10
 #define REL_FILL_PERCENT_DEFAULT     100
@@ -109,13 +110,12 @@ typedef struct SRelOptions
 	Bool		    security;
 } SRelOptions, *RelOptions;
 
-
 #define RelFillPercent(rel, defaultPercent) \
 	((rel)->options ? \
-	 ((RelOptions)(rel)->options)->fillPercent : (defaultPercent))
+	 (((RelOptions)((rel)->options))->fillPercent) : (defaultPercent))
 
 #define GetPageFreeSpace(rel, defaultPercent) \
-	(BLOCK_SIZE * (100 - RelFillPercent(rel, defaultPercent)) / 100)
+	(BLOCK_SIZE * (100 - RelFillPercent((rel), (defaultPercent))) / 100)
 
 #define RelGetCurrentBlock(rel) \
 	((rel)->data != NULL ? \

@@ -190,7 +190,7 @@ int FileOpenBase(char* FileName, int FileFlags, int FileMode)
 {
 	int FileDescriptor;
 
-	FileDescriptor = OsFileOpen(FileName, FileFlags, FileMode);
+	FileDescriptor = fileOpen(FileName, FileFlags, FileMode);
 
 	if (FileDescriptor >= 0)
 		return FileDescriptor;	

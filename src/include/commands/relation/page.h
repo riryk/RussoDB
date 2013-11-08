@@ -3,6 +3,7 @@
 #define PAGE_H
 
 #include "common.h"
+#include "stddef.h"
 
 /*
  * +----------------+---------------------------------+
@@ -51,8 +52,8 @@ typedef struct SPageHeader
 /* This macros calculates the space which is needed for 
  * page header and items array. 
  */
-#define SizeOfHeaderWithItemsArr (rowsPerPage) \
-    ALIGN(SizeOfPageHeader + (rowsPerPage) * sizeof(SItemId))
+#define SizeOfHeaderWithItemsArr(rowsPerPage) \
+    (ALIGN_DEFAULT(SizeOfPageHeader + (rowsPerPage) * sizeof(SItemId)))
 
 /* Suppose that we want to have 'rowsPerPage' rows on a page
  * BLOCK_SIZE is the total size of a page and 
@@ -60,15 +61,15 @@ typedef struct SPageHeader
  * be allocated for rows. Using this information we can easily calculate
  * maxRowSize.
  */
-#define MaxRowSize (rowsPerPage) \
-	ALIGN_DOWN((BLOCK_SIZE - SizeOfHeaderWithItemsArr(rowsPerPage)) / (rowsPerPage))
+#define MaxRowSize_By_RowsPerPage(rowsPerPage) \
+	(ALIGN_DOWN_DEFAULT((BLOCK_SIZE - SizeOfHeaderWithItemsArr(rowsPerPage)) / (rowsPerPage)))
 
 /* Consider that we put only one row per page.
  * We substract memory allocated for a page header 
  * and for ItemId.
  */
-#define MaxRowSize \
-    (BLOCK_SIZE - ALIGN(SizeOfPageHeader + sizeof(SItemId)))
+#define MaxRowSize_OneRowPerPage \
+    (BLOCK_SIZE - ALIGN_DEFAULT(SizeOfPageHeader + sizeof(SItemId)))
 
 /* If a row is larger than MAX_ROW_SIZE
  * we should compress compressable attributes and 
@@ -76,7 +77,7 @@ typedef struct SPageHeader
  */
 #define ROWS_PER_PAGE	4
 
-#define MAX_ROW_SIZE	MaximumBytesPerTuple(ROWS_PER_PAGE)
+#define MAX_ROW_SIZE	MaxRowSize_By_RowsPerPage(ROWS_PER_PAGE)
 
 
 #endif

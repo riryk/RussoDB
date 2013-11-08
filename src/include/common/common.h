@@ -10,6 +10,7 @@ extern const SICommon sCommonHelper;
 extern const ICommon  commonHelper;
 
 typedef unsigned char  uint8;
+typedef char           int8;
 typedef unsigned short uint16;
 typedef signed short   int16;
 typedef unsigned int   uint;
@@ -29,7 +30,13 @@ typedef int            Bool;
 #define Min(x, y)		((x) < (y) ? (x) : (y))
 #define Abs(x)			((x) >= 0 ? (x) : -(x))
 
-#define BLOCK_SIZE 8192
+/* 1Gb = 1024Mb = 2^10 Mb = 2^20 Kb = 2^30 bytes
+ * We consider that the maximum file size is 1 Gb
+ * REL_SEGM_SIZE * BLOCK_SIZE should not be greater than 1 Gb.
+ * REL_SEGM_SIZE = 2^30 / 2^13 = 2^(30-13) = 2^17
+ */
+#define REL_SEGM_SIZE (1 << 17)
+#define BLOCK_SIZE (1 << 13)
 #define MAX_BLOCK_SIZE (1 << 15)
 
 typedef struct SBlockId

@@ -6,6 +6,7 @@
 #include "relrow.h"
 #include "rel.h"
 #include "ihashtablemanager.h"
+#include "irelrowmanager.h"
 
 extern const SIRelRowManager sRelRowManager;
 extern const IRelRowManager  relRowManager;
@@ -31,9 +32,9 @@ RelRow createRelRow(void*           self,
 				    uint*           values,
 				    Bool*           isnull);
 
-void shortenRow(RelRow          row,
-				RelRow          oldRow,
-				int             relAttrsCount,
-			    RelAttribute    relAttrs);
+RelRow shortenRow(RelRow          row,
+	  			  RelRow          oldRow,
+				  int             relAttrsCount,
+			      RelAttribute    relAttrs);
 
 #endif

@@ -140,6 +140,14 @@ typedef union SType_4b
 	                    : (IS_FIRST_BIT_1(p) ? CUT_THE_LAST_BIT_AND_TAKE_7_BITS(p) \
 						                     : CUT_LAST_2_BITS_AND_TAKE_30_NEXT_BITS(p)))
 
+
+#define SIZE_BY_LEN(len, p) \
+	( \
+       ((len) > 0) ? (len) \
+		           : ( ((len) == -1) ? (SIZE(p)) : (strlen((char*)(p)) + 1) ) \
+	)
+
+/*
 #define SIZE_BY_LEN(len, p) \
 ( \
 	((len) > 0) ? \
@@ -152,10 +160,11 @@ typedef union SType_4b
 	  ) \
 	  : \
 	  ( \
-	     (strlen((char*)(p)) + 1)
+	     (strlen((char*)(p)) + 1) \
 	  ) \
-    )
+    ) \
 )
+*/
 
 /* Mark as a short variable-length attribute and set the next 7 bits */
 #define MARK_AS_SHORT_VAR_LEN(p,len) \

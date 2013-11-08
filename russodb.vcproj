@@ -202,7 +202,15 @@
 						>
 					</File>
 					<File
-						RelativePath="src\include\file\relfile.h"
+						RelativePath="src\include\file\filemanager.h"
+						>
+					</File>
+					<File
+						RelativePath="src\include\file\ifilemanager.h"
+						>
+					</File>
+					<File
+						RelativePath="src\include\file\irelfilemanager.h"
 						>
 					</File>
 					<File
@@ -210,7 +218,7 @@
 						>
 					</File>
 					<File
-						RelativePath="src\include\file\irelfilemanager.h"
+						RelativePath="src\include\file\relfile.h"
 						>
 					</File>
 					<File
@@ -475,13 +483,17 @@
 					>
 				</File>
 				<File
+					RelativePath="src\file\filemanager.c"
+					>
+				</File>
+				<File
 					RelativePath="src\file\relation_storage.c"
 					>
 				</File>
 				<File
 					RelativePath="src\file\relfilemanager.c"
 					>
-			    </File>
+				</File>
 			</Filter>
 			<Filter
 				Name="error"
@@ -498,42 +510,6 @@
 					RelativePath="src\memory\trackmemmanager.c"
 					>
 				</File>
-			</Filter>
-			<Filter
-				Name="common"
-				>
-				<File
-					RelativePath="src\common\common.c"
-					>
-				</File>
-				<File
-					RelativePath="src\common\lock.c"
-					>
-				</File>
-				<File
-					RelativePath="src\common\set.c"
-					>
-				</File>
-				<Filter
-					Name="hashtable"
-					>
-					<File
-						RelativePath="src\common\hashtable\hashfunctions.c"
-						>
-					</File>
-					<File
-						RelativePath="src\common\hashtable\hashtable.c"
-						>
-					</File>
-					<File
-						RelativePath="src\common\hashtable\hashtablehelper.c"
-						>
-					</File>
-					<File
-						RelativePath="src\common\hashtable\hashtablemanager.c"
-						>
-					</File>
-				</Filter>
 			</Filter>
 			<Filter
 				Name="lib"
@@ -841,6 +817,42 @@
 							>
 						</File>
 					</Filter>
+				</Filter>
+			</Filter>
+			<Filter
+				Name="common"
+				>
+				<File
+					RelativePath="src\common\common.c"
+					>
+				</File>
+				<File
+					RelativePath="src\common\lock.c"
+					>
+				</File>
+				<File
+					RelativePath="src\common\set.c"
+					>
+				</File>
+				<Filter
+					Name="hashtable"
+					>
+					<File
+						RelativePath="src\common\hashtable\hashfunctions.c"
+						>
+					</File>
+					<File
+						RelativePath="src\common\hashtable\hashtable.c"
+						>
+					</File>
+					<File
+						RelativePath="src\common\hashtable\hashtablehelper.c"
+						>
+					</File>
+					<File
+						RelativePath="src\common\hashtable\hashtablemanager.c"
+						>
+					</File>
 				</Filter>
 			</Filter>
 		</Filter>

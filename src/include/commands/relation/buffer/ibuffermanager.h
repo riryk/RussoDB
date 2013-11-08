@@ -8,6 +8,7 @@
 typedef struct SIBufferManager
 {   
 	IHashtableManager hashtableManager;
+	IRelFileManager relFileManager;
 } SIBufferManager, *IBufferManager;
 
 #endif

@@ -1,4 +1,8 @@
 
+#ifndef REL_FILE_H
+#define REL_FILE_H
+
+
 #define DEFAULT_TBL_SPACE 1663
 #define GLOBAL_TBL_SPACE 1664
 
@@ -21,7 +25,7 @@ typedef struct SFileSeg
 {
 	int		          fileDesc;
 	uint              segNum;
-	struct SFileSeg*  segNext
+	struct SFileSeg*  segNext;
 } SFileSeg, *FileSeg;
 
 typedef enum FilePartNumber
@@ -45,12 +49,13 @@ const char* filePartNames[] =
 
 typedef struct SRelData
 { 
-	int         currentBlock;
-	FileSeg     parts[FILE_PART_MAX + 1];
+    SRelFileInfoBack  relKey;
+	int               currentBlock;
+	FileSeg           parts[FILE_PART_MAX + 1];
 } SRelData, *RelData;
 
+#endif
 
-/* First argument is a RelFileNodeBackend */
-#define relpath(rnode, forknum) \
-		relpathbackend((rnode).node, (rnode).backend, (forknum))
+
+
 

@@ -79,7 +79,7 @@ typedef struct SRelRowHeader
 {
 	union
 	{
-		SRowFields   fiels;
+		SRowFields   fields;
 		SDataFields  data;
 	}          typeData;
 
@@ -152,7 +152,7 @@ typedef struct SRelRow
 )
 
 /* retrieves a value from a data pointer.
- *  */
+ */
 #define ATT_RETRIEVE(data, byval, len) \
 ( \
 	(byval) ? \
@@ -164,13 +164,12 @@ typedef struct SRelRow
 			(len) == (int)sizeof(int16) ? \
 				(uint)SET_2_BYTES(*((int16*)(data))) \
 			: \
-		        (uint)SET_1_BYTES(*((char*)(data))) \
+		        (uint)SET_1_BYTE(*((char*)(data))) \
 		) \
 	) \
 	: \
-	(uint)((char *) (T)) \
+	(uint)((char*)(data)) \
 )
-#endif 
 
 #define SET_ATTR_VALUE(dataP,val,len) \
 	do { \
@@ -203,7 +202,6 @@ typedef struct SRelRow
  * you can, say, fit 2 tuples of size MaxHeapTupleSize/2 on the same page.
  */
 #define MaxHeapTupleSize  (BLOCK_SIZE - ALIGN(SizeOfPageHeaderData + sizeof(ItemIdData)))
-
 
 #define INVALID_TBLID 0
 
