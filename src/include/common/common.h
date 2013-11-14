@@ -26,6 +26,7 @@ typedef int            Bool;
 #define ALIGN_DOUBLE_VAL    8
 #define ALIGN_SHORT_VAL     2
 
+#define CYCLE for(;;) 
 #define Max(x, y)		((x) > (y) ? (x) : (y))
 #define Min(x, y)		((x) < (y) ? (x) : (y))
 #define Abs(x)			((x) >= 0 ? (x) : -(x))
@@ -112,6 +113,8 @@ typedef struct SName
 #define SET_4_BYTES(val) (((uint)(val)) & 0xffffffff)
 
 
+#define FILE_EXISTS(name) ((access((name), _A_NORMAL) != -1) ? True : False)
+
 #define cat_rel_attr_count   8
 
 #define catalog_relation \
@@ -164,7 +167,6 @@ typedef struct SName
 { 1003, {"collation"},   26,  -1, False, False, False, 0 }, \
 { 1003, {"defaultbin"},  194, -1, False, False, False, 0 }, \
 { 1003, {"default"},     25,  -1, False, False, False, 0 }
-
 
 int nextPowerOf2(long num);
 

@@ -16,6 +16,7 @@
 typedef struct SIMemoryManager
 {
     void* (*alloc)(uint size);	
+	void* (*realloc)(void* newMem, uint size);
 	void (*free)(void* mem);
 	void (*freeAll)();
 } SIMemoryManager, *IMemoryManager;

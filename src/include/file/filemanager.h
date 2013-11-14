@@ -6,6 +6,8 @@
 #include <io.h>
 #include <errno.h>
 #include "osfile.h"
+#include "file.h"
+#include "trackmemmanager.h"
 
 #ifndef FILE_MANAGER_H
 #define FILE_MANAGER_H
@@ -13,30 +15,27 @@
 extern const SIFileManager sFileManager;
 extern const IFileManager  fileManager;
 
-typedef struct SFileCacheItem
-{
-	int			   fileDesc;			
-	uint16         state;		
-	int		       nextFree;
-	int		       moreRecent;	
-	int		       lessRecent;
-	long		   seekPos;
-	long		   size;
-	char*          name;
-	int			   flags;
-	int			   mode;
-} SFileCacheItem, *FileCacheItem;
+extern int	     allocatedDescsCount;
+extern int		 maxFileDescriptors;
 
-FileCacheItem    fileCache;
-size_t           sizeFileCache = 0;
-int	             fileCount     = 0;
+extern FCacheEl         fileCache;
+extern size_t           fileCacheCount;
+extern int	            fileCount;
 
-int	             allocatedDescsCount = 0;
-int			     maxFileDescriptors  = 32;
+#define FILE_INVALID          (-1)
+#define MIN_CACHE_EL_TO_ALLOC 32
+#define FILE_EMPTY_OR_AT_THE_END ((errno) == EMFILE || (errno) == ENFILE)
 
-#define FILE_CLOSED (-1)
+void ctorFileMan     (void* self);
+int  openFileToCache (void* self, char* name, int flags, int mode);
+long restoreFilePos  (void* self, int fileId, long offset, int placeToPut);
+void cacheInsert     (int pos);
+void cacheRealloc    (void* self);
+int  cacheGetFree    (void* self);
+void cacheDelete     (int pos);
+Bool closeRecentFile (void* self);
+int openFile         (void* self, char* name, int flags, int mode);
 
-int openFile(char* fname, int fileFlags, int fileMode);
-long restoreFilePos(int fileId, long offset, int placeToPut);
 
 #endif
+

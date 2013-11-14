@@ -37,14 +37,6 @@ typedef enum FilePartNumber
 	FILE_PART_INIT
 } FilePartNumber;
 
-const char* filePartNames[] = 
-{
-	"main",						/* FILE_PART_MAIN */
-	"fs",						/* FILE_PART_FILE_STORAGE */
-	"vm",						/* FILE_PART_VISIBILITY_MAP */
-	"init"						/* FILE_PART_INIT */
-};
-
 #define FILE_PART_MAX FILE_PART_INIT
 
 typedef struct SRelData

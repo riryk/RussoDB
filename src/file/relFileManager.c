@@ -10,6 +10,14 @@ const SIRelFileManager sRelFileManager =
 
 const IRelFileManager relFileManager = &sRelFileManager;
 
+const char* filePartNames[] = 
+{
+	"main",						/* FILE_PART_MAIN */
+	"fs",						/* FILE_PART_FILE_STORAGE */
+	"vm",						/* FILE_PART_VISIBILITY_MAP */
+	"init"						/* FILE_PART_INIT */
+};
+
 char* getFilePath(
     void*         self,
 	SRelFileInfo  relFile, 
@@ -125,7 +133,7 @@ FileSeg fileRelOpen(
         return rel->parts[partnum];
 
     path     = getFilePath(_, rel->relKey.node, rel->relKey.backend, partnum);
-	fileDesc = _->fileManager->openFile(path, O_RDWR | O_BINARY, 0600);
+	fileDesc = _->fileManager->openFile(self, path, O_RDWR | O_BINARY, 0600);
 
 	_->memManager->free(path);
 
@@ -153,6 +161,7 @@ FileSeg openRelSegm(
 	                     partnum);
 
 	int              fileDesc = _->fileManager->openFile(
+		                 self,
 		                 path, 
 						 O_RDWR | O_BINARY | flags, 
 						 0600);
