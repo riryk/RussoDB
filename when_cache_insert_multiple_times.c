@@ -14,6 +14,7 @@ SETUP_DEPENDENCIES(file_cache_insert_multiple_times)
     fm_fcimt->ctorFileMan = ctorFileMan;
 	fm_fcimt->cacheGetFree = cacheGetFree;
     fm_fcimt->cacheInsert = cacheInsert;
+	fm_fcimt->cacheRealloc = cacheRealloc;
 }
 
 GIVEN(file_cache_insert_multiple_times) 

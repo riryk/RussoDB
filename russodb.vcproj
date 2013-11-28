@@ -43,7 +43,7 @@
 				Name="VCCLCompilerTool"
 				AdditionalOptions="/MP"
 				Optimization="0"
-				AdditionalIncludeDirectories="src/include/file;src/include/error;src/include/common;src/include/os/file;src/include/commands;src/include/commands/relation;src/include/memory;src/include/lib/unity;src/include/tests/unit;src/include/common/hashtable;src/include/tests/unit/memory;src/include/tests/unit/common/hashtable;src/include/commands/relation/row;src/include/tests/unit/commands/relation/row;src/include/commands/relation/buffer;"
+				AdditionalIncludeDirectories="src/include/file;src/include/error;src/include/common;src/include/os/file;src/include/commands;src/include/commands/relation;src/include/memory;src/include/lib/unity;src/include/tests/unit;src/include/common/hashtable;src/include/tests/unit/memory;src/include/tests/unit/common/hashtable;src/include/commands/relation/row;src/include/tests/unit/commands/relation/row;src/include/commands/relation/buffer;src/include/tests/unit/file/file_manager;"
 				StringPooling="false"
 				RuntimeLibrary="3"
 				AssemblerOutput="0"
@@ -266,6 +266,10 @@
 						>
 					</File>
 					<File
+						RelativePath=".\snprintf.h"
+						>
+					</File>
+					<File
 						RelativePath="src\include\common\types.h"
 						>
 					</File>
@@ -468,6 +472,18 @@
 								>
 								<File
 									RelativePath="src\include\tests\unit\common\hashtable\hashtable_helper.h"
+									>
+								</File>
+							</Filter>
+						</Filter>
+						<Filter
+							Name="file"
+							>
+							<Filter
+								Name="file_manager"
+								>
+								<File
+									RelativePath=".\file_manager_helper.h"
 									>
 								</File>
 							</Filter>
@@ -823,6 +839,10 @@
 						<Filter
 							Name="file_manager"
 							>
+							<File
+								RelativePath=".\file_manager_helper.c"
+								>
+							</File>
 							<Filter
 								Name="cache_insert"
 								>
@@ -913,6 +933,98 @@
 										RelativePath=".\when_open_file_with_create_flag.c"
 										>
 									</File>
+									<File
+										RelativePath=".\when_open_more_than_allowed.c"
+										>
+									</File>
+								</Filter>
+							</Filter>
+							<Filter
+								Name="estimate_file_count"
+								>
+								<Filter
+									Name="negative"
+									>
+								</Filter>
+								<Filter
+									Name="positive"
+									>
+									<File
+										RelativePath=".\when_estimate_file_count.c"
+										>
+									</File>
+								</Filter>
+							</Filter>
+							<Filter
+								Name="close_recent_file"
+								>
+								<Filter
+									Name="positive"
+									>
+									<File
+										RelativePath=".\when_close_recent_file.c"
+										>
+									</File>
+								</Filter>
+								<Filter
+									Name="negative"
+									>
+								</Filter>
+							</Filter>
+							<Filter
+								Name="open_file_to_cache"
+								>
+								<Filter
+									Name="negative"
+									>
+								</Filter>
+								<Filter
+									Name="positive"
+									>
+									<File
+										RelativePath=".\when_open_more_than_max.c"
+										>
+									</File>
+								</Filter>
+							</Filter>
+							<Filter
+								Name="reopen_file"
+								>
+								<Filter
+									Name="negative"
+									>
+								</Filter>
+								<Filter
+									Name="positive"
+									>
+									<File
+										RelativePath=".\when_reopen_closed_file.c"
+										>
+									</File>
+									<File
+										RelativePath=".\when_reopen_opened_file.c"
+										>
+									</File>
+								</Filter>
+							</Filter>
+						</Filter>
+						<Filter
+							Name="rel_file_manager"
+							>
+							<Filter
+								Name="open_rel"
+								>
+								<Filter
+									Name="negative"
+									>
+								</Filter>
+								<Filter
+									Name="positive"
+									>
+									<File
+										RelativePath=".\when_open_rel.c"
+										>
+									</File>
 								</Filter>
 							</Filter>
 						</Filter>
@@ -932,6 +1044,10 @@
 				</File>
 				<File
 					RelativePath="src\common\set.c"
+					>
+				</File>
+				<File
+					RelativePath=".\snprintf.c"
 					>
 				</File>
 				<Filter

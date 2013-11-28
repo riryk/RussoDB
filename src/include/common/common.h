@@ -1,6 +1,7 @@
 
 #include <stdlib.h>
 #include <string.h>
+#include <io.h>
 #include "icommon.h"
 
 #ifndef COMMON_H
@@ -39,6 +40,7 @@ typedef int            Bool;
 #define REL_SEGM_SIZE (1 << 17)
 #define BLOCK_SIZE (1 << 13)
 #define MAX_BLOCK_SIZE (1 << 15)
+#define MAX_PRINTED_CHARS 10
 
 typedef struct SBlockId
 {

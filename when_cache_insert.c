@@ -14,6 +14,7 @@ SETUP_DEPENDENCIES(file_cache_insert)
     fm_fci->ctorFileMan = ctorFileMan;
 	fm_fci->cacheGetFree = cacheGetFree;
     fm_fci->cacheInsert = cacheInsert;
+	fm_fci->cacheRealloc = cacheRealloc;
 }
 
 GIVEN(file_cache_insert) 

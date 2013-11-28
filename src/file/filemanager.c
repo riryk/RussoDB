@@ -1,5 +1,6 @@
 
 #include "filemanager.h"
+#include <stdio.h>
 
 const SIFileManager sFileManager = 
 { 
@@ -36,6 +37,69 @@ void ctorFileMan(void* self)
 	fileCache->fileDesc = FILE_INVALID;
 
 	fileCacheCount = 1;
+}
+
+/* Calculates a number of file handlers already opened
+ * and a number we can open without an exception.
+ * Suppose that in our process there have been opened 
+ * n file handlers. Its file descriptors will be numerated:
+ * 1, 2, 3, 4,..., n - 1.
+ * The others from n - 1 to max are not opened. Number of successful
+ * dups is the number of not opened handlers.
+ * To determine the max possible file dscriptor we know exactly that it
+ * is not among already opened. During the dups we can find the max fd.
+ */
+void estimateFileCount(
+	void*     self,
+	int       max, 
+	int*      maxToOpen, 
+	int*      opened)
+{   
+    IFileManager    _      = (IFileManager)self;
+    IMemoryManager  memMan = _->memManager;
+
+	int*            fds;
+	int             i;
+	int             fdCount = 0;
+	int             maxfd   = 0;
+    int             size    = 1024;
+
+	fds = (int*)memMan->alloc(size * sizeof(int));
+
+    CYCLE
+	{
+		int   dupRes;
+
+		/* Standard dup function from c library calls the 
+		 * standard windows (or analoguos function in Linux) DuplicateHandle
+		 * These handlers are duplicated inside the current process and 
+		 * do not affect other processes */
+		dupRes = dup(0);
+		if (dupRes < 0)
+			break;
+
+        if (fdCount >= size)
+		{
+			size *= 2;
+			fds = (int*)memMan->realloc(fds, size * sizeof(int));
+		}
+
+        fds[fdCount++] = dupRes;
+
+		if (maxfd < dupRes)
+			maxfd = dupRes;
+
+		if (fdCount >= max)
+			break;
+	}
+
+	for (i = 0; i < fdCount; i++)
+		close(fds[i]);
+    
+	memMan->free(fds);
+
+	*maxToOpen = fdCount;
+	*opened    = maxfd + 1 - fdCount;
 }
 
 /* Allocates new items to the file cache array.
@@ -268,33 +332,18 @@ void cacheInsert(int pos)
 	theNewItem->moreRecent = 0;
 }
 
-int insertIntoArray(void* self, int fileInd)
-{
-    FCacheEl  fileItem = &fileCache[fileInd];
-
-    if (fileItem->fileDesc == FILE_INVALID)
-	{
-        while (fileCount >= fileMaxCount)
-	    {
-            if (!closeRecentFile(self))
-		        break;
-	    }
-
-        fileItem->fileDesc = openFileBase(
-		                           fileItem->name, 
-		                           fileItem->flags, 
-								   fileItem->mode);
-	    if (fileItem->fileDesc < 0)
-            return fileItem->fileDesc;
-	    
-        fileCount++; 
-		if (fileItem->seekPos != 0)
-			lseek(fileItem->fileDesc, fileItem->seekPos, SEEK_SET);
-	}
-
-    cacheInsert(fileInd);
-}
-
+/* This function opens a file handler.
+ * This function is an auxiliary for openFileToCache.
+ * It is not called directly. 
+ * openFileToCache function opens a file handler and puts it 
+ * into the file ring. 
+ * In one moment we can not open a file handler
+ * and we get an error: Cannot create a file when that file already exists.
+ * This means that we have already opened all allowed file handlers.
+ * So that we need to close at least one file handler to allow 
+ * opening a new one.
+ * We choose the most recent file, remove it from the ring and close.
+ */ 
 int openFile(
     void*      self,
 	char*      name, 
@@ -305,83 +354,186 @@ int openFile(
 
 	CYCLE
 	{
-		int  fd = openFileBase(name, flags, mode);
+		int   fd     = openFileBase(name, flags, mode);
 
 	    if (fd >= 0)
 		    return fd;
         
-        if (!FILE_EMPTY_OR_AT_THE_END)
+		if (errno == FILE_PATH_NOT_FOUND)
 			return FILE_INVALID;
 
-		if (_->closeRecentFile(_))
-		    continue;
+		if (errno == EMFILE || errno == ENFILE)
+		{
+		    if (_->closeRecentFile(_))
+		       continue;
+		}
 
 		return FILE_INVALID;
 	}
-	return FILE_INVALID;
 }
 
-void removeFileToFreeList(int fileInd)
+/* The function adds a record to the head 
+ * of the free list. (&fileCache[0])->nextFree is 
+ * the head of free list. Also we free the name.
+ */
+void addToFreeList(void* self, int ind)
 {
-    FCacheEl  fileItem = &fileCache[fileInd]; 
+    IFileManager     _        = (IFileManager)self;
+    IMemoryManager   memMan   = _->memManager;
 
-	if (fileItem->name != NULL)
+    FCacheEl  theHead = &fileCache[0]; 
+    FCacheEl  it      = &fileCache[ind]; 
+
+	if (it->name != NULL)
 	{
-		free(fileItem->name);
-		fileItem->name = NULL;
+		memMan->free(it->name);
+		it->name = NULL;
 	}
 
-	fileItem->state = 0;
+	it->state = 0;
 
-	fileItem->nextFree    = fileCache[0].nextFree;
-    fileCache[0].nextFree = fileInd;
+	it->nextFree      = theHead->nextFree;
+    theHead->nextFree = ind;
 }
 
-int changeFileArrayPos(void* self, int fileId)
+/* Consider a situation: The system opens a file
+ * for the first time and puts it into the ring.
+ * Then we do not use the file for a specific period of time
+ * and we want to use the file again. There can be
+ * two different situations:
+ *  1. File has not been removed from the ring yet
+ *     and so has not been closed yet.
+ *     In this case we move it to the head of 
+ *     the less recent files.
+ *   
+ *  2. The file has been removed from the ring and closed.
+ *     In this case we need to open it, seek to the 
+ *     previous pointer position and insert into the ring
+ */
+int reopenFile(void* self, int ind)
 {
-    if (fileCache[fileId].fileDesc == FILE_INVALID)
-	{
-        int retValue = insertIntoArray(self, fileId);
-		if (retValue)
-			return retValue;
-		return 0;
-	}
+    IFileManager   _           = (IFileManager)self;
+    FCacheEl       theHead     = &fileCache[0];
+    FCacheEl       it          = &fileCache[ind];
+	int*           fd          = &(it->fileDesc);
 
-	if (fileCache[0].lessRecent != fileId)
+	/* If the file is already opened we just  
+	 * touch it and thats why it goes to the 
+	 * least recent items.
+	 */
+	if FILE_IS_OPEN(it)
 	{
-        removeFileToFreeList(fileId);
-        insertIntoArray(self, fileId);
-	}
-	return 0;
-}
-
-long restoreFilePos(void* self, int fileId, long offset, int placeToPut)
-{
-	if (fileCache[fileId].fileDesc == FILE_INVALID)
-	{
-        if (placeToPut == SEEK_SET)
-			fileCache[fileId].seekPos = offset;
-		if (placeToPut == SEEK_CUR)
-            fileCache[fileId].seekPos += offset;
-		if (placeToPut == SEEK_END)
+		if (theHead->lessRecent != ind)
 		{
-            int retCode = changeFileArrayPos(self, fileId);
-            if (retCode < 0)
-				return retCode;
-			fileCache[fileId].seekPos = lseek(fileCache[fileId].fileDesc, offset, placeToPut);
+			/* The next 2 code items make ind 
+			 * as the least recent item and put 
+			 * it into the head of the ring.
+			 * To implement that we need first of all
+			 * delete it from the ring and then 
+			 * insert it again. cacheInsert function 
+			 * inserts it exactly into the head.
+			 */
+			_->cacheDelete(ind);
+			_->cacheInsert(ind);
+			return FM_SUCCESS;
 		}
-		return fileCache[fileId].seekPos;
 	}
-	if (placeToPut == SEEK_SET && fileCache[fileId].seekPos != offset)
-		fileCache[fileId].seekPos = lseek(fileCache[fileId].fileDesc, offset, placeToPut);
-	if (placeToPut == SEEK_CUR && (offset != 0 || fileCache[fileId].seekPos == -1))
-        fileCache[fileId].seekPos = lseek(fileCache[fileId].fileDesc, offset, placeToPut);
-	if (placeToPut == SEEK_END)
-        fileCache[fileId].seekPos = lseek(fileCache[fileId].fileDesc, offset, placeToPut);
 
-	return fileCache[fileId].seekPos;
+	/* Here the file is closed. So we need to open it 
+	 * and put it to the head of less recent files.
+	 * First of all we need to close some recent files
+	 * if we have exceeded the files max count.
+	 */
+    while (fileCount >= fileMaxCount)
+    {
+		if (!_->closeRecentFile(_))
+		    break;
+    }
+
+	/* Next we open a file handler */
+	*fd = _->openFile(_, it->name, it->flags, it->mode);
+    if (*fd < 0)
+        return *fd;
+    
+    fileCount++; 
+
+	/* Move the file handler to the previous saved position. */
+	if (it->seekPos != 0)
+		lseek(*fd, it->seekPos, SEEK_SET);
+    
+    /* Insert into less recent files array. */
+    _->cacheInsert(ind);
+
+	return FM_SUCCESS;
 }
 
+/* This function restores the previous file content position */
+long restoreFilePos(
+	void*     self, 
+	int       ind, 
+	long      offset, 
+	int       placeToPut)
+{
+	IFileManager   _      = (IFileManager)self;
+	int            pp     = placeToPut;
+    FCacheEl       it     = &fileCache[ind];
+	int            fd     = it->fileDesc;
+
+	if (fd == FILE_INVALID)
+	{
+        if (pp == SEEK_SET)
+			it->seekPos = offset;
+
+		if (pp == SEEK_CUR)
+			it->seekPos += offset;
+
+		if (pp == SEEK_END)
+		{
+			int code = _->reopenFile(_, ind);
+            if (code < 0)  
+		        return code;
+             
+			it->seekPos = lseek(it->fileDesc, offset, pp);
+		}
+		return it->seekPos;
+	}
+
+	if (pp == SEEK_SET && it->seekPos != offset)
+		it->seekPos = lseek(it->fileDesc, offset, pp);
+
+	if (pp == SEEK_CUR && (offset != 0 || it->seekPos == -1))
+        it->seekPos = lseek(it->fileDesc, offset, pp);
+
+	if (pp == SEEK_END)
+		it->seekPos = lseek(it->fileDesc, offset, pp);
+
+	return it->seekPos;
+}
+
+/* The function deletes the file from 
+ * the cache, saves the current seek position
+ * and closes it.
+ */
+void deleteFileFromCache(
+    void*     self, 
+    int       ind)
+{
+    IFileManager   _      = (IFileManager)self;
+    FCacheEl       it     = &fileCache[ind];
+	int            fd     = it->fileDesc;
+
+	_->cacheDelete(ind);
+    
+	it->seekPos = lseek(fd, 0, SEEK_CUR);
+	close(fd);
+
+	fileCacheCount--;
+	it->fileDesc = FILE_CLOSED;
+}
+
+/* The function opens a file and adds a file handler 
+ * into the ring.
+ */
 int openFileToCache(
     void*         self,
 	char*         name, 
@@ -394,6 +546,10 @@ int openFileToCache(
     int            ind     = _->cacheGetFree(_);
 	FCacheEl       it      = &fileCache[ind];
 
+	/* We maintain the maximum count of opened files.
+	 * If we exceed the max count, we should close some 
+	 * recent files to reduce the file number.
+	 */
 	while (fileCount >= fileMaxCount)
 	{
 		if (!_->closeRecentFile(_))
@@ -401,9 +557,13 @@ int openFileToCache(
 	}
 
 	it->fileDesc = _->openFile(self, name, flags, mode);
+
+	/* If we have not opened a file we should return 
+	 * the free index back to the free list. 
+	 */
 	if (it->fileDesc < 0)
 	{
-		removeFileToFreeList(ind);
+		addToFreeList(_, ind);
         free(nameCpy);
 	    return FILE_INVALID;
 	}

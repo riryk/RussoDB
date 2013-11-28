@@ -15,6 +15,7 @@ SETUP_DEPENDENCIES(file_cache_delete)
 	fm_fcd->cacheGetFree = cacheGetFree;
     fm_fcd->cacheInsert = cacheInsert;
 	fm_fcd->cacheDelete = cacheDelete;
+	fm_fcd->cacheRealloc = cacheRealloc;
 }
 
 GIVEN(file_cache_delete) 

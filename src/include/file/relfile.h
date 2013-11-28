@@ -28,6 +28,8 @@ typedef struct SFileSeg
 	struct SFileSeg*  segNext;
 } SFileSeg, *FileSeg;
 
+typedef FileSeg *AFileSeg;
+
 typedef enum FilePartNumber
 {
 	FilePartInvalid          = -1,
@@ -43,7 +45,7 @@ typedef struct SRelData
 { 
     SRelFileInfoBack  relKey;
 	int               currentBlock;
-	FileSeg           parts[FILE_PART_MAX + 1];
+	AFileSeg          parts[FILE_PART_MAX + 1];
 } SRelData, *RelData;
 
 #endif
