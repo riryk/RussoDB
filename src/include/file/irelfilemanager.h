@@ -13,26 +13,43 @@ typedef struct SIRelFileManager
 
 	void  (*ctorRelFileMan) (void* self);
     
-	void  (*createRelPart)(
+	FileSeg  (*createRelPart)(
           void*           self,
+		  char*           execfold,
 	      RelData         rel, 
 	      int             pnum);
 
 	char* (*getFilePath)(
           void*           self,
+		  char*           execfold,
 	      RelFileInfo     relFile, 
 	      int             backend, 
 	      int             part);
 
 	int (*getBlocksNum)(
           void*           self,
+          char*           fold,
 	      RelData         rel, 
-	      FilePartNumber  partnum);
+	      FilePartNumber  part,
+		  int             segmsize);
 
 	FileSeg (*openRel)(
           void*           self,
+		  char*           execfold,
 	      RelData         rel, 
 	      FilePartNumber  pnum);
+
+	FileSeg (*openRelSegm)(
+          void*           self,
+	      char*           execfold,
+	      RelData         rel, 
+	      FilePartNumber  part,
+	      uint            segnum,
+	      int             flags);
+
+	void (*closeSegm)(
+          void*           self,
+          FileSeg         seg);
 } SIRelFileManager, *IRelFileManager;
 
 

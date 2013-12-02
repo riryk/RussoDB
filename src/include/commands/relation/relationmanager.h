@@ -6,6 +6,8 @@
 #include "rel.h"
 #include "irelationmanager.h"
 #include "relrowmanager.h"
+#include "relfilemanager.h"
+#include "irelfilemanager.h"
 
 Hashtable RelationCache;
 

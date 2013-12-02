@@ -5,15 +5,18 @@
 const SIFileManager sFileManager = 
 { 
 	&sTrackMemManager,
-    ctorFileMan,
+	ctorFileMan,
 	openFileToCache,
-    restoreFilePos,
-    cacheInsert,
-    cacheRealloc,
+	restoreFilePos,
+	cacheInsert,
+	cacheRealloc,
     cacheGetFree,
 	cacheDelete,
-    closeRecentFile,
-	openFile
+	closeRecentFile,
+	openFile,
+	estimateFileCount,
+	reopenFile,
+	deleteFileFromCache
 };
 
 const IFileManager fileManager = &sFileManager;
@@ -23,8 +26,6 @@ int		         fileMaxCount   = 32;
 FCacheEl         fileCache      = NULL;
 size_t           fileCacheCount = 0;
 int	             fileCount      = 0;
-
-
 
 void ctorFileMan(void* self)
 {
@@ -451,7 +452,7 @@ int reopenFile(void* self, int ind)
     }
 
 	/* Next we open a file handler */
-	*fd = _->openFile(_, it->name, it->flags, it->mode);
+	*fd = _->openFile(_, it->name, _O_EXCL, it->mode);
     if (*fd < 0)
         return *fd;
     
@@ -471,21 +472,22 @@ int reopenFile(void* self, int ind)
 long restoreFilePos(
 	void*     self, 
 	int       ind, 
-	long      offset, 
+	long      off, 
 	int       placeToPut)
 {
 	IFileManager   _      = (IFileManager)self;
 	int            pp     = placeToPut;
     FCacheEl       it     = &fileCache[ind];
 	int            fd     = it->fileDesc;
+	long*          spos   = &(it->seekPos);
 
 	if (fd == FILE_INVALID)
 	{
         if (pp == SEEK_SET)
-			it->seekPos = offset;
+			*spos = off;
 
 		if (pp == SEEK_CUR)
-			it->seekPos += offset;
+			*spos += off;
 
 		if (pp == SEEK_END)
 		{
@@ -493,21 +495,22 @@ long restoreFilePos(
             if (code < 0)  
 		        return code;
              
-			it->seekPos = lseek(it->fileDesc, offset, pp);
+			fd    = (&fileCache[ind])->fileDesc;
+			*spos = lseek(fd, off, pp);
 		}
-		return it->seekPos;
+		return *spos;
 	}
 
-	if (pp == SEEK_SET && it->seekPos != offset)
-		it->seekPos = lseek(it->fileDesc, offset, pp);
+	if (pp == SEEK_SET && *spos != off)
+		*spos = lseek(fd, off, pp);
 
-	if (pp == SEEK_CUR && (offset != 0 || it->seekPos == -1))
-        it->seekPos = lseek(it->fileDesc, offset, pp);
+	if (pp == SEEK_CUR && (off != 0 || *spos == -1))
+        *spos = lseek(fd, off, pp);
 
 	if (pp == SEEK_END)
-		it->seekPos = lseek(it->fileDesc, offset, pp);
+		*spos = lseek(fd, off, pp);
 
-	return it->seekPos;
+	return *spos;
 }
 
 /* The function deletes the file from 
@@ -572,7 +575,6 @@ int openFileToCache(
     _->cacheInsert(ind);
 
 	it->name    = nameCpy;
-	it->flags   = flags & ~(_O_CREAT | _O_TRUNC | _O_EXCL); 
 	it->mode    = mode;
 	it->seekPos = 0;
 	it->size    = 0;

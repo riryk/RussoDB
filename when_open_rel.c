@@ -11,6 +11,7 @@ TEST_GROUP(open_rel);
 IRelFileManager rfm_or;
 SRelData        rfm_rel;
 FileSeg         rfm_seg; 
+char*           rfm_start = "test_result";
 
 SETUP_DEPENDENCIES(open_rel) 
 {
@@ -25,35 +26,38 @@ SETUP_DEPENDENCIES(open_rel)
 
 GIVEN(open_rel) 
 {
-	char* p = (char*)malloc(len);
-
 	rfm_rel.relKey.node.relId      = 1;
 	rfm_rel.relKey.node.databaseId = 1;
 	rfm_rel.relKey.node.tblSpaceId = GLOBAL_TBL_SPACE;
 
 	rfm_or->ctorRelFileMan(rfm_or);
-	rfm_or->createRelPart(rfm_or, &rfm_rel, 0);
 }
 
 WHEN(open_rel)
 {
-    rfm_seg = rfm_or->openRel(rfm_or, &rfm_rel, 0);
+    rfm_seg = rfm_or->openRel(rfm_or, rfm_start, &rfm_rel, 0);
 }
 
 TEST_TEAR_DOWN(open_rel)
 {
+	rfm_or->closeSegm(rfm_or, rfm_seg);
+	remove("test_result/global/1");
+
 	rfm_or->memManager->freeAll();
 	free(rfm_or);
 }
 
-TEST(open_rel, then_test)
+TEST(open_rel, then_file_should_be_opened)
 {
-    
+    FileSeg  seg = rfm_rel.parts[0];
+	
+	TEST_ASSERT_NOT_NULL(seg);
+	TEST_ASSERT_TRUE(seg->find > 0);
 }
 
 TEST_GROUP_RUNNER(open_rel)
 {
-    RUN_TEST_CASE(open_rel, then_test);
+    RUN_TEST_CASE(open_rel, then_file_should_be_opened);
 }
 
 

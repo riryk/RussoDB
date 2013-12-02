@@ -23,9 +23,12 @@ typedef struct SRelFileInfoBack
 
 typedef struct SFileSeg
 {
-	int		          fileDesc;
-	uint              segNum;
-	struct SFileSeg*  segNext;
+	/* File's index in the file cache.
+	 * Not file descriptor.
+	 */
+	int		          find;
+	uint              num;
+	struct SFileSeg*  next;
 } SFileSeg, *FileSeg;
 
 typedef FileSeg *AFileSeg;

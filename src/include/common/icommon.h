@@ -8,6 +8,7 @@
 typedef struct SICommon
 {
 	int (*nextPowerOf2)(long num);
+	void (*setExecFold)(char* fold);
 } SICommon, *ICommon;
 
 #endif

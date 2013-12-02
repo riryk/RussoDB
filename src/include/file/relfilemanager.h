@@ -13,28 +13,46 @@
 #define TBL_SPACE_DEFAULT "default"
 #define TBL_SPACES "tblspaces"
 #define REL_PART_LEN 4
+#define REL_SEGM_LEN 12
 
 void ctorRelFileMan(void* self);
 
-void createRelPart(
-    void*         self,
-	RelData       rel, 
-	int           pnum);
+FileSeg createRelPart(
+    void*            self,
+	char*            execfold,
+	RelData          rel, 
+	int              pnum);
 
 int getBlocksNum(
     void*            self,
+    char*            fold,
 	RelData          rel, 
-	FilePartNumber   partnum);
+	FilePartNumber   part,
+	int              segmsize);
 
 char* getFilePath(
     void*            self,
+	char*            execfold,
 	RelFileInfo      relFile, 
 	int              backend, 
 	int              part);
 
 FileSeg openRel(
     void*            self,
+	char*            execfold,
 	RelData          rel, 
 	FilePartNumber   pnum);
+
+FileSeg openRelSegm(
+    void*            self,
+	char*            execfold,
+	RelData          rel, 
+	FilePartNumber   part,
+	uint             segnum,
+	int              flags);
+
+void closeSegm(
+    void*            self,
+    FileSeg          seg);
 
 #endif

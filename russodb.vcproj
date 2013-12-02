@@ -266,7 +266,7 @@
 						>
 					</File>
 					<File
-						RelativePath=".\snprintf.h"
+						RelativePath="src\include\common\snprintf.h"
 						>
 					</File>
 					<File
@@ -1023,6 +1023,42 @@
 									>
 									<File
 										RelativePath=".\when_open_rel.c"
+										>
+									</File>
+								</Filter>
+							</Filter>
+							<Filter
+								Name="open_rel_segm"
+								>
+								<Filter
+									Name="negative"
+									>
+								</Filter>
+								<Filter
+									Name="positive"
+									>
+									<File
+										RelativePath=".\when_open_rel_segm.c"
+										>
+									</File>
+								</Filter>
+							</Filter>
+							<Filter
+								Name="get_blocks_num"
+								>
+								<Filter
+									Name="negative"
+									>
+								</Filter>
+								<Filter
+									Name="positive"
+									>
+									<File
+										RelativePath=".\when_get_blocks_num.c"
+										>
+									</File>
+									<File
+										RelativePath=".\when_get_blocks_num_given_the_last_segm_is_filled.c"
 										>
 									</File>
 								</Filter>

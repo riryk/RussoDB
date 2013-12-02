@@ -26,8 +26,9 @@ void ctorRelFileMan(void* self)
 	fm->ctorFileMan(fm);
 }
 
-void createRelPart(
+FileSeg createRelPart(
     void*         self,
+	char*         execfold,
 	RelData       rel, 
 	int           pnum)
 {
@@ -37,28 +38,29 @@ void createRelPart(
 
     FileSeg*        pt  = &(rel->parts[pnum]); 
     char*           p;
-    int             fd;    
+    int             find;    
 	RelFileInfoBack key = &(rel->relKey);
 
     if (*pt != NULL)
 		return;
 
-    p  = _->getFilePath(_, &(key->node), key->backend, pnum);
-	fd = fm->openFile(_, p, O_RDWR | O_CREAT | O_EXCL | O_BINARY, 600);
+    p    = _->getFilePath(_, execfold, &(key->node), key->backend, pnum);
+	find = fm->openFile(_, p, _O_CREAT, O_BINARY | O_RDWR | O_EXCL);
 
     mm->free(p);
 
 	*pt = (FileSeg)mm->alloc(sizeof(SFileSeg));
 
-	(*pt)->fileDesc = fd;
-	(*pt)->segNum   = 0;
-	(*pt)->segNext  = NULL;
+	(*pt)->find     = find;
+	(*pt)->num      = 0;
+	(*pt)->next     = NULL;
 
-	return pt;
+	return *pt;
 }
 
 char* getFilePath(
     void*         self,
+	char*         execfold,
 	RelFileInfo   relFile, 
 	int           backend, 
 	int           part)
@@ -67,32 +69,48 @@ char* getFilePath(
     IMemoryManager   mm = _->memManager;
 
 	char*            p;
+	char*            start    = "";
+	int              startlen = 0;
 	int              len;
-    char**           names = filePartNames; 
+    char**           names    = filePartNames; 
+
+	if (execfold != NULL)
+	{
+		startlen = strlen(execfold) 
+                 + 1;           /* for '/' symbol */
+
+        snprintf(start, 
+		         startlen, 
+		         "%s/", 
+		         execfold);
+	}
 
 	if (relFile->tblSpaceId == GLOBAL_TBL_SPACE)
 	{
-		len = sizeof(TBL_SPACE_GLOBAL) 
+		len = strlen(TBL_SPACE_GLOBAL) 
 			+ 1                        /* for '/' symbol  */
 			+ MAX_PRINTED_CHARS        /* For relation id */
 			+ 1                        /* for '_' symbol  */
-			+ REL_PART_LEN;            /* for relation part */
+			+ REL_PART_LEN             /* for relation part */
+            + startlen; 
 
 		p = (char*)mm->alloc(len);
 
 		if (part != FILE_PART_MAIN)
-            _snprintf_s(p, 
-			            len, 
-			            "%s/%u_%s", 
-			            TBL_SPACE_GLOBAL, 
-						relFile->relId,
-						names[part]);
+            snprintf(p, 
+		             len, 
+		             "%s%s/%u_%s", 
+                     start, 
+		             TBL_SPACE_GLOBAL, 
+					 relFile->relId,
+					 names[part]);
 		else
-            _snprintf_s(p, 
-			            len, 
-			            "%s/%u", 
-			            TBL_SPACE_GLOBAL, 
-						relFile->relId);
+            snprintf(p, 
+		             len, 
+		             "%s%s/%u", 
+					 start,
+		             TBL_SPACE_GLOBAL, 
+				 	 relFile->relId);
 
 		return p;
 	}
@@ -101,35 +119,38 @@ char* getFilePath(
 	{
 		if (backend == INVALID_BACK_ID)
 		{
-            len = sizeof(TBL_SPACE_DEFAULT)
+            len = strlen(TBL_SPACE_DEFAULT)
 				+ 1                     /* for '/' symbol  */
 			    + MAX_PRINTED_CHARS     /* for database id */
                 + 1                     /* for '/' symbol  */ 
 				+ MAX_PRINTED_CHARS     /* for relation id */
                 + 1                     /* for '_' symbol  */
-			    + REL_PART_LEN;         /* for relation part */ 
+			    + REL_PART_LEN          /* for relation part */ 
+			    + startlen; 
 
 			p  = (char*)mm->alloc(len);
 
 			if (part != FILE_PART_MAIN)
-				_snprintf_s(p, 
-					        len, 
-							"%s/%u/%u_%s", 
-							TBL_SPACE_DEFAULT,
-					        relFile->databaseId, 
-							relFile->relId, 
-							names[part]);
+				snprintf(p, 
+				         len, 
+						 "%s%s/%u/%u_%s", 
+						 start,
+						 TBL_SPACE_DEFAULT,
+				         relFile->databaseId, 
+						 relFile->relId, 
+						 names[part]);
 			else
-		        _snprintf_s(p, 
-				            len, 
-							"%s/%u/%u", 
-                            TBL_SPACE_DEFAULT,
-				            relFile->databaseId, 
-							relFile->relId);
+		        snprintf(p, 
+			             len, 
+						 "%s%s/%u/%u", 
+						 start,
+                         TBL_SPACE_DEFAULT,
+			             relFile->databaseId, 
+						 relFile->relId);
 			return p;
 		}
 
-		len = sizeof(TBL_SPACE_DEFAULT)
+		len = strlen(TBL_SPACE_DEFAULT)
 				+ 1                     /* for '/' symbol  */
 			    + MAX_PRINTED_CHARS     /* for database id */
                 + 1                     /* for '/' symbol  */ 
@@ -137,32 +158,35 @@ char* getFilePath(
 				+ MAX_PRINTED_CHARS     /* for backend     */ 
 				+ MAX_PRINTED_CHARS     /* for relation id */
                 + 1                     /* for '_' symbol  */
-			    + REL_PART_LEN;         /* for relation part */ 
+			    + REL_PART_LEN          /* for relation part */ 
+                + startlen; 
 
 	    p = (char*)mm->alloc(len);
 
 		if (part != FILE_PART_MAIN)
-		    _snprintf_s(p, 
-				        len, 
-						"%s/%u/t%d_%u_%s",
-                        TBL_SPACE_DEFAULT,
-				        relFile->databaseId, 
-						backend, 
-						relFile->relId, 
-						names[part]);
+		    snprintf(p, 
+			         len, 
+					 "%s%s/%u/t%d_%u_%s",
+					 start,
+                     TBL_SPACE_DEFAULT,
+			         relFile->databaseId, 
+					 backend, 
+					 relFile->relId, 
+					 names[part]);
 		else
-		    _snprintf_s(p, 
-			            len, 
-				   	    "%s/%u/t%d_%u",
-			            relFile->databaseId, 
-					    backend, 
-					    relFile->relId);
-		return p;
+		    snprintf(p, 
+		             len, 
+			   	     "%s%s/%u/t%d_%u",
+					 start,
+		             relFile->databaseId, 
+				     backend, 
+				     relFile->relId);
+		return p; 
 	}
 
 	if (backend == INVALID_BACK_ID)
 	{
-        len = sizeof(TBL_SPACES)
+        len = strlen(TBL_SPACES)
 				+ 1                     /* for '/' symbol  */
 			    + MAX_PRINTED_CHARS     /* for tblSpace Id */
                 + 1                     /* for '/' symbol  */ 
@@ -170,32 +194,35 @@ char* getFilePath(
 				+ 1                     /* for '/' symbol */
 				+ MAX_PRINTED_CHARS     /* for relation id */
                 + 1                     /* for '_' symbol  */
-			    + REL_PART_LEN;         /* for relation part */ 
+			    + REL_PART_LEN          /* for relation part */ 
+                + startlen; 
 
 		p   = (char*)mm->alloc(len);
 
 		if (part != FILE_PART_MAIN)
-			_snprintf_s(p, 
-				        len, 
-						"%s/%s/%u/%u_%s",
-						TBL_SPACES,
-						relFile->tblSpaceId, 
-						relFile->databaseId, 
-						relFile->relId, 
-						names[part]);
+			snprintf(p, 
+			         len, 
+					 "%s%s/%s/%u/%u_%s",
+					 start,
+					 TBL_SPACES,
+					 relFile->tblSpaceId, 
+					 relFile->databaseId, 
+					 relFile->relId, 
+					 names[part]);
 		else
-		    _snprintf_s(p, 
-			            len, 
-				  	    "%s/%s/%u/%u",
-                        TBL_SPACES,
-			            relFile->tblSpaceId, 
-					    relFile->databaseId, 
-					    relFile->relId);
+		    snprintf(p, 
+		             len, 
+			  	     "%s%s/%s/%u/%u",
+					 start,
+                     TBL_SPACES,
+		             relFile->tblSpaceId, 
+				     relFile->databaseId, 
+				     relFile->relId);
 
         return p;
 	}
 
-    len = sizeof(TBL_SPACES)
+    len = strlen(TBL_SPACES)
 		     + 1                     /* for '/' symbol  */
 			 + MAX_PRINTED_CHARS     /* for tblSpace Id */
              + 1                     /* for '/' symbol  */ 
@@ -205,46 +232,43 @@ char* getFilePath(
 			 + 1                     /* for '/' symbol  */
 			 + MAX_PRINTED_CHARS     /* for relation id */
              + 1                     /* for '_' symbol  */
-			 + REL_PART_LEN;         /* for relation part */ 
+			 + REL_PART_LEN          /* for relation part */ 
+	         + startlen; 
 
 	p   = (char*)mm->alloc(len);
 
 	if (part != FILE_PART_MAIN)
-	   _snprintf_s(p, 
-		           len, 
-				   "%s/%s/%u/t%d_%u_%s",
-                   TBL_SPACES,
-				   relFile->tblSpaceId,
-				   relFile->databaseId,
-				   backend, 
-				   relFile->relId, 
-				   names[part]);
+	   snprintf(p, 
+	            len, 
+			    "%s%s/%s/%u/t%d_%u_%s",
+				start,
+                TBL_SPACES,
+			    relFile->tblSpaceId,
+			    relFile->databaseId,
+			    backend, 
+			    relFile->relId, 
+			    names[part]);
 	else
-	   _snprintf_s(p, 
-	  	           len, 
-				   "%s/%s/%u/t%d_%u",
-                   TBL_SPACES,
-		           relFile->tblSpaceId, 
-				   relFile->databaseId, 
-				   backend, 
-				   relFile->relId);
+	   snprintf(p, 
+  	            len, 
+			    "%s%s/%s/%u/t%d_%u",
+				start,
+                TBL_SPACES,
+	            relFile->tblSpaceId, 
+			    relFile->databaseId, 
+			    backend, 
+			    relFile->relId);
 
 	return p;
 }
 
 FileSeg openRel(
     void*              self,
+	char*              execfold,
 	RelData            rel, 
 	FilePartNumber     pnum)
 {
 	IRelFileManager   _  = (IRelFileManager)self;
-	IFileManager      fm = _->fileManager;
-	IMemoryManager    mm = _->memManager;
-
-	FileSeg           seg;
-    char*             p;
-	int               fd;
-	RelFileInfoBack   key = &(rel->relKey);
 	FileSeg*          pt  = &(rel->parts[pnum]);            
 
     /* if partnum-th part is not null, that means that
@@ -254,22 +278,12 @@ FileSeg openRel(
 	if (*pt)
         return *pt;
 
-    p  = _->getFilePath(_, &(key->node), key->backend, pnum);
-	fd = fm->openFile(_, p, O_RDWR | O_BINARY, 600);
-
-	mm->free(p);
-
-	*pt = seg = (FileSeg)mm->alloc(sizeof(SFileSeg));
-
-	seg->fileDesc = fd;
-	seg->segNum   = 0;
-	seg->segNext  = NULL;
-
-	return pt;
+    return _->createRelPart(_, execfold, rel, pnum);
 }
 
 FileSeg openRelSegm(
     void*              self,
+	char*              execfold,
 	RelData            rel, 
 	FilePartNumber     part,
 	uint               segnum,
@@ -283,63 +297,93 @@ FileSeg openRelSegm(
     RelFileInfoBack   key = &(rel->relKey);
 
     char*             p;
-    int               fd;
+	char*             pold;
+    int               find;
+	int               seglen;
 
-	p = _->getFilePath(_, &(key->node), key->backend, part);
-	fd = fm->openFile(_, p, O_RDWR | O_BINARY | flags, 600);
+	p  =  _->getFilePath(_, execfold, &(key->node), key->backend, part);
+
+	if (segnum > 0)
+	{
+		pold   = p;
+		seglen = strlen(p) + REL_SEGM_LEN;
+		p      = (char*)mm->alloc(seglen); 
+        snprintf(p, seglen, "%s.%u", pold, segnum);
+        mm->free(pold);    
+	}
+
+	find = fm->openFileToCache(fm, p, flags | O_RDWR, O_BINARY);
 
     mm->free(p);
-	if (fd < 0)
+	if (find < 0)
 		return NULL;
 
     seg = (FileSeg)mm->alloc(sizeof(SFileSeg));
 
-	seg->fileDesc = fd;
-	seg->segNum   = segnum;
-	seg->segNext  = NULL;
+	seg->find  = find;
+	seg->num   = segnum;
+	seg->next  = NULL;
 
 	return seg;
 } 
 
-int calculateBlocks(
-    void*            self,
-	RelData          rel,
-	FilePartNumber   partnum,
-	FileSeg          seg)
+void closeSegm(
+    void*             self,
+    FileSeg           seg)
 {
-    IRelFileManager  _  = (IRelFileManager)self;
-    IFileManager     fm = _->fileManager;
-	long             len = fm->restoreFilePos(fm, seg->fileDesc, 0, SEEK_END);
+    IRelFileManager  _      = (IRelFileManager)self;
+    IFileManager     fm     = _->fileManager;
 
-    return len / BLOCK_SIZE;
+	fm->deleteFileFromCache(fm, seg->find);
 }
 
 int getBlocksNum(
     void*            self,
+    char*            fold,
 	RelData          rel, 
-	FilePartNumber   partnum)
+	FilePartNumber   part,
+	int              segmsize)
 {
-	FileSeg          fileSeg = openRel(self, rel, partnum);
-	uint             blocksCount;
-    uint             segmNum;
+    IRelFileManager  _      = (IRelFileManager)self;
+    IFileManager     fm     = _->fileManager;
 
-	/* We have (n-1) full segments in a relation and  */
-	while (fileSeg->segNext != NULL)
+	FileSeg          seg    = _->openRel(_, fold, rel, part);
+	uint             bnum;
+    uint             snum   = 0;
+	long             len;
+
+	/* We have (n-1) full segments in a relation and 
+	 * it is pointless to calculate blocks number in
+	 * filles segments because we know it exactly.
+	 */
+	while (seg->next != NULL)
 	{
-		segmNum++;
-		fileSeg = fileSeg->segNext;
+		snum++;
+		seg = seg->next;
 	}
+    
+	/* Here seg points to the last segment. 
+	 * We need to lseek in this file to the end
+	 * to calculate the size of the file.
+	 */
+	len = fm->restoreFilePos(fm, seg->find, 0, SEEK_END);
 
-    blocksCount = calculateBlocks(self, rel, partnum, fileSeg);
-	if (blocksCount < REL_SEGM_SIZE)
-        return segmNum * REL_SEGM_SIZE + blocksCount;
+	/* And calculate the number of blocks. */
+	bnum = len / BLOCK_SIZE;
+
+	/* If the last segment is not filled,
+	 * we simply return the total blocks number.
+	 * If the last segment is completely filled,
+	 * we need to allocate a new one.
+	 */
+	if (bnum < segmsize)
+        return snum * segmsize + bnum;
         
     /* If the last segment is full, we need to create another one. */
-    segmNum++;
+    snum++;
 	
     /* By using O_CREAT flag we create a new segment file of size 0 */
-	fileSeg->segNext = openRelSegm(self, rel, partnum, segmNum, O_CREAT);
-    blocksCount = calculateBlocks(self, rel, partnum, fileSeg);
+	seg->next = _->openRelSegm(_, fold, rel, part, snum, O_CREAT);
 
-    return segmNum * REL_SEGM_SIZE + blocksCount;
+    return snum * segmsize;
 }
