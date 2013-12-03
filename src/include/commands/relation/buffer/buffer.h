@@ -30,6 +30,14 @@ typedef struct SBufferInfo
 	int			 freeNext;	
 } SBufferInfo, *BufferInfo;
 
+typedef struct SLatch
+{
+	int         is_set;
+	Bool		is_shared;
+	int			owner_pid;
+    HANDLE		event;
+} SLatch, *Latch;
+
 typedef enum BufferAccessStrategyType
 {
 	BAS_NORMAL,					/* Normal random access */
@@ -38,7 +46,7 @@ typedef enum BufferAccessStrategyType
 	BAS_VACUUM					/* VACUUM */
 } BufferAccessStrategyType;
 
-typedef struct SBufferAccessStrategyData
+typedef struct SBufferAccessStrategy
 {
 	/* Overall strategy type */
 	BufferAccessStrategyType  btype;
@@ -61,8 +69,38 @@ typedef struct SBufferAccessStrategyData
 	 * simplicity this is palloc'd together with the fixed fields of the
 	 * struct.
 	 */
-	Buffer		buffers[1];		/* VARIABLE SIZE ARRAY */
-}	BufferAccessStrategyData;
+	int		buffers[1];		/* VARIABLE SIZE ARRAY */
+}	SBufferAccessStrategy, *BufferAccessStrategy;
+
+
+typedef struct SBufferStrategyControl
+{
+	/* Clock sweep hand: index of next buffer to consider grabbing */
+	int			nextVictimBuffer;
+
+	int			firstFreeBuffer;	/* Head of list of unused buffers */
+	int			lastFreeBuffer;     /* Tail of list of unused buffers */
+
+	/*
+	 * NOTE: lastFreeBuffer is undefined when firstFreeBuffer is -1 (that is,
+	 * when the list is empty)
+	 */
+
+	/*
+	 * Statistics.	These counters should be wide enough that they can't
+	 * overflow during a single bgwriter cycle.
+	 */
+	uint32		completePasses;     /* Complete cycles of the clock sweep */
+	uint32		numBufferAllocs;	/* Buffers allocated since last reset */
+
+	/*
+	 * Notification latch, or NULL if none.  See StrategyNotifyBgWriter.
+	 */
+	Latch	   bgwriterLatch;
+} SBufferStrategyControl, *BufferStrategyControl;
+
+/* Pointers to shared state */
+static BufferStrategyControl *StrategyControl = NULL;
 
 
 #define MAX_USAGE_COUNT 5
