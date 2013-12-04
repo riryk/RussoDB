@@ -387,3 +387,97 @@ int getBlocksNum(
 
     return snum * segmsize;
 }
+
+void addblock(
+    void*              self,
+	char*              fold,
+	RelData            rel,  
+	FilePartNumber     part,
+	uint               block,
+    char*              buffer, 
+	bool               skipFsync)
+{
+	FileSeg          seg;
+
+    //seg = _mdfd_getseg(reln, forknum, blocknum, skipFsync, EXTENSION_CREATE);
+}
+
+FileSeg findBlockSegm(
+    void*              self,
+	char*              fold,
+	RelData            rel, 	
+	FilePartNumber     part,
+	uint               block,
+	Bool               skipFsync, 
+	ExtensionBehavior  behavior)
+{
+	IRelFileManager  _      = (IRelFileManager)self;
+    IFileManager     fm     = _->fileManager;
+    IMemoryManager   mm     = _->memManager;
+
+    uint             segnum;
+	uint             segcurr;
+	FileSeg          seg    = _->openRel(_, fold, rel, part);
+
+    if (seg == NULL)
+		return NULL;
+    
+    segnum = block / REL_SEGM_LEN;
+    for (segcurr = 1; segcurr <= segnum; segcurr++)
+	{
+        if (seg->next == NULL)
+		{
+			if (behavior == EXTENSION_CREATE)
+			{
+                int  len  = fm->restoreFilePos(fm, seg->find, 0, SEEK_END);
+	            int  bnum = len / BLOCK_SIZE;   
+
+                if (bnum < REL_SEGM_LEN)
+				{
+                    char* zerobuf = mm->alloc(BLOCK_SIZE);
+
+                    /*mdextend(reln, forknum,
+							 nextsegno * ((BlockNumber) RELSEG_SIZE) - 1,
+							 zerobuf, skipFsync);*/
+
+					mm->free(zerobuf);
+				}
+
+                seg->next = _->openRelSegm(_, fold, rel, part, segnum, O_CREAT);
+			}
+			else
+			{
+				seg->next = _->openRelSegm(_, fold, rel, part, segnum, 0);
+			}
+
+			if (seg->next == NULL)
+				; // error report
+		}
+		seg = seg->next;
+	}
+	return seg;
+}
+
+void writeBlock(
+    void*            self,
+    char*            fold,
+	RelData          rel, 	
+	FilePartNumber   part,
+    uint             block,
+	char*            buffer,
+	Bool             skipFsync)
+{
+	IRelFileManager  _      = (IRelFileManager)self;
+    IFileManager     fm     = _->fileManager;
+
+    FileSeg          seg;
+	off_t		     seekpos;
+
+	seg     = _->findBlockSegm(_, fold, rel, part, block, skipFsync, EXTENSION_FAIL);
+	seekpos = (off_t)BLOCK_SIZE *(block % REL_SEGM_LEN);
+
+	if (fm->restoreFilePos(fm, seg->find, seekpos, SEEK_END) != seekpos)
+        ; //report an error
+
+    nbytes = FileWrite(v->mdfd_vfd, buffer, BLCKSZ);
+}

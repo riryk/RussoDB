@@ -42,6 +42,13 @@ typedef enum FilePartNumber
 	FILE_PART_INIT
 } FilePartNumber;
 
+typedef enum ExtensionBehavior 
+{
+	EXTENSION_FAIL,			
+	EXTENSION_RETURN_NULL,	
+	EXTENSION_CREATE		
+} ExtensionBehavior;
+
 #define FILE_PART_MAX FILE_PART_INIT
 
 typedef struct SRelData

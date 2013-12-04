@@ -582,3 +582,18 @@ int openFileToCache(
 
 	return ind;
 } 
+
+void writeFile(
+    void*      self, 
+	int        ind,
+	char*      buf,
+	int        len)
+{
+    IFileManager   _       = (IFileManager)self;
+    int            code    = _->reopenFile(_, ind);
+
+	if (code < 0)
+		return code;
+
+
+}
