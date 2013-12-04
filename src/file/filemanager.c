@@ -584,16 +584,57 @@ int openFileToCache(
 } 
 
 void writeFile(
-    void*      self, 
-	int        ind,
-	char*      buf,
-	int        len)
+    void*       self, 
+	int         ind,
+	char*       buf,
+	int         len)
 {
     IFileManager   _       = (IFileManager)self;
     int            code    = _->reopenFile(_, ind);
+	FCacheEl       it      = &fileCache[ind];
 
 	if (code < 0)
 		return code;
 
+retry:
+	errno = 0;
+	code = write(it->fileDesc, buf, len);
 
+	/* if write didn't set errno, assume problem is no disk space */
+	if (code != len && errno == 0)
+		errno = ENOSPC;
+
+	if (code >= 0)
+		it->seekPos += code;
+	else
+	{
+		/*
+		 * Windows may run out of kernel buffers and return "Insufficient
+		 * system resources" error.  Wait a bit and retry to solve it.
+		 *
+		 * It is rumored that EINTR is also possible on some Unix filesystems,
+		 * in which case immediate retry is indicated.
+		 */
+#ifdef WIN32
+		DWORD		error = GetLastError();
+
+		switch (error)
+		{
+			case ERROR_NO_SYSTEM_RESOURCES:
+				// pg_usleep(1000L);
+				errno = EINTR;
+				break;
+			default:
+				// Printf unrecognized error
+				//_dosmaperr(error);
+				break;
+		}
+#endif
+		/* OK to retry if interrupted */
+		if (errno == EINTR)
+			goto retry;
+
+		/* Trouble, so assume we don't know the file position anymore */
+		VfdCache[file].seekPos = FileUnknownPos;
+	}
 }
