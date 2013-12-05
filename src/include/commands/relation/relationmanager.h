@@ -9,7 +9,6 @@
 #include "relfilemanager.h"
 #include "irelfilemanager.h"
 
-Hashtable RelationCache;
 
 void createRelation(
 	void*          self,

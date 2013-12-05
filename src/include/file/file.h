@@ -11,6 +11,8 @@
 #include "common.h"
 #include "osfile.h"
 
+#define FILE_POS_INVALID (-1)
+
 typedef unsigned long long int uint64;
 
 typedef struct SFCacheEl

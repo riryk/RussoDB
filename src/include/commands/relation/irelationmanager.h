@@ -6,6 +6,7 @@
 #include "rel.h"
 #include "ihashtablemanager.h"
 #include "irelrowmanager.h"
+#include "irelfilemanager.h"
 
 typedef struct SIRelationManager
 {   

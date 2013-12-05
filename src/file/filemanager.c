@@ -592,22 +592,26 @@ void writeFile(
     IFileManager   _       = (IFileManager)self;
     int            code    = _->reopenFile(_, ind);
 	FCacheEl       it      = &fileCache[ind];
+    DWORD		   error;
 
 	if (code < 0)
 		return code;
-
-retry:
-	errno = 0;
-	code = write(it->fileDesc, buf, len);
-
-	/* if write didn't set errno, assume problem is no disk space */
-	if (code != len && errno == 0)
-		errno = ENOSPC;
-
-	if (code >= 0)
-		it->seekPos += code;
-	else
+    
+    CYCLE
 	{
+	    errno = 0;
+	    code = write(it->fileDesc, buf, len);
+
+	    /* if write didn't set errno, assume problem is no disk space */
+	    if (code != len && errno == 0)
+		    errno = ENOSPC;
+
+	    if (code >= 0)
+		{
+		    it->seekPos += code;
+			break;
+		}
+
 		/*
 		 * Windows may run out of kernel buffers and return "Insufficient
 		 * system resources" error.  Wait a bit and retry to solve it.
@@ -615,26 +619,12 @@ retry:
 		 * It is rumored that EINTR is also possible on some Unix filesystems,
 		 * in which case immediate retry is indicated.
 		 */
-#ifdef WIN32
-		DWORD		error = GetLastError();
-
-		switch (error)
-		{
-			case ERROR_NO_SYSTEM_RESOURCES:
-				// pg_usleep(1000L);
-				errno = EINTR;
-				break;
-			default:
-				// Printf unrecognized error
-				//_dosmaperr(error);
-				break;
-		}
-#endif
-		/* OK to retry if interrupted */
-		if (errno == EINTR)
-			goto retry;
+		error = GetLastError();
+		if (error == ERROR_NO_SYSTEM_RESOURCES)
+			continue;
 
 		/* Trouble, so assume we don't know the file position anymore */
-		VfdCache[file].seekPos = FileUnknownPos;
+		it->seekPos = FILE_POS_INVALID;
 	}
+	return code;
 }

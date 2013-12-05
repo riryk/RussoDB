@@ -10,6 +10,9 @@ const SIRelFileManager sRelFileManager =
 
 const IRelFileManager relFileManager = &sRelFileManager;
 
+Hashtable     pendingOpsTable;
+
+
 const char* filePartNames[] = 
 {
 	"main",						/* FILE_PART_MAIN */
@@ -395,7 +398,7 @@ void addblock(
 	FilePartNumber     part,
 	uint               block,
     char*              buffer, 
-	bool               skipFsync)
+	Bool               skipFsync)
 {
 	FileSeg          seg;
 
@@ -472,6 +475,7 @@ void writeBlock(
 
     FileSeg          seg;
 	off_t		     seekpos;
+	int              nbytes;
 
 	seg     = _->findBlockSegm(_, fold, rel, part, block, skipFsync, EXTENSION_FAIL);
 	seekpos = (off_t)BLOCK_SIZE *(block % REL_SEGM_LEN);
@@ -479,5 +483,23 @@ void writeBlock(
 	if (fm->restoreFilePos(fm, seg->find, seekpos, SEEK_END) != seekpos)
         ; //report an error
 
-    nbytes = FileWrite(v->mdfd_vfd, buffer, BLCKSZ);
+    nbytes = FileWrite(seg->find, buffer, BLOCK_SIZE);
+	if (nbytes != BLOCK_SIZE)
+	    ; //report an error
+
+	_->pushFSyncRequest(_, fold, rel, part, seg);
+}
+
+void pushFSyncRequest(
+    void*            self,
+    char*            fold,
+	RelData          rel, 
+	FilePartNumber   part,
+	FileSeg          seg)
+{
+    if (pendingOpsTable)
+	{
+        /* push it into local pending-ops table */
+		//RememberFsyncRequest(reln->smgr_rnode.node, forknum, seg->mdfd_segno);
+	}
 }

@@ -50,6 +50,23 @@ typedef struct SIRelFileManager
 	void (*closeSegm)(
           void*           self,
           FileSeg         seg);
+
+	FileSeg (*findBlockSegm)(
+          void*               self,
+	      char*               fold,
+	      RelData             rel, 	
+	      FilePartNumber      part,
+	      uint                block,
+	      Bool                skipFsync, 
+	      ExtensionBehavior   behavior);
+
+	void (*pushFSyncRequest)(
+          void*           self,
+          char*           fold,
+	      RelData         rel, 
+	      FilePartNumber  part,
+ 	      FileSeg         seg);
+
 } SIRelFileManager, *IRelFileManager;
 
 

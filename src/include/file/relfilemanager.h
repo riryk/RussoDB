@@ -4,6 +4,7 @@
 #include "relfile.h"
 #include "filemanager.h"
 #include "snprintf.h"
+#include "hashtable.h"
 #include <fcntl.h>
 
 #ifndef REL_FILE_MANAGER_H
@@ -54,5 +55,21 @@ FileSeg openRelSegm(
 void closeSegm(
     void*            self,
     FileSeg          seg);
+
+FileSeg findBlockSegm(
+    void*               self,
+	char*               fold,
+	RelData             rel, 	
+	FilePartNumber      part,
+	uint                block,
+	Bool                skipFsync, 
+	ExtensionBehavior   behavior);
+
+void pushFSyncRequest(
+    void*            self,
+    char*            fold,
+	RelData          rel, 
+	FilePartNumber   part,
+	FileSeg          seg);
 
 #endif
