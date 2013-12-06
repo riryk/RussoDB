@@ -436,8 +436,8 @@ int reopenFile(void* self, int ind)
 			 */
 			_->cacheDelete(ind);
 			_->cacheInsert(ind);
-			return FM_SUCCESS;
 		}
+		return FM_SUCCESS;
 	}
 
 	/* Here the file is closed. So we need to open it 
@@ -625,6 +625,7 @@ void writeFile(
 
 		/* Trouble, so assume we don't know the file position anymore */
 		it->seekPos = FILE_POS_INVALID;
+		break;
 	}
 	return code;
 }
