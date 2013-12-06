@@ -1007,6 +1007,22 @@
 									</File>
 								</Filter>
 							</Filter>
+							<Filter
+								Name="write_file"
+								>
+								<Filter
+									Name="negative"
+									>
+								</Filter>
+								<Filter
+									Name="positive"
+									>
+									<File
+										RelativePath=".\when_write_file.c"
+										>
+									</File>
+								</Filter>
+							</Filter>
 						</Filter>
 						<Filter
 							Name="rel_file_manager"

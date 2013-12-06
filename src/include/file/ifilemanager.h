@@ -19,6 +19,7 @@ typedef struct SIFileManager
 	void (*estimateFileCount)  (void* self, int max, int* maxToOpen, int* opened);
 	int  (*reopenFile)         (void* self, int ind);
 	void (*deleteFileFromCache)(void* self, int ind);
+	void (*writeFile)          (void* self, int ind, char* buf, int len);
 } SIFileManager, *IFileManager;
 
 
