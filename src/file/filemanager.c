@@ -583,6 +583,7 @@ int openFileToCache(
 	return ind;
 } 
 
+/* The function writes a buffer into a file. */
 void writeFile(
     void*       self, 
 	int         ind,

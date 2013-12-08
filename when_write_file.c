@@ -39,10 +39,12 @@ GIVEN(write_file)
 
 WHEN(write_file)
 {
-    buffer_wf  = "aaaa aaaa aaaa aaaa";
+    buffer_wf  = "aaaa aaaa aaaa aaaa\0";
 	buffer_len = strlen(buffer_wf);
+
 	fm_wf->writeFile(fm_wf, ind_wf, buffer_wf, buffer_len);
 	fd_wf = fileCache[ind_wf].fileDesc;
+
     _commit(fd_wf);
 }
 
@@ -60,7 +62,20 @@ TEST_TEAR_DOWN(write_file)
 
 TEST(write_file, then_the_block_should_be_written_to_the_file)
 {
-    
+    int    result, i;
+	char*  buffer     = (char*)malloc(buffer_len);
+    int    len;
+
+    memset(buffer, 0, sizeof(buffer));
+
+	lseek(fd_wf, 0, SEEK_SET);
+    result = read(fd_wf, buffer, buffer_len);
+    len = sizeof(buffer);
+
+    for (i = 0; i < buffer_len; i++)
+	{
+	   TEST_ASSERT_EQUAL_INT(buffer[i], buffer_wf[i]);    
+	}
 }
 
 TEST_GROUP_RUNNER(write_file)

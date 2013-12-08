@@ -1,0 +1,181 @@
+
+
+Site improvements
+Alterations to the land that enhance the utility of any structure placed on the site.
+Example: Common site improvements include:
+- drainage 
+- sewerage and other utilities 
+- walks and drives
+- landscaping 
+- fencing
+
+
+1. Domain Model
+                                               Additions
+    ----------------- 
+   | AdditionBase    |
+   | - quantity      |
+   | - name          |
+   | - reference id  |
+   | - depreciation  |   
+    ----------------- 
+	    ^   ^   ^----------------------------------------------------------------------------
+		|    \---------------------------|                                                   |
+    ------------------                   V                                                   |
+   | Misc Adjustments |           ---------------                                            V
+   | - is depreciated |          | Equipment     |                                   -------------------
+    -----------------            | - criterias   |                                  | Site improvements |        
+	   ^                         | - adjustments | -<>---->   ------------------    |                   |
+	   |						  ---------------            | Adjustment       |            ^
+	   |						                             | - is depreciated |            |  
+	----------------------									 | - cost           |     -----------------------
+    | New misc adjustments |                                  ------------------	 | New Site Improvements |		
+	-----------------------									                          -----------------------
+
+   Building has a collection of 
+     --------------  
+    | Building     |                --------------
+    | - additions  | -<>---------> | AdditionBase |
+     --------------                 -------------- 
+	 
+ 2. Client which creates some additions.
+    It can be used in unit tests: 
+ 
+    void createTestBuilding()
+	{
+	   var equipment = new List<Equipment>();
+	   equipment.Adjustments = new Adjustments();
+	   equipment.Adjustments.add(new Adjustment);
+	   
+	   var additions = new List();
+	   additions.add(new MiscAdjustments);
+	   additions.add(equipment);
+	   additions.add(new SiteImprovements);
+	}
+    
+	And the similar create methods can be a lot scattered among application.
+	
+ 3. What changes can affect this code. What can we change in our model
+    that will cause rewriting all those createTestBuilding methods.
+	If we add new site improvements and new misc adjustments
+    we will have to change code.
+	
+	   -------------------                  -----------
+	  | Abstract Factory  |                | ProductA  |           the same for ProductB
+	   -------------------                  -----------
+	           ^                                ^
+               |                                |
+          ----- -----                       ---- ----- 
+		 |			 |					   |          |			   
+		 V           V		               V          V
+    		  
+	Factory 1     Factory 2			ProductA1		ProductA2								   
+	createPrA()
+    createPrB()
+
+  4. In our case we have a factory:
+                     
+	--------------------------------
+	|  IAdditionFactory             |
+	|  -createMiscAdjustments()     |
+	|  -createEquipment()           | 
+	|  -createSiteImprovemnts()     | 
+	|  -createEquipmentAdjustment() |
+	--------------------------------
+	            ^
+	            |
+	    -------- ---------------
+	   |                        |  
+	   V                        V
+  ----------------             ----------------------------
+| AdditionFactory1 |           | AdditionFactory2           |
+   - new MiscAdjustment()       - new NewMiscAdjustments()  |
+   - new SiteImprovements()     - new NewSiteImprovements() |
+   - new Equipment()            - new Equipment()           |
+   - new EquipmentAdjustment()  - new EquipmentAdjustment() |
+  ----------------	            ---------------------------         
+	
+  5. createTestBuilding method after changing:	
+	
+    void createTestBuilding(IAdditionFactory factory)
+	{
+	   var equipment = factory.createEquipment();
+	   equipment.Adjustments = new List<Adjustment>();
+	   equipment.Adjustments.add(factory.createAdjustment());
+	   
+	   var additions = new List();
+	   additions.add(factory.createMiscAdjustment());
+	   additions.add(equipment);
+	   additions.add(factory.createSiteImprovement());
+	}
+	
+  6. Pattern builder
+       ---------------
+      | Builder       |  
+	  | -buildPartA() |
+	  | -buildPartB() |
+	  | -getResult()  |
+	   ---------------
+	   
+	    ---------------
+      | Builder1       |  
+	  | -buildPartA1() |
+	  | -buildPartB1() |
+	  | -getResult()   |
+	   ---------------
+	   
+	    ---------------
+      | Builder2       |  
+	  | -buildPartA2() |
+	  | -buildPartB2() |
+	  | -getResult()   |
+	   ---------------
+	       
+   Builder hides inward structure of an object.
+   If object inward structure is changed, we need to change only builder
+   In our case we can create AdditionBuilder.
+   
+   class AdditionListBuilder
+   {
+      IAdditionFactory factory;
+      List<Addition> additions = new List<Addition>();
+	  
+	  void AddMiscAdjustment(params)
+	  {
+	      additions.Add(factory.CreateMiscAdjustmnet(params));
+	  }
+	  
+	  void AddEquipment(params)
+	  {
+	      additions.Add(factory.CreateEquipment(params));
+	  }
+	  
+	  void AddSiteImprovements(params)
+	  {
+	      additions.Add(factory.CreateEquipment(params)); 
+	  }
+   }
+   
+   So that builder hides the inward relationship among object.
+   If the object is complicated, the structure can change often and we 
+   do not want to rewrite a lot of code.
+   
+   
+   For additions we have another model: database model 
+   which is used in ORM. And we also have a similar model
+   in anothert appplication.
+   
+   | ORMAddition     |
+   | - quantity      |
+   | - name          |
+   | - reference id  |
+   | - depreciation  |   
+   | - criterias     |              ------------------
+   | - adjustments   | -<>-------> |  Adjustment      |
+    -----------------              | - is depreciated |
+   
+   
+   And we apply our builder in conversion from ORMAddition to Addition.
+   
+   
+	
