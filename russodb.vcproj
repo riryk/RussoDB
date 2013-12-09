@@ -1079,6 +1079,22 @@
 									</File>
 								</Filter>
 							</Filter>
+							<Filter
+								Name="find_block_segment"
+								>
+								<Filter
+									Name="negative"
+									>
+								</Filter>
+								<Filter
+									Name="positive"
+									>
+									<File
+										RelativePath=".\when_find_block_segment.c"
+										>
+									</File>
+								</Filter>
+							</Filter>
 						</Filter>
 					</Filter>
 				</Filter>

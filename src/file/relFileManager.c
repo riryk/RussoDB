@@ -411,26 +411,42 @@ FileSeg findBlockSegm(
 	RelData            rel, 	
 	FilePartNumber     part,
 	uint               block,
-	Bool               skipFsync, 
-	ExtensionBehavior  behavior)
+	ExtensionBehavior  behavior,
+	int                segmsize)
 {
 	IRelFileManager  _      = (IRelFileManager)self;
     IFileManager     fm     = _->fileManager;
     IMemoryManager   mm     = _->memManager;
 
     uint             segnum;
-	uint             segcurr;
+	uint             i;
 	FileSeg          seg    = _->openRel(_, fold, rel, part);
 
     if (seg == NULL)
 		return NULL;
     
-    segnum = block / REL_SEGM_LEN;
-    for (segcurr = 1; segcurr <= segnum; segcurr++)
+    segnum = block / segmsize;
+
+	/* Loop through all segments before our current segment
+	 * and open all these segments and build a one-directional list.
+	 */
+    for (i = 1; i <= segnum; i++, seg = seg->next)
 	{
-        if (seg->next == NULL)
+		if (seg->next != NULL)
+			continue;
+
+        /* Here seg->next is null. We need to open it.
+		 * We just open the next relation segment and 
+		 */
+        if (behavior != EXTENSION_CREATE)
 		{
-			if (behavior == EXTENSION_CREATE)
+            seg->next = _->openRelSegm(_, fold, rel, part, i, 0);
+			continue;
+		}
+
+        /* Here behaviour is EXTENSION_CREATE */  
+
+			/*if (behavior == EXTENSION_CREATE)
 			{
                 int  len  = fm->restoreFilePos(fm, seg->find, 0, SEEK_END);
 	            int  bnum = len / BLOCK_SIZE;   
@@ -438,25 +454,15 @@ FileSeg findBlockSegm(
                 if (bnum < REL_SEGM_LEN)
 				{
                     char* zerobuf = mm->alloc(BLOCK_SIZE);
-
-                    /*mdextend(reln, forknum,
-							 nextsegno * ((BlockNumber) RELSEG_SIZE) - 1,
-							 zerobuf, skipFsync);*/
-
 					mm->free(zerobuf);
 				}
 
                 seg->next = _->openRelSegm(_, fold, rel, part, segnum, O_CREAT);
 			}
 			else
-			{
-				seg->next = _->openRelSegm(_, fold, rel, part, segnum, 0);
-			}
-
-			if (seg->next == NULL)
-				; // error report
-		}
-		seg = seg->next;
+			{*/
+				
+			/*}*/
 	}
 	return seg;
 }

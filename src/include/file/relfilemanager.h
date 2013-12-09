@@ -62,8 +62,8 @@ FileSeg findBlockSegm(
 	RelData             rel, 	
 	FilePartNumber      part,
 	uint                block,
-	Bool                skipFsync, 
-	ExtensionBehavior   behavior);
+	ExtensionBehavior   behavior,
+	int                 segmsize);
 
 void pushFSyncRequest(
     void*            self,
