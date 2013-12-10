@@ -48,15 +48,14 @@ FileSeg createRelPart(
 		return;
 
     p    = _->getFilePath(_, execfold, &(key->node), key->backend, pnum);
-	find = fm->openFile(_, p, _O_CREAT, O_BINARY | O_RDWR | O_EXCL);
+	find = fm->openFileToCache(fm, p, _O_CREAT, O_BINARY | O_RDWR | O_EXCL);
 
-    mm->free(p);
-
-	*pt = (FileSeg)mm->alloc(sizeof(SFileSeg));
+	*pt  = (FileSeg)mm->alloc(sizeof(SFileSeg));
 
 	(*pt)->find     = find;
 	(*pt)->num      = 0;
 	(*pt)->next     = NULL;
+	(*pt)->fname    = p;
 
 	return *pt;
 }
@@ -317,7 +316,6 @@ FileSeg openRelSegm(
 
 	find = fm->openFileToCache(fm, p, flags | O_RDWR, O_BINARY);
 
-    mm->free(p);
 	if (find < 0)
 		return NULL;
 
@@ -326,6 +324,7 @@ FileSeg openRelSegm(
 	seg->find  = find;
 	seg->num   = segnum;
 	seg->next  = NULL;
+	seg->fname = p;
 
 	return seg;
 } 
@@ -421,6 +420,7 @@ FileSeg findBlockSegm(
     uint             segnum;
 	uint             i;
 	FileSeg          seg    = _->openRel(_, fold, rel, part);
+	int              len, bnum;
 
     if (seg == NULL)
 		return NULL;
@@ -444,25 +444,7 @@ FileSeg findBlockSegm(
 			continue;
 		}
 
-        /* Here behaviour is EXTENSION_CREATE */  
-
-			/*if (behavior == EXTENSION_CREATE)
-			{
-                int  len  = fm->restoreFilePos(fm, seg->find, 0, SEEK_END);
-	            int  bnum = len / BLOCK_SIZE;   
-
-                if (bnum < REL_SEGM_LEN)
-				{
-                    char* zerobuf = mm->alloc(BLOCK_SIZE);
-					mm->free(zerobuf);
-				}
-
-                seg->next = _->openRelSegm(_, fold, rel, part, segnum, O_CREAT);
-			}
-			else
-			{*/
-				
-			/*}*/
+		seg->next = _->openRelSegm(_, fold, rel, part, i, O_CREAT);
 	}
 	return seg;
 }

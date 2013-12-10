@@ -28,6 +28,7 @@ typedef struct SFileSeg
 	 */
 	int		          find;
 	uint              num;
+	char*             fname;
 	struct SFileSeg*  next;
 } SFileSeg, *FileSeg;
 
