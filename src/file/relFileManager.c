@@ -48,7 +48,7 @@ FileSeg createRelPart(
 		return;
 
     p    = _->getFilePath(_, execfold, &(key->node), key->backend, pnum);
-	find = fm->openFileToCache(fm, p, _O_CREAT, O_BINARY | O_RDWR | O_EXCL);
+	find = fm->openFileToCache(fm, p, _O_CREAT | O_RDWR, O_BINARY | O_EXCL);
 
 	*pt  = (FileSeg)mm->alloc(sizeof(SFileSeg));
 
@@ -449,33 +449,30 @@ FileSeg findBlockSegm(
 	return seg;
 }
 
-void writeBlock(
+FileSeg writeBlock(
     void*            self,
     char*            fold,
 	RelData          rel, 	
 	FilePartNumber   part,
     uint             block,
-	char*            buffer,
-	Bool             skipFsync)
+	char*            buffer)
 {
 	IRelFileManager  _      = (IRelFileManager)self;
     IFileManager     fm     = _->fileManager;
 
     FileSeg          seg;
-	off_t		     seekpos;
+	off_t		     seekpos, seekposret;
 	int              nbytes;
 
-	seg     = _->findBlockSegm(_, fold, rel, part, block, skipFsync, EXTENSION_FAIL);
-	seekpos = (off_t)BLOCK_SIZE *(block % REL_SEGM_LEN);
+	seg     = _->findBlockSegm(_, fold, rel, part, block, FILE_PART_MAIN, REL_SEGM_SIZE);
+	seekpos = (off_t)BLOCK_SIZE *(block % REL_SEGM_SIZE);
 
-	if (fm->restoreFilePos(fm, seg->find, seekpos, SEEK_END) != seekpos)
-        ; //report an error
+	seekposret = fm->restoreFilePos(fm, seg->find, seekpos, SEEK_END);
 
-    nbytes = FileWrite(seg->find, buffer, BLOCK_SIZE);
-	if (nbytes != BLOCK_SIZE)
-	    ; //report an error
+	fm->writeFile(fm, seg->find, buffer, BLOCK_SIZE);
 
-	_->pushFSyncRequest(_, fold, rel, part, seg);
+	return seg;
+	//_->pushFSyncRequest(_, fold, rel, part, seg);
 }
 
 void pushFSyncRequest(

@@ -258,6 +258,10 @@
 						>
 					</File>
 					<File
+						RelativePath="src\include\common\latch.h"
+						>
+					</File>
+					<File
 						RelativePath="src\include\common\lock.h"
 						>
 					</File>
@@ -338,15 +342,15 @@
 					Name="commands"
 					>
 					<File
-						RelativePath="src\include\commands\buffermanager.h"
-						>
-					</File>
-					<File
 						RelativePath="src\include\commands\freespacemanager.h"
 						>
 					</File>
 					<File
 						RelativePath="src\include\commands\modify.h"
+						>
+					</File>
+					<File
+						RelativePath="src\include\commands\old_buffermanager.h"
 						>
 					</File>
 					<File
@@ -555,10 +559,6 @@
 				Name="commands"
 				>
 				<File
-					RelativePath="src\commands\buffermanager.c"
-					>
-				</File>
-				<File
 					RelativePath="src\commands\bufferwriter.c"
 					>
 				</File>
@@ -572,6 +572,10 @@
 				</File>
 				<File
 					RelativePath="src\commands\modify.c"
+					>
+				</File>
+				<File
+					RelativePath="src\commands\old_buffermanager.c"
 					>
 				</File>
 				<File
@@ -1091,6 +1095,22 @@
 									>
 									<File
 										RelativePath=".\when_find_block_segment.c"
+										>
+									</File>
+								</Filter>
+							</Filter>
+							<Filter
+								Name="write_block"
+								>
+								<Filter
+									Name="negative"
+									>
+								</Filter>
+								<Filter
+									Name="positive"
+									>
+									<File
+										RelativePath=".\when_write_block.c"
 										>
 									</File>
 								</Filter>

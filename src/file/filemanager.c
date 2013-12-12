@@ -16,7 +16,8 @@ const SIFileManager sFileManager =
 	openFile,
 	estimateFileCount,
 	reopenFile,
-	deleteFileFromCache
+	deleteFileFromCache,
+	writeFile
 };
 
 const IFileManager fileManager = &sFileManager;

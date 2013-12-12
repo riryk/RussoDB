@@ -65,6 +65,14 @@ FileSeg findBlockSegm(
 	ExtensionBehavior   behavior,
 	int                 segmsize);
 
+FileSeg writeBlock(
+    void*            self,
+    char*            fold,
+	RelData          rel, 	
+	FilePartNumber   part,
+    uint             block,
+	char*            buffer);
+
 void pushFSyncRequest(
     void*            self,
     char*            fold,

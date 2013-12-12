@@ -3,19 +3,31 @@
 #define BUFFER_H
 
 #include "common.h"
+#include "relfile.h"
+#include "latch.h"
 
-
+/* Buffers and blocks are the same.
+ * It consists of relation identifier,
+ * relation part and block number.
+ * This is the physical disk buffer identifier.
+ */
 typedef struct SBufferId
 {
 	SRelFileInfo    relId;
 	FilePartNumber	relPart;
-	uint32          blockNum;
+	uint            blockNum;
 } SBufferId, *BufferId;
 
+/* The structure which is used in the buffer cache hash table.
+ * The first field bufId is the hashtable key.
+ * The second field is the hashtable value
+ * and actually is an buffer's identifier in an array in memory.
+ * We do not keep a buffer as a value but have a separate array.
+ */
 typedef struct SBufCacheItem
 {
-    SBufferId       bufId;
-    int             id;
+    SBufferId       bufId;     /* Disk buffer id */
+    int             id;        /* id in an array in memory */
 } SBufCacheItem, *BufCacheItem;
 
 typedef struct SBufferInfo
@@ -30,13 +42,6 @@ typedef struct SBufferInfo
 	int			 freeNext;	
 } SBufferInfo, *BufferInfo;
 
-typedef struct SLatch
-{
-	int         is_set;
-	Bool		is_shared;
-	int			owner_pid;
-    HANDLE		event;
-} SLatch, *Latch;
 
 typedef enum BufferAccessStrategyType
 {
@@ -90,8 +95,8 @@ typedef struct SBufferStrategyControl
 	 * Statistics.	These counters should be wide enough that they can't
 	 * overflow during a single bgwriter cycle.
 	 */
-	uint32		completePasses;     /* Complete cycles of the clock sweep */
-	uint32		numBufferAllocs;	/* Buffers allocated since last reset */
+	uint		completePasses;     /* Complete cycles of the clock sweep */
+	uint		numBufferAllocs;	/* Buffers allocated since last reset */
 
 	/*
 	 * Notification latch, or NULL if none.  See StrategyNotifyBgWriter.
