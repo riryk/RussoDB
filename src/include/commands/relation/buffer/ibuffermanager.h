@@ -4,11 +4,14 @@
 
 #include "hashtable.h"
 #include "buffer.h"
+#include "ilatchmanager.h"
+#include "latch.h"
 
 typedef struct SIBufferManager
 {   
-	IHashtableManager hashtableManager;
-	IRelFileManager   relFileManager;
+	IHashtableManager  hashtableManager;
+	IRelFileManager    relFileManager;
+	ILatchManager      latchManager;
 } SIBufferManager, *IBufferManager;
 
 #endif

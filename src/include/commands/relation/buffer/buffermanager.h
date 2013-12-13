@@ -8,6 +8,11 @@
 
 extern Hashtable    bufCache;
 
+
+extern const SIBufferManager sBufferManager;
+extern const IBufferManager  bufferManager = &sBufferManager;
+
+
 BufferInfo allocateBuffer(
     void*             self,
     RelData           rel,

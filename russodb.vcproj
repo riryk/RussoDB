@@ -258,7 +258,15 @@
 						>
 					</File>
 					<File
+						RelativePath="src\include\common\ilatchmanager.h"
+						>
+					</File>
+					<File
 						RelativePath="src\include\common\latch.h"
+						>
+					</File>
+					<File
+						RelativePath="src\include\common\latchmanager.h"
 						>
 					</File>
 					<File
@@ -1124,6 +1132,10 @@
 				>
 				<File
 					RelativePath="src\common\common.c"
+					>
+				</File>
+				<File
+					RelativePath="src\common\latchmanager.c"
 					>
 				</File>
 				<File
