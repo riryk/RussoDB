@@ -119,5 +119,6 @@ static BufferStrategyControl *StrategyControl = NULL;
 #define BUFFER_PIN_WAITER		  (1 << 6)		/* there is a thread which is waiting for pin releasing */
 #define BUFFER_CHECKPOINT_NEEDED  (1 << 7)		
 #define BUFFER_PERMANENT		  (1 << 8)		/* permanent relation */
+#define BUFFER_JUST_DIRTIED       (1 << 9)    
 
 #endif
