@@ -34,9 +34,14 @@ typedef struct SBufferInfo
 {
 	SBufferId	 bufId;			
 	uint16	     flags;			
-	uint16		 usageCount;  /* usage counter */
-	uint	     refCount;	  /* number of backend processes 
-							   * which are holding the buffer's pin */	
+
+	/* If usageCount = 0, the buffer is not being used.
+	 * If usageCount > 0, the buffer is being used. */
+	uint16		 usageCount;  
+
+    /* Number of backend processes 
+	 * which are holding the buffer's pin */	
+	uint	     refCount;	  
 	int			 backWaiterId;
 	int			 bufInd;
 	int			 freeNext;	
@@ -103,9 +108,6 @@ typedef struct SBufferStrategyControl
 	 */
 	Latch	   bgwriterLatch;
 } SBufferStrategyControl, *BufferStrategyControl;
-
-/* Pointers to shared state */
-static BufferStrategyControl *StrategyControl = NULL;
 
 
 #define MAX_USAGE_COUNT 5
