@@ -48,7 +48,7 @@ typedef struct SBufferInfo
 } SBufferInfo, *BufferInfo;
 
 
-typedef enum BufferAccessStrategyType
+typedef enum BufRingAccessType
 {
 	BAS_NORMAL,					/* Normal random access */
 	BAS_BULKREAD,				/* Large read-only scan (hint bit updates are ok) */
@@ -56,31 +56,27 @@ typedef enum BufferAccessStrategyType
 	BAS_VACUUM					/* VACUUM */
 } BufferAccessStrategyType;
 
-typedef struct SBufferAccessStrategy
+typedef struct SBufRing
 {
-	/* Overall strategy type */
-	BufferAccessStrategyType  btype;
-	/* Number of elements in buffers[] array */
-	int   ring_size;
-	/*
-	 * Index of the "current" slot in the ring, ie, the one most recently
-	 * returned by GetBufferFromRing.
-	 */
-	int	  current;
-	/*
-	 * True if the buffer just returned by StrategyGetBuffer had been in the
-	 * ring already.
-	 */
-	Bool  current_was_in_ring;
+	/* Buffer ring access type */
+	BufRingAccessType    atype;
 
-	/*
-	 * Array of buffer numbers.  InvalidBuffer (that is, zero) indicates we
-	 * have not yet selected a buffer for this ring slot.  For allocation
-	 * simplicity this is palloc'd together with the fixed fields of the
-	 * struct.
+	/* Number of elements in buffers array 
+	 * which represents the ring 
 	 */
-	int		buffers[1];		/* VARIABLE SIZE ARRAY */
-}	SBufferAccessStrategy, *BufferAccessStrategy;
+	int                  size;
+
+	/* Index of "current" buffer in the buffer array.
+	 * It is the last most recent returned victim buffer.
+	 */
+	int	                 current;
+
+	/* True if the current had been in the ring already. */
+	Bool                 currentInRing;
+
+	/* Array of ring buffer numbers. */
+	int		             buffers[1];		
+} SBufRing, *BufRing;
 
 
 typedef struct SBufferStrategyControl
