@@ -32,7 +32,7 @@ typedef struct SBufCacheItem
 
 typedef struct SBufferInfo
 {
-	SBufferId	 bufId;			
+	SBufferId	 id;			
 	uint16	     flags;			
 
 	/* If usageCount = 0, the buffer is not being used.
@@ -43,9 +43,17 @@ typedef struct SBufferInfo
 	 * which are holding the buffer's pin */	
 	uint	     refCount;	  
 	int			 backWaiterId;
-	int			 bufInd;
-	int			 freeNext;	
+
+	/* The buffer's index in Buffer's array */
+	int			 ind;
+
+	/* Link to the the next free item from the free list. */
+	int 		 freeNext;	
 } SBufferInfo, *BufferInfo;
+
+
+#define FREENEXT_END_OF_LIST	(-1)
+#define FREENEXT_NOT_IN_LIST	(-2)
 
 
 typedef enum BufRingAccessType
@@ -74,36 +82,38 @@ typedef struct SBufRing
 	/* True if the current had been in the ring already. */
 	Bool                 currentInRing;
 
-	/* Array of ring buffer numbers. */
+	/* Array of ring buffer numbers. 
+	 * If buffers[i] == -1 that means we have not
+	 * selected this buffer as a victim.
+	 */
 	int		             buffers[1];		
 } SBufRing, *BufRing;
 
 
-typedef struct SBufferStrategyControl
+typedef struct SBufFreeList
 {
-	/* Clock sweep hand: index of next buffer to consider grabbing */
-	int			nextVictimBuffer;
+	/* Next buffer to take as a victim buffer */
+	int			next;
 
-	int			firstFreeBuffer;	/* Head of list of unused buffers */
-	int			lastFreeBuffer;     /* Tail of list of unused buffers */
+	/* Head of list of unused buffers */
+	int			first;	
 
-	/*
-	 * NOTE: lastFreeBuffer is undefined when firstFreeBuffer is -1 (that is,
-	 * when the list is empty)
+	/* Tail of list of unused buffers */
+	int			last;     
+
+	/* Statistic information
+	 * Completed cycles of the clock sweep algorithm */
+	uint		completedCycles;     
+
+	/* Statistic information
+	 * allocated buffers. */
+	uint		bufferAllocated;
+
+	/* Notification latch.
+	 * It is null if noone is waiting for notification
 	 */
-
-	/*
-	 * Statistics.	These counters should be wide enough that they can't
-	 * overflow during a single bgwriter cycle.
-	 */
-	uint		completePasses;     /* Complete cycles of the clock sweep */
-	uint		numBufferAllocs;	/* Buffers allocated since last reset */
-
-	/*
-	 * Notification latch, or NULL if none.  See StrategyNotifyBgWriter.
-	 */
-	Latch	   bgwriterLatch;
-} SBufferStrategyControl, *BufferStrategyControl;
+	Latch	    latch;
+} SBufFreeList, *BufFreeList;
 
 
 #define MAX_USAGE_COUNT 5

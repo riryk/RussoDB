@@ -21,6 +21,9 @@ typedef struct SIBufferManager
 	void (*unpinBuffer)(
 	     void*                self,
 	     BufferInfo           buf);
+
+	BufferInfo (*getBufferFromRingArray)(BufRing ring);
+
 } SIBufferManager, *IBufferManager;
 
 #endif

@@ -27,4 +27,6 @@ BufferInfo allocateBuffer(
     FilePartNumber    partNum,
     uint              blockNum);
 
+BufferInfo getBufferFromRingArray(BufRing ring);
+
 #endif
