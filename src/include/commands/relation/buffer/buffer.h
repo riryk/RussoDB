@@ -90,7 +90,7 @@ typedef struct SBufRing
 } SBufRing, *BufRing;
 
 
-typedef struct SBufFreeList
+typedef struct SBufFreeListState
 {
 	/* Next buffer to take as a victim buffer */
 	int			next;
@@ -113,7 +113,7 @@ typedef struct SBufFreeList
 	 * It is null if noone is waiting for notification
 	 */
 	Latch	    latch;
-} SBufFreeList, *BufFreeList;
+} SBufFreeListState, *BufFreeListState;
 
 
 #define MAX_USAGE_COUNT 5
