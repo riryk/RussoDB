@@ -13,19 +13,24 @@ extern const IBufferManager  bufferManager;
 
 Bool pinBuffer(
     void*                self,
-	BufferInfo           buf, 
-	BufferAccessStrategy strategy);
+    BufferInfo           buf, 
+	BufRing              ring);
 
 void unpinBuffer(
 	void*                self,
 	BufferInfo           buf);
 
 BufferInfo allocateBuffer(
-    void*             self,
-    RelData           rel,
-    char              relPersist, 
-    FilePartNumber    partNum,
-    uint              blockNum);
+    void*                self,
+    RelData              rel,
+    char                 relPersist, 
+    FilePartNumber       partNum,
+    uint                 blockNum,
+	BufRing              ring);
+
+BufferInfo getBufferFromRing(
+	void*                 self,
+	BufRing               ring);
 
 BufferInfo getBufferFromRingArray(BufRing ring);
 

@@ -14,13 +14,17 @@ typedef struct SIBufferManager
 	ILatchManager      latchManager;
 
 	Bool (*pinBuffer)(
-		 void*                self,
-		 BufferInfo           buf, 
-		 BufferAccessStrategy strategy);
+         void*                self,
+         BufferInfo           buf, 
+	     BufRing              ring);
 
 	void (*unpinBuffer)(
 	     void*                self,
 	     BufferInfo           buf);
+
+	BufferInfo (*getBufferFromRing)(
+	     void*                self,
+	     BufRing              ring);
 
 	BufferInfo (*getBufferFromRingArray)(BufRing ring);
 

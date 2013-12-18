@@ -62,12 +62,12 @@ typedef enum BufRingAccessType
 	BAS_BULKREAD,				/* Large read-only scan (hint bit updates are ok) */
 	BAS_BULKWRITE,				/* Large multi-block write (e.g. COPY IN) */
 	BAS_VACUUM					/* VACUUM */
-} BufferAccessStrategyType;
+} BufRingAccessType;
 
 typedef struct SBufRing
 {
 	/* Buffer ring access type */
-	BufRingAccessType    atype;
+	BufRingAccessType    type;
 
 	/* Number of elements in buffers array 
 	 * which represents the ring 
@@ -128,5 +128,15 @@ typedef struct SBufFreeList
 #define BUFFER_CHECKPOINT_NEEDED  (1 << 7)		
 #define BUFFER_PERMANENT		  (1 << 8)		/* permanent relation */
 #define BUFFER_JUST_DIRTIED       (1 << 9)    
+
+
+#define BUFFER_ID_DEFAULT(b) \
+( \
+	(b).relId.tblSpaceId = (-1), \
+	(b).relId.databaseId = (-1), \
+	(b).relId.relId = (-1), \
+	(b).relPart = (-1), \
+	(b).blockNum = (-1) \
+)
 
 #endif
