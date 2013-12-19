@@ -738,6 +738,22 @@
 							<Filter
 								Name="buffer"
 								>
+								<Filter
+									Name="get_buffer_from_ring"
+									>
+									<Filter
+										Name="negative"
+										>
+									</Filter>
+									<Filter
+										Name="positive"
+										>
+										<File
+											RelativePath=".\when_get_buffer_from_ring.c"
+											>
+										</File>
+									</Filter>
+								</Filter>
 							</Filter>
 						</Filter>
 					</Filter>

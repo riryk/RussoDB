@@ -12,7 +12,6 @@ const IRelFileManager relFileManager = &sRelFileManager;
 
 Hashtable     pendingOpsTable;
 
-
 const char* filePartNames[] = 
 {
 	"main",						/* FILE_PART_MAIN */

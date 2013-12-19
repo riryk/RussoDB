@@ -6,6 +6,13 @@
 #include "relfile.h"
 #include "latch.h"
 
+/* Number of partitions of the shared buffer mapping hashtable 
+ * Partitions in a hashtable has been created to reduce contention
+ * which is caused by one single lock.
+ * We split a hashtable to parts and can simultaneously be processed.
+ */
+#define BUFFER_HASHTABLE_PARTITIONS  16
+
 /* Buffers and blocks are the same.
  * It consists of relation identifier,
  * relation part and block number.

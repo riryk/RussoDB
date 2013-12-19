@@ -13,6 +13,8 @@ typedef struct SIBufferManager
 	IRelFileManager    relFileManager;
 	ILatchManager      latchManager;
 
+	void (*ctorBufMan)(void* self);
+
 	Bool (*pinBuffer)(
          void*                self,
          BufferInfo           buf, 

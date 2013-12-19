@@ -16,6 +16,11 @@
 #define REL_PART_LEN 4
 #define REL_SEGM_LEN 12
 
+
+extern const SIRelFileManager sRelFileManager;
+extern const IRelFileManager  relFileManager;
+
+
 void ctorRelFileMan(void* self);
 
 FileSeg createRelPart(

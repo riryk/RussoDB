@@ -27,9 +27,10 @@ typedef enum
 
 typedef struct SHashtableSettings
 {
-	ulong            partNum;      /* Number of sets on which the whole data will be divided */
-	uint	         keyLen;       /* hash key length in bytes */
-    uint             valLen;       /* hash table value size in bytes */
+	ulong            partNum;       /* Number of sets on which the whole data will be divided 
+									 * Number of max parallel processes which can work with a table */
+	uint	         keyLen;        /* hash key length in bytes */
+    uint             valLen;        /* hash table value size in bytes */
 	ulong		     segmSize;			
 	uint			 segmShift;	
 	uint             hashListSize;

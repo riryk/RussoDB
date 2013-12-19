@@ -11,6 +11,8 @@ extern Hashtable    bufCache;
 extern const SIBufferManager sBufferManager;
 extern const IBufferManager  bufferManager;
 
+void ctorBufMan(void* self);
+
 Bool pinBuffer(
     void*                self,
     BufferInfo           buf, 
