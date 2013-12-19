@@ -15,6 +15,7 @@ SETUP_DEPENDENCIES(get_buffer_from_ring)
 	bm_gbfr->relFileManager         = &sRelFileManager;
 	bm_gbfr->hashtableManager       = &sHashtableHelper;
 	bm_gbfr->latchManager           = &sLatchManager;
+	bm_gbfr->memoryManager          = &sTrackMemManager;
 
 	bm_gbfr->ctorBufMan             = ctorBufMan;
 	bm_gbfr->getBufferFromRingArray = getBufferFromRingArray;

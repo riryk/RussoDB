@@ -12,6 +12,7 @@ typedef struct SIBufferManager
 	IHashtableManager  hashtableManager;
 	IRelFileManager    relFileManager;
 	ILatchManager      latchManager;
+	IMemoryManager     memoryManager;
 
 	void (*ctorBufMan)(void* self);
 

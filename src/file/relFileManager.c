@@ -5,7 +5,16 @@ const SIRelFileManager sRelFileManager =
 { 
 	&sFileManager,
 	&sTrackMemManager,
-    getBlocksNum
+	ctorRelFileMan,
+    createRelPart,
+    getFilePath,
+    getBlocksNum,
+	openRel,
+	openRelSegm,
+	closeSegm,
+	findBlockSegm,
+	writeBlock,
+	pushFSyncRequest
 };
 
 const IRelFileManager relFileManager = &sRelFileManager;
