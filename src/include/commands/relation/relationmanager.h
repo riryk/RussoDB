@@ -19,4 +19,9 @@ void createRelation(
 
 void createRelationCache(void* self);
 
+RelData openRelation(
+    void*          self,
+	RelFileInfo    fileInfo, 
+	int            backend);
+
 #endif

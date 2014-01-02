@@ -28,6 +28,11 @@ typedef struct SIHashtableManager
         Hashtable          tbl, 
         void*              key);
 
+	void* (*hashRemove)(
+	    void*              self,
+        Hashtable          tbl, 
+        void*              key);
+
 } SIHashtableManager, *IHashtableManager;
 
 

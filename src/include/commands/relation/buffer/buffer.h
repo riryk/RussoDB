@@ -136,6 +136,7 @@ typedef struct SBufFreeListState
 #define BUFFER_PERMANENT		  (1 << 8)		/* permanent relation */
 #define BUFFER_JUST_DIRTIED       (1 << 9)    
 
+#define BUFFER_NEW (0xFFFFFFFF)
 
 #define BUFFER_ID_DEFAULT(b) \
 ( \

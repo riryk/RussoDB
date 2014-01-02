@@ -7,12 +7,16 @@
 #include "ihashtablemanager.h"
 #include "irelrowmanager.h"
 #include "irelfilemanager.h"
+#include "ibuffermanager.h"
+#include "ipagemanager.h"
 
 typedef struct SIRelationManager
 {   
 	IHashtableManager hashtableManager;
 	IRelRowManager    relRowManager;
 	IRelFileManager   relFileManager;
+    IBufferManager    bufferManager;
+    IPageManager      pageManager;
 
 	void (*createRelation)(
 	     void*            self,
@@ -22,6 +26,11 @@ typedef struct SIRelationManager
 	     RelAttribute     attributes);
 
 	void (*createRelationCache)(void* self);
+
+	RelData (*openRelation)(
+         void*            self,
+	     RelFileInfo      fileInfo, 
+	     int              backend);
 
 } SIRelationManager, *IRelationManager;
 

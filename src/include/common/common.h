@@ -171,6 +171,8 @@ typedef struct SName
 { 1003, {"default"},     25,  -1, False, False, False, 0 }
 
 int nextPowerOf2(long num);
+void setExecFold(char* fold);
+char* getExecFold();
 
 /* Generate assempler code by writing ANCI C program
  * gcc -Wall -S -masm=intel -m32 sub.c

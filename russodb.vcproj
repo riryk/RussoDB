@@ -4,6 +4,7 @@
 	Version="9.00"
 	Name="russodb"
 	ProjectGUID="{D51DACE6-5062-4DF6-84F4-3B59FFC90ED2}"
+	RootNamespace="russodb"
 	TargetFrameworkVersion="0"
 	>
 	<Platforms>
@@ -373,11 +374,19 @@
 						Name="relation"
 						>
 						<File
+							RelativePath=".\ipagemanager.h"
+							>
+						</File>
+						<File
 							RelativePath="src\include\commands\relation\irelationmanager.h"
 							>
 						</File>
 						<File
 							RelativePath="src\include\commands\relation\page.h"
+							>
+						</File>
+						<File
+							RelativePath=".\pagemanager.h"
 							>
 						</File>
 						<File
@@ -602,6 +611,10 @@
 					Name="relation"
 					>
 					<File
+						RelativePath=".\pagemanager.c"
+						>
+					</File>
+					<File
 						RelativePath="src\commands\relation\relationmanager.c"
 						>
 					</File>
@@ -749,7 +762,15 @@
 										Name="positive"
 										>
 										<File
+											RelativePath=".\when_get_buffer_from_empty_free_list.c"
+											>
+										</File>
+										<File
 											RelativePath=".\when_get_buffer_from_ring.c"
+											>
+										</File>
+										<File
+											RelativePath=".\when_get_the_most_popular_buffers.c"
 											>
 										</File>
 									</Filter>

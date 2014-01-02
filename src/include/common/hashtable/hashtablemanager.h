@@ -30,6 +30,12 @@ void* hashFind(
     void*              key);
 
 void* hashInsert(
+	void*              self,
+    Hashtable          tbl, 
+    void*              key);
+
+void* hashRemove(
+	void*              self,
     Hashtable          tbl, 
     void*              key);
 
