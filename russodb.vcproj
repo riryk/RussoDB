@@ -374,7 +374,7 @@
 						Name="relation"
 						>
 						<File
-							RelativePath=".\ipagemanager.h"
+							RelativePath="src\include\commands\relation\ipagemanager.h"
 							>
 						</File>
 						<File
@@ -386,7 +386,7 @@
 							>
 						</File>
 						<File
-							RelativePath=".\pagemanager.h"
+							RelativePath="src\include\commands\relation\pagemanager.h"
 							>
 						</File>
 						<File
@@ -611,7 +611,7 @@
 					Name="relation"
 					>
 					<File
-						RelativePath=".\pagemanager.c"
+						RelativePath="src\commands\relation\pagemanager.c"
 						>
 					</File>
 					<File

@@ -8,7 +8,8 @@
 #include "relrowmanager.h"
 #include "relfilemanager.h"
 #include "irelfilemanager.h"
-
+#include "ibuffermanager.h"
+#include "buffermanager.h"
 
 void createRelation(
 	void*          self,

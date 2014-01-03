@@ -2,17 +2,19 @@
 #ifndef REL_FILE_H
 #define REL_FILE_H
 
+#include "common.h"
 
 #define DEFAULT_TBL_SPACE 1663
 #define GLOBAL_TBL_SPACE 1664
 
 #define INVALID_BACK_ID (-1)
 
+/*
 typedef struct SRelFileInfo
 {
-	uint		  tblSpaceId;
-	uint 		  databaseId;
-	uint		  relId;		
+	int		      tblSpaceId;
+	int 	      databaseId;
+	int		      relId;		
 } SRelFileInfo, *RelFileInfo;
 
 typedef struct SRelFileInfoBack
@@ -20,19 +22,21 @@ typedef struct SRelFileInfoBack
 	SRelFileInfo  node;
 	int	          backend;
 } SRelFileInfoBack, *RelFileInfoBack;
+*/
 
+/*
 typedef struct SFileSeg
-{
+{*/
 	/* File's index in the file cache.
 	 * Not file descriptor.
 	 */
-	int		          find;
+/*	int		          find;
 	uint              num;
 	char*             fname;
 	struct SFileSeg*  next;
-} SFileSeg, *FileSeg;
+} SFileSeg, *FileSeg;*/
 
-typedef FileSeg *AFileSeg;
+/*typedef FileSeg *AFileSeg;*/
 
 typedef enum FilePartNumber
 {

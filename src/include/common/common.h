@@ -48,6 +48,33 @@ typedef struct SBlockId
 	uint16		 low;
 } SBlockId, *BlockId;
 
+typedef struct SRelFileInfo
+{
+	int		      tblSpaceId;
+	int 	      databaseId;
+	int		      relId;		
+} SRelFileInfo, *RelFileInfo;
+
+typedef struct SRelFileInfoBack
+{
+	SRelFileInfo  node;
+	int	          backend;
+} SRelFileInfoBack, *RelFileInfoBack;
+
+typedef struct SFileSeg
+{
+	/* File's index in the file cache.
+	 * Not file descriptor.
+	 */
+	int		          find;
+	uint              num;
+	char*             fname;
+	struct SFileSeg*  next;
+} SFileSeg, *FileSeg;
+
+typedef FileSeg *AFileSeg;
+
+
 /* Invalid block id is a 32-bit number where all bits are 1
  * 1111 1111 1111 1111  1111 1111 1111 1111 
  */

@@ -19,6 +19,8 @@ extern const IBufferManager  bufferManager;
 
 extern BufFreeListState  freeBufferState;
 extern BufferInfo        bufInfos;
+extern char*             bufBlocks;
+
 
 void ctorBufMan(void* self);
 
@@ -58,5 +60,7 @@ int readBuffer(
     BufRing              ring);
 
 int getBlockNum(int buffer);
+
+void dirtyBuffer(int buffer);
 
 #endif

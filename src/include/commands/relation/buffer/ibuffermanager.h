@@ -6,7 +6,6 @@
 #include "buffer.h"
 #include "ilatchmanager.h"
 #include "latch.h"
-#include "irelationmanager.h"
 
 typedef struct SIBufferManager
 {   
@@ -14,7 +13,7 @@ typedef struct SIBufferManager
 	IRelFileManager    relFileManager;
 	ILatchManager      latchManager;
 	IMemoryManager     memoryManager;
-	IRelationManager   relationManager;
+	void*              relationManager;
     ICommon            commonManager;
 
 	void (*ctorBufMan)(void* self);
@@ -47,6 +46,8 @@ typedef struct SIBufferManager
          BufRing              ring);
     
 	int (*getBlockNum)(int buffer);
+    
+	void (*dirtyBuffer)(int buffer);
 
 } SIBufferManager, *IBufferManager;
 

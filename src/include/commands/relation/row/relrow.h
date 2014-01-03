@@ -93,23 +93,21 @@ typedef struct SRelRowHeader
 
 #define RelRowSetCmdId(row, cmdId) \
 ( \
-    (row)->data->typeData.fields.field3.cmdId = cmdId; \
+    (row)->data->typeData.fields.field3.cmdId = cmdId \
 )
 
 #define RelRowSetTranMin(row, tranId) \
 ( \
-	(row)->data->typeData.fields.tranMin = tranId; \
+	(row)->data->typeData.fields.tranMin = tranId \
 )
 
 #define RelRowSetTranMax(row, tranId) \
 ( \
-	(row)->data->typeData.fields.tranMax = tranId; \
+	(row)->data->typeData.fields.tranMax = tranId \
 )
 
 #define HeapTupleHasExternal(row) \
-( \ 
-    ((row)->data->mask & ROW_HASEXTERNAL) != 0 \
-)
+   (((row)->data->mask & ROW_HASEXTERNAL) != 0)
 
 #define MAX_ROW_SIZE MaxRowSize_By_RowsPerPage(ROWS_PER_PAGE)
 

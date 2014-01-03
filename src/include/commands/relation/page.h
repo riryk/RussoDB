@@ -3,6 +3,7 @@
 #define PAGE_H
 
 #include "common.h"
+#include "relrow.h"
 #include "stddef.h"
 
 /*
@@ -93,15 +94,7 @@ typedef struct SPageHeader
  * which can fit into a page.
  */
 #define MaxRowCountPerPage \
-	((int) \
-      ( \  
-        (BLOCK_SIZE - SizeOfPageHeader) / \
-		( \
-           ALIGN_DEFAULT(offsetof(SRelRowHeader, nullBits)) + \
-		   sizeof(SItemId) \
-		) \   
-      ) \
-	) \
+	((int)(BLOCK_SIZE - SizeOfPageHeader) / (ALIGN_DEFAULT(offsetof(SRelRowHeader, nullBits)) + sizeof(SItemId)))
 
 /* This macros determines if there is 
  * at least one free item on a page. 
@@ -130,11 +123,7 @@ typedef struct SPageHeader
  * which are put on a page. 
  */
 #define RowsCountOnPage(page) \
-    ( \ 	
-      ((PageHeader)(page))->freeStart <= SizeOfPageHeader ? \
-      0 : \
-      (((PageHeader)(page))->freeStart - SizeOfPageHeader) / sizeof(SItemId) \
-	) \ 
+	((((PageHeader)(page))->freeStart <= SizeOfPageHeader) ? 0 : ((((PageHeader)(page))->freeStart - SizeOfPageHeader) / sizeof(SItemId)))
 
 #define MaxItemId  ((int)(BLOCK_SIZE / sizeof(SItemId)))
 
