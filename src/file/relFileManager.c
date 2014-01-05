@@ -472,15 +472,37 @@ FileSeg writeBlock(
 	off_t		     seekpos, seekposret;
 	int              nbytes;
 
-	seg     = _->findBlockSegm(_, fold, rel, part, block, FILE_PART_MAIN, REL_SEGM_SIZE);
+	seg     = _->findBlockSegm(_, fold, rel, part, block, EXTENSION_FAIL, REL_SEGM_SIZE);
 	seekpos = (off_t)BLOCK_SIZE *(block % REL_SEGM_SIZE);
 
 	seekposret = fm->restoreFilePos(fm, seg->find, seekpos, SEEK_END);
-
 	fm->writeFile(fm, seg->find, buffer, BLOCK_SIZE);
 
 	return seg;
 	//_->pushFSyncRequest(_, fold, rel, part, seg);
+}
+
+void extendRelation(
+    void*            self,
+    char*            fold,
+	RelData          rel, 	
+    FilePartNumber   part,
+    uint             block,
+    char*            buffer)
+{
+    IRelFileManager  _      = (IRelFileManager)self;
+    IFileManager     fm     = _->fileManager;
+
+	FileSeg          seg;
+    off_t		     seekpos, seekposret;
+
+    seg     = _->findBlockSegm(_, fold, rel, part, block, EXTENSION_CREATE, REL_SEGM_SIZE);
+    seekpos = (off_t)BLOCK_SIZE *(block % REL_SEGM_SIZE);
+
+    seekposret = fm->restoreFilePos(fm, seg->find, seekpos, SEEK_END);
+    fm->writeFile(fm, seg->find, buffer, BLOCK_SIZE);
+
+	return seg;
 }
 
 void pushFSyncRequest(

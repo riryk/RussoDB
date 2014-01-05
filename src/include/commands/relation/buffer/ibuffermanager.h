@@ -48,6 +48,11 @@ typedef struct SIBufferManager
 	int (*getBlockNum)(int buffer);
     
 	void (*dirtyBuffer)(int buffer);
+    
+	uint (*getBlocksNumInRelPart)(
+	     void*                self,
+	     RelData              rel, 
+	     FilePartNumber       pnum);
 
 } SIBufferManager, *IBufferManager;
 

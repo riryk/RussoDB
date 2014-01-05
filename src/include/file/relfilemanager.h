@@ -85,4 +85,12 @@ void pushFSyncRequest(
 	FilePartNumber   part,
 	FileSeg          seg);
 
+void extendRelation(
+    void*            self,
+    char*            fold,
+	RelData          rel, 	
+    FilePartNumber   part,
+    uint             block,
+    char*            buffer);
+
 #endif

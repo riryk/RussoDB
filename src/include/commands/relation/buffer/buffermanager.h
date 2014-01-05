@@ -39,7 +39,8 @@ BufferInfo allocateBuffer(
     char                 relPersist, 
     FilePartNumber       partNum,
     uint                 blockNum,
-	BufRing              ring);
+	BufRing              ring,
+	Bool*                found);
 
 BufferInfo getBufferFromRing(
 	void*                self,
@@ -62,5 +63,10 @@ int readBuffer(
 int getBlockNum(int buffer);
 
 void dirtyBuffer(int buffer);
+
+uint getBlocksNumInRelPart(
+	void*                 self,
+	RelData               rel, 
+	FilePartNumber        pnum);
 
 #endif
