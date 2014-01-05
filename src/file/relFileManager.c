@@ -457,6 +457,26 @@ FileSeg findBlockSegm(
 	return seg;
 }
 
+void readBlock(
+    void*            self,
+    char*            fold,
+    RelData          rel, 	
+	FilePartNumber   part,
+	uint             block,
+	char*            buffer)
+{
+    IRelFileManager  _      = (IRelFileManager)self;
+    IFileManager     fm     = _->fileManager;
+
+	FileSeg          seg;
+	off_t		     seekpos;
+
+	seg     = _->findBlockSegm(_, fold, rel, part, block, EXTENSION_FAIL, REL_SEGM_SIZE);
+    seekpos = (off_t)BLOCK_SIZE *(block % REL_SEGM_SIZE);
+
+
+}
+
 FileSeg writeBlock(
     void*            self,
     char*            fold,

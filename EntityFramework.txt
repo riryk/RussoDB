@@ -1,0 +1,476 @@
+
+				
+
+ 
+ 
+ 1. What is Entity Framework?
+ 
+ ADO.NET entity is an ORM (object relational mapping) 
+ which creates a higher abstract object model over ADO.NET components. 
+ So rather than getting into dataset, datatables, command, 
+ and connection objects as shown in the below code, 
+ you work on higher level domain objects like customers, suppliers, etc.
+ 
+ 2. What are the benefits of using EF?
+ 
+ The main and the only benefit of EF is it auto-generates code for the Model (middle layer), 
+ Data Access Layer, and mapping code, thus reducing a lot of development time.
+ 
+ 3. What are the different ways of creating these domain / entity objects?
+ 
+ Entity objects can be created in two ways: 
+ from a database structure, 
+ or by starting from scratch by creating a model.
+ 
+ 4. What is pluralize and singularize in the Entity Framework dialog box?
+ 
+ 5. How can we read records using Entity Framework classes?
+ 
+ In order to browse through records you can create the object of the context class 
+ and inside the context class you will get the records.
+ 
+ For instance, in the below code snippet 
+ we are looping through a customer object collection. 
+ This customer collection is the output given by the context class CustomermytextEntities.
+ 
+ CustomermytestEntities obj = new CustomermytestEntities();
+ foreach (Customer objCust in obj.Customers)
+ {}
+ 
+ 6. How can we add, update, and delete using EF?
+ 
+ ADD:
+ 
+  Create the object of your entity class, add it to the data context 
+  using AddObject method, and then call the SaveChanges method.
+ 
+  CustomermytestEntities obj = new CustomermytestEntities();
+  Customer objCust = new Customer();
+  objCust.CustomerCode = "1001";
+  obj.Customers.AddObject(objCust);
+  obj.SaveChanges();
+ 
+  CustomermytestEntities obj = new CustomermytestEntities();
+  obj.Entry(objCust).State = EntityState.Added;
+  obj.SaveChanges();
+  
+ UPDATE:
+  
+  CustomermytestEntities objContext = new CustomermytestEntities();
+  Customer objCustomer = (Customer)objContext.Customers.FirstOrDefault();
+  objCustomer.CountryCode = "NEP";
+  objContext.Entry(objCustomer).State = EntityState.Modified;
+  objContext.SaveChanges();
+ 
+ DELETE:
+
+  CustomermytestEntities objContext = new CustomermytestEntities();
+  Customer objCustomer = (Customer)objContext.Customers.FirstOrDefault();
+  objContext.Entry(objCustomer).State = EntityState.Deleted;
+  objContext.SaveChanges();  
+ 
+ 7. Can you explain lazy loading in a detailed manner?
+ 
+  MyEntities context = new MyEntities();
+
+  var Customers = context.Customers.ToList();
+
+  foreach (Customercust in Customers) // In this line no address object loaded
+  {
+     foreach(Address add in cust.Addresses){}// Address object is loaded here
+  }
+ 
+ 8. How do we implement POCO in Entity Framework?
+  
+    public sealed class PolicyContext : ChupDataContext, IPolicyContext
+    {
+	    public DbSet<Addition> Additions { get; set; }
+        public DbSet<Attachment> Attachments { get; set; }
+        public DbSet<Address> Addresses { get; set; }
+        public DbSet<Building> Buildings { get; set; }
+        public DbSet<Business> Businesses { get; set; }
+        public DbSet<LocationProfile> LocationProfiles { get; set; }
+        public DbSet<InsurancePolicy> InsurancePolicies { get; set; }
+        public DbSet<BusinessContent> BusinessContents { get; set; }
+        public DbSet<Location> Locations { get; set; }
+        public DbSet<Section> Sections { get; set; }
+        public DbSet<SectionMaterial> SectionMaterials { get; set; }
+        public DbSet<LockedPolicy> LockedPolicies { get; set; }
+        public DbSet<BuildingPrefill> BuildingPrefills { get; set; }
+        public DbSet<HazardSummary> HazardSummary { get; set; }
+        public DbSet<RootToMaster> RootToMaster { get; set; }
+        public DbSet<Notes> Notes { get; set; }
+        public DbSet<HistoryValuation> ValuationHistoryItems { get; set; }
+        
+		protected override void OnModelCreating(DbModelBuilder modelBuilder)
+        {
+            modelBuilder.Configurations.Add(new AdditionConfiguration());
+            modelBuilder.Configurations.Add(new AdditionCriteriaConfiguration());
+            modelBuilder.Configurations.Add(new AdditionAdjustmentConfiguration());
+            modelBuilder.Configurations.Add(new AddressConfiguration());
+            modelBuilder.Configurations.Add(new GeolocationInfoConfiguration());
+            modelBuilder.Configurations.Add(new BuildingConfiguration());
+            modelBuilder.Configurations.Add(new BusinessConfiguration());
+            modelBuilder.Configurations.Add(new LocationProfileConfiguration());
+            modelBuilder.Configurations.Add(new InsurancePolicyConfiguration());
+            modelBuilder.Configurations.Add(new AttachmentConfiguration());
+            modelBuilder.Configurations.Add(new BusinessContentsConfiguration());
+            modelBuilder.Configurations.Add(new LocationConfiguration());
+            modelBuilder.Configurations.Add(new SectionConfiguration());
+            modelBuilder.Configurations.Add(new OccupancyTypeConfiguration());
+            modelBuilder.Configurations.Add(new ConstructionTypeConfiguration());
+            modelBuilder.Configurations.Add(new CustomAdjustmentConfiguration());
+            modelBuilder.Configurations.Add(new TotalsConfiguration());
+            modelBuilder.Configurations.Add(new SectionMaterialConfiguration());
+            modelBuilder.Configurations.Add(new LockedPolicyConfiguration());
+            modelBuilder.Configurations.Add(new SectionSubstructureAreaConfiguration());
+            modelBuilder.Configurations.Add(new BuildingPrefillConfiguration());
+            modelBuilder.Configurations.Add(new HazardSummaryConfiguration());
+            modelBuilder.Configurations.Add(new RootToMasterConfiguration());
+            modelBuilder.Configurations.Add(new NotesConfiguration());
+            modelBuilder.Configurations.Add(new HistoryValuationConfiguration());
+        }
+    }
+ 
+ 
+ public class AdditionConfiguration : ApplicationEntityWithLongIdConfiguration<Addition>
+    {
+        public AdditionConfiguration()
+        {
+            Property(t => t.Name)
+                .HasMaxLength(50);
+
+            Property(t => t.CategoryName)
+                .HasMaxLength(50);
+				
+			Property(t => t.Type)
+                .IsRequired();	
+			
+			ToTable("Additions");
+
+            Property(t => t.EquipmentId).HasColumnName("EquipmentId");
+            Property(t => t.Name).HasColumnName("Name");
+            Property(t => t.Value).HasColumnName("Value");
+			
+			HasMany(t => t.Locations)
+               .WithMany(t => t.Additions)
+               .Map(m =>
+               {
+                   m.ToTable("LocationAddition");
+                   m.MapLeftKey("AdditionId");
+                   m.MapRightKey("LocationId");
+               });
+			   
+			HasMany(t => t.Sections)
+               .WithMany(t => t.Additions)
+               .Map(m =>
+               {
+                   m.ToTable("SectionAddition");
+                   m.MapLeftKey("AdditionId");
+                   m.MapRightKey("SectionId");
+               });
+		}
+	}
+ 
+public class BuildingConfiguration : ApplicationEntityWithLongIdConfiguration<Building>
+{
+    public BuildingConfiguration()
+    {
+        ToTable("Building");
+
+        HasRequired(t => t.Location)
+           .WithMany(t => t.Buildings)
+           .HasForeignKey(d => d.LocationId);        		
+    }	
+}
+
+
+Get locations list:
+
+    [Flags]
+    public enum Load
+    {
+        UseLazyLoad = 0,
+        Building = 1,
+        Section = 2,
+        Address = 4,
+        GeoInfo = 8,
+        Hazard = 16,
+        LocationProfile = 32,
+        Valuation = 64,
+        LocationAdditions = 128,
+        SectionAdditions = 256,
+        Totals = 512,
+        SectionDetails = 1024
+		.
+		.
+		.
+	}
+
+    IQueryable<Location> IPolicyContext.Locations(Load level)
+    {
+            IQueryable<Location> res = Locations;
+            if (level == Load.UseLazyLoad) return res;
+
+            if (level.HasFlag(Load.Address))
+            {
+                res = res.Include(x => x.Address);
+            }
+            if (level.HasFlag(Load.Hazard))
+            {
+                res = res.Include(x => x.HazardSummary);
+            }
+            if (level.HasFlag(Load.GeoInfo))
+            {
+                res = res.Include(x => x.Address.GeolocationInfo);
+            }
+			
+			return res;
+    }
+
+	
+1. What kind of confusion is caused because of concurrency?
+
+
+ Dirty reads
+ 
+ "Dirty Read" occurs when one transaction is reading a record, which is part of a half, finished work of other transaction.
+ 
+              Tran1                                              Tran2
+  select val from T where id = 1
+  update T set val = 10 where id = 1
+                                               select val from T where id = 1 (val == 10)                           
+  rollback tran.
+ 
+ 
+ Unrepetable reads
+ 
+          Tran1                                                  Tran2
+  select val from T where id = 1              select val from T where id = 1  (val = 0)
+  update T set val = 10       
+  commit
+                                              select val from T where id = 1  (val = 10)
+    different values were read.											  
+ 
+ Phantom
+          
+		  Tran1                                                  Tran2
+                                              select sum(v2) from T
+  insert into T(v1, v2)
+  commit 
+                                              select sum(v2) from T
+											  different values.
+											  
+ Lost update
+
+         Tran1                                                   Tran2 
+  read id = 1                                          read id = 1        											 
+  update id = 1
+                                                       update id = 1
+  commit                                               commit
+  
+  
+ Read committed
+ a tran reads only committed data.
+ 
+ Repetable read
+ When one transaction is updating a row, other transactions 
+ which want to update are being locked.
+ Repetable read keeps write and read locks until the end of tha transaction.
+ 
+ 
+ 
+ Optimistic lock:
+ 
+ As the name suggests “optimistic” it assumes 
+ that multiple transaction will work without affecting each other. 
+ In other words no locks are enforced while doing optimistic locking. 
+ The transaction just verifies that no other transaction has modified the data. 
+ In case of modification the transaction is rolled back.
+ 
+ • Record the current timestamp.
+ • Start changing the values.
+ * Before updating check whether anyone else has changed 
+   the values by checking the old time stamp and new time stamp.
+ * 
+ 
+ 
+ Optimistic lock in DataSets:
+ 
+ var dataSet = new DataSet();
+ var adapter = new SqlDataAdapter();
+ 
+ adapter.Fill(dataSet); // executes a select query and extracts 
+ adapter.UpdateCommand = "update A set ID = @newID"
+ 
+ adapter.Update(); 
+ // here we perform the same select to extract the values again
+ // then we check if old values are equal to new values.
+ // If they are not we throw an optimistic concurrency exception.
+ 
+ 
+ 
+ How can we do pessimistic locking?
+
+ We can do pessimistic locking by specifying “IsolationLevel” in SQL Server stored procedures, 
+ ADO.NET level or by using transaction scope object.
+ 
+ 
+ What kind of locks can be acquired by using pessimistic locking?
+
+ There are 4 kinds of locks you can acquire Shared, Exclusive, Update and intent. 
+ The first two are actual locks while the other two are hybrid locks and marker.
+ 
+ 
+                    When to use?                     Reads Allowed	          Writes Allowed
+Shared lock	   When you want only to read 
+               and you do not want any 
+			   other transactions to do update.	         Yes	                    No
+			   
+Exclusive      When you want to modify data              No                         No
+               and you do not want anyone 
+			   to read the transaction, 
+			   neither you want anyone to update.
+ 
+Update lock    This is a hybrid lock. 
+               This lock is used when you want to 
+			   do update operation which passes through 
+			   multiple phases before the actual update happens. 
+               It first starts with shared lock in the read phase 
+			   and then on the actual update it acquires an exclusive lock.
+			   
+               Read phase	                             Yes	                     No
+ 	           Manipulating phase	                     Yes	                     No
+ 	           Update phas	                             No	                         No
+ 
+ 
+Intent lock    is for lock hierarchy. 
+               This lock is used when you want to lock 
+			   resources down in the hierarchy. 
+			   For example a shared intent lock on a table 
+			   means shared locks are placed on pages and rows with the table.
+			   
+Schema locks   When you are changing table structure.	 No	                         No
+ 
+Bulk update 
+locks	       Used when you are doing bulk updates	     No                          No
+
+
+
+
+
+How can we handle concurrency in Entity Framework?
+
+How can we do pessimistic locking in Entity Framework?
+   We cannot do pessimistic locking using Entity Framework. 
+   You can invoke a stored procedure from Entity Framework 
+   and do pessimistic locking by setting the isolation level in the stored procedure. 
+   But directly, Entity Framework does not support pessimistic locking. 
+   
+  
+
+  
+Entity Framework optimistic concurency?
+
+Resolving optimistic concurrency exceptions with Reload (database wins)
+
+The Reload method can be used to overwrite the current values 
+of the entity with the values now in the database. 
+The entity is then typically given back to the user 
+in some form and they must try to make their changes again and re-save. 
+For example:
+
+
+using (var context = new BloggingContext())
+{
+    var blog = context.Blogs.Find(1);
+    blog.Name = "The New ADO.NET Blog";
+ 
+    bool saveFailed;
+    do
+    {
+        saveFailed = false;
+ 
+        try
+        {
+            context.SaveChanges();
+        }
+        catch (DbUpdateConcurrencyException ex)
+        {
+            saveFailed = true;
+ 
+            // Update the values of the entity that failed to save from the store
+            ex.Entries.Single().Reload();
+        }
+ 
+    } while (saveFailed);
+}
+
+
+Resolving optimistic concurrency exceptions as client wins
+
+using (var context = new BloggingContext())
+{
+    var blog = context.Blogs.Find(1);
+    blog.Name = "The New ADO.NET Blog";
+ 
+    bool saveFailed;
+    do
+    {
+        saveFailed = false;
+        try
+        {
+            context.SaveChanges();
+        }
+        catch (DbUpdateConcurrencyException ex)
+        {
+            saveFailed = true;
+ 
+            // Update original values from the database
+            var entry = ex.Entries.Single();
+            entry.OriginalValues.SetValues(entry.GetDatabaseValues());
+        }
+ 
+    } while (saveFailed);
+}
+
+Add an Optimistic Concurrency  Property to the Department Entity
+In Models\Department.cs, add a tracking property named RowVersion:
+
+public class Department
+{
+    public int DepartmentID { get; set; }
+
+    [StringLength(50, MinimumLength = 3)]
+    public string Name { get; set; }
+
+    [DataType(DataType.Currency)]
+    [Column(TypeName = "money")]
+    public decimal Budget { get; set; }
+
+    [DataType(DataType.Date)]
+    public DateTime StartDate { get; set; }
+
+    [Display(Name = "Administrator")]
+    public int? InstructorID { get; set; }
+
+    [Timestamp]
+    public byte[] RowVersion { get; set; }
+
+    public virtual Instructor Administrator { get; set; }
+    public virtual ICollection<Course> Courses { get; set; }
+}
+
+modelBuilder.Entity<Department>()
+    .Property(p => p.RowVersion).IsConcurrencyToken();
+
+	
+Pessimistic concurrency can be achieved by Transaction Scope or stored procedure in Entity Framework.
+Or custom approach which marks object as locked in a database.
+
+
+
+
+               
+
+				

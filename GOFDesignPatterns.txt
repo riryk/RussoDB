@@ -1,0 +1,697 @@
+
+
+Site improvements
+Alterations to the land that enhance the utility of any structure placed on the site.
+Example: Common site improvements include:
+- drainage 
+- sewerage and other utilities 
+- walks and drives
+- landscaping 
+- fencing
+
+
+1. Domain Model
+                                               Additions
+    ----------------- 
+   | AdditionBase    |
+   | - quantity      |
+   | - name          |
+   | - reference id  |
+   | - depreciation  |   
+    ----------------- 
+	    ^   ^   ^----------------------------------------------------------------------------
+		|    \---------------------------|                                                   |
+    ------------------                   V                                                   |
+   | Misc Adjustments |           ---------------                                            V
+   | - is depreciated |          | Equipment     |                                   -------------------
+    -----------------            | - criterias   |                                  | Site improvements |        
+	   ^                         | - adjustments | -<>---->   ------------------    |                   |
+	   |						  ---------------            | Adjustment       |            ^
+	   |						                             | - is depreciated |            |  
+	----------------------									 | - cost           |     -----------------------
+    | New misc adjustments |                                  ------------------	 | New Site Improvements |		
+	-----------------------									                          -----------------------
+
+   Building has a collection of 
+     --------------  
+    | Building     |                --------------
+    | - additions  | -<>---------> | AdditionBase |
+     --------------                 -------------- 
+	 
+ 2. Client which creates some additions.
+    It can be used in unit tests: 
+ 
+    void createTestBuilding()
+	{
+	   var equipment = new List<Equipment>();
+	   equipment.Adjustments = new Adjustments();
+	   equipment.Adjustments.add(new Adjustment);
+	   
+	   var additions = new List();
+	   additions.add(new MiscAdjustments);
+	   additions.add(equipment);
+	   additions.add(new SiteImprovements);
+	}
+    
+	And the similar create methods can be a lot scattered among application.
+	
+ 3. What changes can affect this code. What can we change in our model
+    that will cause rewriting all those createTestBuilding methods.
+	If we add new site improvements and new misc adjustments
+    we will have to change code.
+	
+	   -------------------                  -----------
+	  | Abstract Factory  |                | ProductA  |           the same for ProductB
+	   -------------------                  -----------
+	           ^                                ^
+               |                                |
+          ----- -----                       ---- ----- 
+		 |			 |					   |          |			   
+		 V           V		               V          V
+    		  
+	Factory 1     Factory 2			ProductA1		ProductA2								   
+	createPrA()
+    createPrB()
+
+  4. In our case we have a factory:
+                     
+	--------------------------------
+	|  IAdditionFactory             |
+	|  -createMiscAdjustments()     |
+	|  -createEquipment()           | 
+	|  -createSiteImprovemnts()     | 
+	|  -createEquipmentAdjustment() |
+	--------------------------------
+	            ^
+	            |
+	    -------- ---------------
+	   |                        |  
+	   V                        V
+  ----------------             ----------------------------
+| AdditionFactory1 |           | AdditionFactory2           |
+   - new MiscAdjustment()       - new NewMiscAdjustments()  |
+   - new SiteImprovements()     - new NewSiteImprovements() |
+   - new Equipment()            - new Equipment()           |
+   - new EquipmentAdjustment()  - new EquipmentAdjustment() |
+  ----------------	            ---------------------------         
+	
+  5. createTestBuilding method after changing:	
+	
+    void createTestBuilding(IAdditionFactory factory)
+	{
+	   var equipment = factory.createEquipment();
+	   equipment.Adjustments = new List<Adjustment>();
+	   equipment.Adjustments.add(factory.createAdjustment());
+	   
+	   var additions = new List();
+	   additions.add(factory.createMiscAdjustment());
+	   additions.add(equipment);
+	   additions.add(factory.createSiteImprovement());
+	}
+	
+  6. Pattern builder
+       ---------------
+      | Builder       |  
+	  | -buildPartA() |
+	  | -buildPartB() |
+	  | -getResult()  |
+	   ---------------
+	   
+	    ---------------
+      | Builder1       |  
+	  | -buildPartA1() |
+	  | -buildPartB1() |
+	  | -getResult()   |
+	   ---------------
+	   
+	    ---------------
+      | Builder2       |  
+	  | -buildPartA2() |
+	  | -buildPartB2() |
+	  | -getResult()   |
+	   ---------------
+	       
+   Builder hides inward structure of an object.
+   If object inward structure is changed, we need to change only builder
+   In our case we can create AdditionBuilder.
+   
+   class AdditionListBuilder
+   {
+      IAdditionFactory factory;
+      List<Addition> additions = new List<Addition>();
+	  
+	  void AddMiscAdjustment(params)
+	  {
+	      additions.Add(factory.CreateMiscAdjustmnet(params));
+	  }
+	  
+	  void AddEquipment(params)
+	  {
+	      additions.Add(factory.CreateEquipment(params));
+	  }
+	  
+	  void AddSiteImprovements(params)
+	  {
+	      additions.Add(factory.CreateEquipment(params)); 
+	  }
+   }
+   
+   So that builder hides the inward relationship among object.
+   If the object is complicated, the structure can change often and we 
+   do not want to rewrite a lot of code.
+   
+   
+   For additions we have another model: database model 
+   which is used in ORM. And we also have a similar model
+   in anothert appplication.
+   
+   | ORMAddition     |
+   | - quantity      |
+   | - name          |
+   | - reference id  |
+   | - depreciation  |   
+   | - criterias     |              ------------------
+   | - adjustments   | -<>-------> |  Adjustment      |
+    -----------------              | - is depreciated |
+   
+   
+   And we apply our builder in conversion from ORMAddition to Addition.
+   
+
+
+ 3. Factory method:
+      ----------
+     | Product  |
+	  ----------
+          ^
+          |
+      ------------------		  
+     | Concrete Product |	  
+ 	  ------------------
+	  
+      --------------------
+     | BaseCreator        |
+     | - createProduct()  |             ----------------------------
+	 | - processProject() |-<>-------> |  product = createProject() |
+      --------------------              ----------------------------
+	          ^
+	          | 
+	  ---------------------    
+	 | ConcreteCreator     |             ------------------------- 
+	 | - createProduct()   |-<>-------> | create concrete Project |
+	  ---------------------              ------------------------- 
+	  
+  Application in CHUP:
+     -------------------------- 
+    | BaseReportType           |   
+	| - createReportSettings() | 
+	| - useSettings()          |
+     --------------------------
+	           ^                         -----------------------
+	           |                        |  ConcreteReportType   |
+	 --------------------------          -----------------------
+	|  ConcreteBaseReportType  |               ---------------------------------
+    | - createReportSettings() |-<>---------> | return new ConcreteReportType() | 	  
+	 --------------------------   
+	  
+	  
+ 3. Clone pattern:
+     ---------------
+    | Prototype     | 
+	| - Clone()     |
+	 ---------------
+           ^
+           |
+     -------------------
+	| ConcretePrototype |
+    | - Clone()         |
+	 -------------------
+	 
+	In CHUP clone complicated objects using AutoMapper, serialization or reflection.
+	We implement ICloneable interface.
+	
+ 4. Singleton pattern.
+ 
+    public class Singleton
+	{
+	    private static volatile Singleton instance = NULL;
+		private static Object             sync     = new Object();
+		
+		private Singleton() {}
+		
+		public static Singleton Instance
+		{
+		   get
+           {
+		       if (instance == NULL)
+			   {
+		           lock (sync)
+			       {
+		               if (instance == NULL)
+			               instance = new Singleton();
+			       }
+               }			   
+			   
+			   return instance;
+		   }		   
+		}
+	}
+   
+    Why is 'volatile' is used here.
+	
+	Thread1                      Thread2
+  Singleton.Instance        Singleton.Instance
+  Singleton.Instance        Singleton.Instance
+  Singleton.Instance        Singleton.Instance
+  Singleton.Instance        Singleton.Instance
+  Singleton.Instance        Singleton.Instance
+  Singleton.Instance        Singleton.Instance
+  
+  Without 'volatile':
+  
+  MOV EAX, [g_x]  0
+
+  mov eax, [instance]       - read from RAM memory to register eax.  
+  eax == NULL
+  eax == NULL
+  mov eax, new Singleton()  - set eax to new Singleton().
+  mov [instance], eax       
+  ret eax
+  
+  
+      Thread1                        Thread2
+  
+  mov eax, [instance]            mov eax, [instance] 
+  eax == NULL                    eax == NULL
+  lock                                .
+  eax == NULL                         .
+  mov eax, new Singleton()            .
+  mov [instance], eax                 .
+  unlock                              .
+  ret eax                        lock
+                                 eax == NULL  
+                                 mov eax, new Singleton()           
+                                 mov [instance], eax 								 
+                                 unlock 
+  
+  
+  
+  And in the future we read from 
+  
+  http://www.cs.umd.edu/~pugh/java/memoryModel/DoubleCheckedLocking.html
+  
+  
+  
+  
+  // C++ implementation with explicit memory barriers
+// Should work on any platform, including DEC Alphas
+// From "Patterns for Concurrent and Distributed Objects",
+// by Doug Schmidt
+template <class TYPE, class LOCK> TYPE *
+Singleton<TYPE, LOCK>::instance (void) {
+    // First check
+    TYPE* tmp = instance_;
+    // Insert the CPU-specific memory barrier instruction
+    // to synchronize the cache lines on multi-processor.
+    asm ("memoryBarrier");
+    if (tmp == 0) {
+        // Ensure serialization (guard
+        // constructor acquires lock_).
+        Guard<LOCK> guard (lock_);
+        // Double check.
+        tmp = instance_;
+        if (tmp == 0) {
+                tmp = new TYPE;
+                // Insert the CPU-specific memory barrier instruction
+                // to synchronize the cache lines on multi-processor.
+                asm ("memoryBarrier");
+                instance_ = tmp;
+        }
+    return tmp;
+    }
+	
+ 5. Adapter pattern
+   ----------------                     ------------------
+   | IAdaptee      |                    |   IAdapter      |                    
+   | -----------   | 	                | --------------- | 
+   | SomeMeothod() |                    |   Method()      |    
+   ----------------                     ------------------
+         ^                                      ^
+         |                                      | 
+		 |                              -------------------- 
+   ------------------                   | ConcreteAdapter   |
+   | ConcreteAdaptee |                  |-------------------|   
+   |                 | <-----------<>---| adaptee           |   
+   | ----------------|                  | Method()          | adaptee.SomeMethod()
+   | SomeMethod()    |                  --------------------
+   ------------------ 
+   
+   In calculation engine we have own model:
+   
+   --------------------------------
+   | IBVSCalculator                |
+   |-------------------------------| 
+   | CalculateValuation(Valuation) | 
+   |-------------------------------
+
+  In CHUP we have different model Location and we need an adapter to
+  transform calls to BVSCalculator.
+  
+  class BVSCalculatorAdapter
+  {
+     IBVSCalculator  bvscalc;
+	 
+	 public void CalculateLocation(Location loc)
+	 {
+	     var val = mapper.MapToValuation(loc);
+		 bvscalc.CalculateValuation(val);
+		 var loc = mapper.MapToLocation(val);
+		 return loc;
+	 }
+  }
+  
+  6. Bridge pattern
+      
+       ----------------                                      ------------------  
+      | IAbstraction   |                                    | IImplementation  |
+	  |----------------|                                    |------------------| 
+      | SomeMethod()   |                                    | Method()         |  
+       ----------------                                      ------------------
+             ^                                                       ^
+             |                                                       | 
+       ---------------------                                   ------ ----------
+      | ConcreteAbstraction |                                 |                 |
+      |---------------------|                       -----------------    -----------------
+	  | implementator       |-<>-----------------> | ImplementationA |  | ImplementationB |
+	  | SomeMethod()        |                      |-----------------|  |-----------------| 
+	   ---------------------                       | Method()        |  | Method()        | 
+	    |                                            -----------------    -----------------
+	    |
+	    |-----------> implementator.Method()
+  	   
+  7. Composite pattern
+            -------------------  
+           |  Component	       |
+	       |-------------------| 
+		   | Operation()       |
+	       | Add(Component)    |
+		   | Remove(Component) |
+		   | GetChild(i)       |
+		    -------------------
+			       ^
+			       |
+		   -------- ------------ 
+	      |                     |
+          |                     |
+     ---------------     --------------------------
+    |   Leaf	    |   | Composite                |   
+	|---------------|   |--------------------------|
+    | Operation()   |   | List<Component> children | 
+     ---------------	| Add(Component)           | 
+	                    | Remove(Component)        |
+	                    | GetChild(i)              |
+						| Operation()              |--------> for each child from children call child.Operation() 
+						 --------------------------
+						 
+    In chup we have different group types. And some groups can have subgroups. 
+	This pattern is applicable here.
+	
+  8. Decorator pattern   or wrapper
+       --------------------
+      |  Component         | 
+      |--------------------|
+      | Operation()        |
+	   --------------------
+	          ^   ^
+	          |   | 
+			  |    --------------------------------------
+	   ---------------------                             |
+	  |  ConcreteComponent  |                            |
+	  |---------------------|             ---------------------
+	  | Operation()         |            |  Decorator          |
+	   ---------------------             |-------------------- |
+	                                     | Component component | 
+										 | Operation()         | 
+										  ---------------------
+										            ^
+										            |
+										  ---------- ------------
+										 |                       |
+								-------------------      ----------------------		 
+							   |  StateDecorator   |    |  BehaviourDecorator  |			 
+							   |-------------------|    | ---------------------|
+							   | Operation()       |    |  AddBehaviour()      |       
+							   | addedState        |    |  Operation()         | --<>----> call AddBehaviour(). 			  
+							    -------------------		 ----------------------	  
+	We have scroll decorator and border decorator.
+    Example for IBuildingCalculator 
+	We have BuildingCalculatorBase which calculates the base building's cost.
+	We should have a decorator which applies climate factor, hillside factor and soil condition
+	to IBuildingCalculator.
+	We have BuildingCalculatorUpdateTotalsDecorator which updates Totals object with calculated 
+	values.
+	
+	Decorator wrapper can be applied to different interfaces.
+	 
+  9.  Facade pattern 
+ 	                     ---------- 
+					    | Facade   |---------------  
+						 ----------	               |
+          subsystem1  		|| 					   |
+          ---------  	    ||      subsystem2     |subsystem3
+         |_________|    ---- |      --------       ----------
+              ^        |      -----|________|     |__________|
+	          |        |
+	   ------    -------	  
+	  |______|  |_______|   
+	  
+	 Facade creates a common interface for different subsystems
+	 For example a compiler consists of 3 different subsystems:
+	 parser, code generator, scanner.
+	 ICompilerFacade unates all these systems and hide private 
+	 subsystems from a client.
+	 
+	 In CHUP we also have ICalculatorFacade that unates 
+	 sevaral different calculation parts.
+	  
+  10. Flyweight pattern
+     Another name is a pool of objects.
+	 This pattern's application is to create a cache of objects.
+     We can find an object by its key inside this pool.	
+  
+      --------------                               ----------------------    
+     | Flyweight    |<---------------------<>-----| FlyweightFactory     |
+     |--------------|                             |----------------------|
+	 |              |                             | flyweights           |
+	 | Operation()  |                             | CreateFlyweight(key) | --  
+	 | state        |                              ----------------------    |
+	  --------------                                                         | 
+            ^	    	                                 -------------------- 
+            |                                            |
+			|                                            |
+	  -------------------		                         V
+	 | ConcreteFlyweight |		            ------------------------------  
+	 |-------------------|                 | if flyweights[key] != null   |       
+	 | Operation()       |                 |    return flyweights[key];   |
+	 | state             |                 | else                         |
+	  -------------------                  |    create new flyweight      |
+	                                       |    add to flyweights         |
+	                                       |    return this flyweight     | 
+	                                        ------------------------------
+    In CHUP calculation we have cached all material costs
+    By material key we can find all information about this material.
+    all costs.	
+  
+   11. Proxy pattern
+    It has the same interface as a real object. 
+	It is used for:
+	 a) Calculate an object's references.
+	 b) To postpone real load of element later if it is expensive
+	 c) To hide requests to a remote object. Hide inward network communication.
+	 
+	  --------           ----------- 
+	 | Client |-------> | Subject   |
+	 |        |         | Request() |  
+	  --------           -----------
+                             ^	  
+	                         |
+	                         |
+						 -------------                          ----------------------
+						| RealSubject | <-----------<>---------| Proxy                |    
+	                    | Request()   |                        |----------------------|   
+	                     -------------                         | RealSubject _subject |
+	                                                     ------| Request()            |
+	                                                    |       ----------------------
+	                                                    |
+	                                                    V
+                                             ----------------------- 
+                                            | if (_subject)         |
+                                            |   _subject = request to real subject
+                                              return _subject.											
+	
+	
+	In chup we have a storage service using which we can save pictures into a database
+	We can read a picture from a database and can load thumbnails.
+	We have created a provider which is a proxy for a storage service and 
+	it hides an inward requests and responses that are sent to the storage service.
+	And it also can cache a thumbnails.
+	
+   12. Chain of responsibility.
+    This pattern is applied for requests processing.
+	For each request type we have a separate handler which 
+	can only process that type of requests. It skips other requests.
+	Each request handler has a link to the next handler so that they are
+	united into a chain and a client keeps a link only to the first element 
+	of this chain. Client doesn't know about all handlers.
+	
+	 ---------                        ------------    --
+	| Client  |---<>------------->   |   Handler  |<-|  |
+	|         |                      |   next     |-----
+     ---------                        ------------
+     ----------                            ^
+	| Request  |                           |
+	 ----------                     ------- ----------
+	                               |                  |
+	                       ------------------      ------------------    
+ 	                      | ConcreteHandler1 |    | ConcreteHandler2 |
+	                       ------------------      ------------------ 
+	In CHUP it is used for Controller's commands processing.
+	
+   13. Command pattern.
+      
+     ----------	                  ------------
+    | Client   |	             | Command    |
+     ----------                  |------------| 
+	                             | Execute()  |
+                                 | Undo()     |								 
+	 ----------                   ------------ 
+	| Receiver |<--                   ^
+	 ----------    |                  | 
+	               |             ------------------  
+	               |            | ConcreteCommand  |
+	               |            |------------------|  
+	               |            | state            |
+	                ------------| receiver         |
+	                            | Execute()        | 
+								| Undo()           |
+								 ------------------
+								 
+	In CHUP every button is asociated with a command.
+	From UI we send a request to a controller and then the controller
+	executes some command.
+	
+	
+   14. Interpretator
+	
+	 ---------                          --------------
+	| Client  |                        | Expression   | 
+	|         |                        | context      | <----
+	|         |                        | Interpret()  |      |       
+	 ---------                          --------------       |
+	 ---------                                ^               --------------
+	| Context |                               |                             | 
+	 ---------                                |                             |
+	                               ----------- ------------                 |
+								  |                        |                |
+                           ---------------          ----------------        |
+						  |	TerminalEx	  |        | NonTerminal    |       |
+                          | Interpret()   |        | Interpret()    |       |
+						   ---------------         | expressions    |--<>--- 
+						                            ----------------
+	We can create an expression tree.
+	We have a boolean expression
+	
+	(true and x) or (y and (not x))
+	
+	var exp_x = new VariableExpression('X');
+	var exp_y = new VariableExpression('Y');
+	
+	var totExp = new OrExpression(
+	   new AndExpression(new ConstantExpr(true), exp_x),
+       new AndExpression(exp_y, new NotExpr(exp_x));	   
+	);
+	
+	context.Assign(exp_x, true);
+	context.Assign(exp_y, false);
+	
+	totExp.Interpret();
+    	
+	It is used for NHibernate criteria.
+	
+	List cats = sess.createCriteria(Cat.class)
+    .add( Restrictions.in( "name", new String[] { "Fritz", "Izi", "Pk" } ) )
+    .add( Restrictions.disjunction()
+        .add( Restrictions.isNull("age") )
+        .add( Restrictions.eq("age", new Integer(0) ) )
+        .add( Restrictions.eq("age", new Integer(1) ) )
+        .add( Restrictions.eq("age", new Integer(2) ) )
+    ) )
+    .list();
+
+    Lambda expressions also are implemented through interpretator pattern.
+	
+    15. Iterator
+
+      -----------------                 ----------------
+     | Aggregate       |               |   Iterator     |	 
+	 |-----------------|               |----------------|
+	 | Add(item)       |               | aggregate      |
+     | Remove(item)    |	           | First()        |
+	 | GetByIndex(ind) | 			   | Prev()         |	 
+	 | GetIterator()   |               | Next()         |
+	  -----------------				   | IsDone()       |					   			
+            ^						    ----------------
+            |                                  ^
+			|			                       |
+      -------------------			   ------------------        
+     | ConcreteAggregate | <-------<>-| ConcreteIterator | 
+	 | GetIterator()     |		      |------------------|
+	  -------------------             | aggregate        | 
+						               ------------------
+									   
+	 IEnumerable is an application of this pattern in .NET
+	 
+	16. Mediator
+	
+	 ----------                        --------------- 
+	| Mediator |                      |   Colleage    |     
+	|          |                      | mediator      |  
+	 ----------                        --------------- 
+	     ^                                   ^ 
+	     |                                   |
+   ------------------               --------- ------------
+  | ConcreteMediator |   		   |                      |
+  |------------------|      -------------------     --------------------
+  | colleage1        |---->| ConcreteColleage1 |   | ConcreteColleage2  |
+  | colleage2        |--    -------------------     --------------------
+   ------------------   |                               ^
+                         -------------------------------
+						 
+	Model View Presenter is an implementation of mediator pattern.
+	
+	
+    17. Memento pattern.
+   -------------------------                       ---------------------
+  | Originator              |--<>---------------> | Memento             | 
+  | SetMemento(Memento mem) |                     | State state         |
+  | GetMemento()            |                     | GetState()          |
+   -------------------------                      | SetState(State)     | 
+                                                   ---------------------
+												   
+    18. Observer pattern.
+   
+   ------------------ 
+  | Subject		     | 							    ----------------------	    
+  |------------------|                             | Observer             |
+  | observers        | ---<>---------------------->|----------------------|
+  | NotifyObservers()|                             | Subject subject      |   ----------------------------
+   ------------------                              | Update()             |--| Update the subject's state |
+    |                                               ----------------------    ----------------------------
+	|           -----------------------
+	|--------->| foreach all observers |  
+	           |  observer.Update()    |
+			    -----------------------
+
+	
+    
+   

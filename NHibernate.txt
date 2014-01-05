@@ -1,0 +1,260 @@
+
+
+
+Lazy Load:
+
+    Note: The members persisted in the database have to be virtual 
+	if you use lazy loading, which is usually best way. 
+	If you don't mark them as virtual you get something like this:
+
+Explain in depth:
+
+    why properties and method must be virtual
+    how lazy loading works
+	
+lazy loading is implemented by substituting a class with a proxy generated at runtime.
+Proxy is inherited from the class, so that it can 'intercept' 
+method calls and load the actual data lazily.
+
+This interception would only work if methods and properties are virtual, 
+because the client code calls them through a reference to the class. 
+Client code can be unaware of the fact that it really uses a proxy (derived from the class). 
+The actual lazy loading logic is a lot more complex but this is roughly what is going on:
+
+
+public class Customer {
+    public virtual String Name {
+        get { return _name; }
+    }
+}
+
+
+// code like this gets generated at runtime:
+public class CustomerProxy7461293476123947123 : Customer {
+
+    private Customer _target;
+
+    public override String Name {
+        get {
+            if(_target == null){
+                _target = LoadFromDatabase();
+            }
+            return _target.Name;
+        }
+    }
+}
+
+Customer customer = Session.Load<Customer>(1);  // <-- proxy is returned
+// or
+Customer customer = salesman.FavoriteCustomer;  // <-- proxy is returned
+
+String name = customer.Name; // <-- proxy's Name
+
+
+
+Q. What is a SessionFactory? Is it a thread-safe object? 
+
+SessionFactory is Hibernates concept of a single datastore 
+and is threadsafe so that many threads can access it concurrently 
+and request for sessions and immutable cache of compiled mappings for a single database.
+
+
+Q. What is a Session? Can you share a session object between different theads? 
+
+Session is a light weight and a non-threadsafe object 
+(No, you cannot share it between threads) 
+that represents a single unit-of-work with the database. 
+Sessions are opened by a SessionFactory and then are closed when all work is complete.
+
+
+public class HibernateUtil 
+{ 
+    public static final ThreadLocal local = new ThreadLocal(); 
+
+    public static Session currentSession() throws HibernateException 
+	{ 
+        Session session = (Session) local.get(); 
+		
+        //open a new session if this thread has no session 
+        if (session == null) 
+		{ 
+            session = sessionFactory.openSession(); 
+            local.set(session); 
+        } 
+		
+        return session; 
+    } 
+} 
+
+
+Q. What are the benefits of detached objects? 
+
+
+Answer: 
+
+Detached objects can be passed across layers all 
+the way up to the presentation layer without 
+having to use any DTOs (Data Transfer Objects). 
+You can later on re-attach the detached objects to another session. 
+
+
+Q. What are the pros and cons of detached objects? 
+
+Answer: 
+
+Pros: 
+
+When long transactions are required due to user think-time, 
+it is the best practice to break the long transaction 
+up into two or more transactions. 
+You can use detached objects from the first transaction 
+to carry data all the way up to the presentation layer. 
+These detached objects get modified outside a transaction 
+and later on re-attached to a new transaction via another session. 
+
+
+Cons 
+
+In general, working with detached objects is quite cumbersome, 
+and better to not clutter up the session with them if possible. 
+It is better to discard them and re-fetch them on subsequent requests. 
+This approach is not only more portable but also more efficient because 
+- the objects hang around in Hibernate's cache anyway. 
+
+Also from pure rich domain driven design perspective 
+it is recommended to use DTOs (DataTransferObjects) 
+and DOs (DomainObjects) to maintain the separation 
+between Service and UI tiers.	
+
+
+
+Q. How does Hibernate distinguish between transient 
+   (i.e. newly instantiated) and detached objects? 
+
+Answer 
+
+Hibernate uses the version property, if there is one. 
+If not uses the identifier value. 
+No identifier value means a new object. 
+This does work only for Hibernate managed surrogate keys. 
+Does not work for natural keys and assigned 
+(i.e. not managed by Hibernate) surrogate keys. 
+Write your own strategy with Interceptor.isUnsaved(). 
+
+
+Q. What is the difference between the session.get() method and the session.load() method? 
+
+Both the session.get(..) and session.load() methods 
+create a persistent object by loading the required object from the database. 
+But if there was not such object in the database 
+then the method session.load(..) throws an exception 
+whereas session.get(&) returns null. 
+
+get loads full object while load can return a proxy with a possibility
+of a further lazy loading.
+
+
+Q. What is the difference between the session.update() method and the session.lock() method? 
+
+Both of these methods and saveOrUpdate() method 
+are intended for reattaching a detached object. 
+
+The session.lock() method simply reattaches the object 
+to the session without checking 
+or updating the database on the assumption 
+that the database in sync with the detached object. 
+
+It is the best practice to use either session.update(..) or session.saveOrUpdate(). 
+Use session.lock() only if you are absolutely sure 
+that the detached object is in sync with your detached object 
+or if it does not matter because you will be overwriting 
+all the columns that would have changed later on within the same transaction. 
+
+Note: 
+When you reattach detached objects you need to make sure 
+that the dependent objects are reatched as well. 
+
+
+Q. How would you reatach detached objects to a session 
+when the same object has already been loaded into the session? 
+
+You can use the session.merge() method call. 
+
+
+Q. Difference between save, persist and saveOrUpdate methods in Hibernate?
+After get vs load, this is another Hibernate Interview question 
+which appears quite often. 
+All three methods i.e. save(), saveOrUpdate() and persist() 
+is used to save objects into database, 
+but has subtle differences 
+e.g. save() can only INSERT records but saveOrUpdate() 
+can either INSERT or UPDATE records. 
+Also, return type of save() is a Serializable object, 
+while return type of persist() method is void. 
+You can also check save vs persist vs saveOrUpdate for complete differences between them in hibernate.
+
+
+Q. What is difference between sorted and ordered collection in hibernate?
+This is one of the easy Hibernate interview question you ever face. 
+A sorted collection is sorted in memory by using Java Comparator, 
+while a ordered collection uses database's order by clause for ordering. 
+For large data set it's better to use ordered collection 
+to avoid any OutOfMemoryError in Java, by trying to sort them in memory.
+
+
+Q. What does Session lock() method do in Hibernate?
+This one is one of the tricky Hibernate Interview question, 
+because Session's lock() method reattach object 
+without synchronizing or updating with database. 
+So you need to be very careful while using lock() method. 
+By the way you can always use Session's update() method 
+to sync with database during reattachment. 
+Some time this Hibernate question is also asked as 
+what is difference between Session's lock() and update() method. 
+You can use this key point to answer that question as well.
+
+
+Q. What is Second level Cache in Hibernate?
+This is one of the first interview question 
+related to caching in Hibernate, you can expect few more. 
+Second level Cache is maintained at SessionFactory level 
+and can improve performance by saving few database round trip. 
+Another worth noting point is that second level cache 
+is available to whole application rather than any particular session.
+
+Q. Why it's important to provide no argument constructor in Hibernate Entities?
+Every Hibernate Entity class must contain a no argument constructor, 
+because Hibernate framework creates instance of them using Reflection API, 
+by calling Class.newInstance() method. 
+This method will throw InstantiationException if 
+it doesn't found no argument constructor inside Entity class.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+               
+
+				
