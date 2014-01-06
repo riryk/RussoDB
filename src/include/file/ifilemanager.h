@@ -20,6 +20,7 @@ typedef struct SIFileManager
 	int  (*reopenFile)         (void* self, int ind);
 	void (*deleteFileFromCache)(void* self, int ind);
 	void (*writeFile)          (void* self, int ind, char* buf, int len);
+	int  (*readFile)           (void* self, int ind, char* buf, int len);
 } SIFileManager, *IFileManager;
 
 

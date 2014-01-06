@@ -2,6 +2,7 @@
 				
 
  
+ ************************************************************************
  
  1. What is Entity Framework?
  
@@ -11,19 +12,32 @@
  and connection objects as shown in the below code, 
  you work on higher level domain objects like customers, suppliers, etc.
  
+ 
+ 
+ ************************************************************************
  2. What are the benefits of using EF?
  
  The main and the only benefit of EF is it auto-generates code for the Model (middle layer), 
  Data Access Layer, and mapping code, thus reducing a lot of development time.
  
+ 
+ 
+ 
+ ************************************************************************
  3. What are the different ways of creating these domain / entity objects?
  
  Entity objects can be created in two ways: 
  from a database structure, 
  or by starting from scratch by creating a model.
  
+ 
+ 
+ ************************************************************************
  4. What is pluralize and singularize in the Entity Framework dialog box?
  
+ 
+ 
+ ************************************************************************
  5. How can we read records using Entity Framework classes?
  
  In order to browse through records you can create the object of the context class 
@@ -37,6 +51,9 @@
  foreach (Customer objCust in obj.Customers)
  {}
  
+ 
+ 
+ ************************************************************************
  6. How can we add, update, and delete using EF?
  
  ADD:
@@ -69,6 +86,9 @@
   objContext.Entry(objCustomer).State = EntityState.Deleted;
   objContext.SaveChanges();  
  
+ 
+ 
+ ************************************************************************
  7. Can you explain lazy loading in a detailed manner?
  
   MyEntities context = new MyEntities();
@@ -80,6 +100,10 @@
      foreach(Address add in cust.Addresses){}// Address object is loaded here
   }
  
+ 
+ 
+ 
+ ************************************************************************
  8. How do we implement POCO in Entity Framework?
   
     public sealed class PolicyContext : ChupDataContext, IPolicyContext
@@ -228,8 +252,12 @@ Get locations list:
 			return res;
     }
 
+
+
+
+************************************************************************
 	
-1. What kind of confusion is caused because of concurrency?
+9. What kind of confusion is caused because of concurrency?
 
 
  Dirty reads
@@ -310,7 +338,10 @@ Get locations list:
  
  
  
- How can we do pessimistic locking?
+ ************************************************************************
+ 
+ 
+ 10. How can we do pessimistic locking?
 
  We can do pessimistic locking by specifying “IsolationLevel” in SQL Server stored procedures, 
  ADO.NET level or by using transaction scope object.
@@ -358,8 +389,10 @@ locks	       Used when you are doing bulk updates	     No                       
 
 
 
+************************************************************************
 
-How can we handle concurrency in Entity Framework?
+
+11. How can we handle concurrency in Entity Framework?
 
 How can we do pessimistic locking in Entity Framework?
    We cannot do pessimistic locking using Entity Framework. 
@@ -370,7 +403,10 @@ How can we do pessimistic locking in Entity Framework?
   
 
   
-Entity Framework optimistic concurency?
+************************************************************************
+  
+  
+12. Entity Framework optimistic concurency?
 
 Resolving optimistic concurrency exceptions with Reload (database wins)
 
@@ -470,7 +506,200 @@ Or custom approach which marks object as locked in a database.
 
 
 
+13. What is snapshot change tracking?
 
-               
+POCO classes don’t contain any logic to notify Entity Framework when a property value is changed. Because there
+is no way to be notified when a property value changes, Entity Framework will take a snapshot of the values in each
+property when it first sees an object and store the values in memory. This snapshot occurs when the object is returned
+from a query or when we add it to a DbSet. When Entity Framework needs to know what changes have been made,
+it will scan each object and compare its current values to the snapshot. This process of scanning each object is
+triggered through a method of Change Tracker called DetectChanges
+
+
+14. What is change-tracking proxies?
+
+The other mechanism for tracking changes is through change-tracking proxies, which allow Entity Framework to
+be notified of changes as they are made. Change-tracking proxies are created using the mechanism of dynamic
+proxies that are created for lazy loading, but in addition to providing for lazy loading, they also have the ability to
+communicate changes to the context. To use change-tracking proxies, you need to structure your classes in such a way
+that Entity Framework can create a dynamic type at runtime that derives from your POCO class and overrides every
+property. This dynamic type, known as a dynamic proxy, includes logic in the overridden properties to notify Entity
+Framework when those properties are changed.
+
+
+
+using (var context = new EFRecipesEntities())
+{
+    context.Configuration.AutoDetectChangesEnabled = false;
+	
+    var speaker1 = new Speaker { Name = "Karen Stanfield" };
+    var talk1 = new Talk { Title = "Simulated Annealing in C#" };
+    speaker1.Talks = new List<Talk> { talk1 };
+	
+    context.Speakers.Add(speaker1);
+    
+    // now it's fixed up
+    Console.WriteLine("talk1.Speaker is null: {0}", talk1.Speakers == null);
+    Console.WriteLine("Number of added entries tracked: {0}", context.ChangeTracker.Entries().Where(e => e.State == System.Data.Entity.EntityState.Added).Count());
+	
+    context.SaveChanges();
+	
+    // change the talk's title
+    talk1.Title = "AI with C# in 3 Easy Steps";
+    Console.WriteLine("talk1's state is: {0}", context.Entry(talk1).State);
+	
+    context.ChangeTracker.DetectChanges();
+    Console.WriteLine("talk1's state is: {0}", context.Entry(talk1).State);
+    context.SaveChanges();
+}
+	
+
+15. Difference between Find and Linq?
+
+LINQ
+
+When issuing a LINQ query, a round trip will always be made to the database to retrieve the requested data, even if
+that data has already been loaded into the context object in memory. When the query completes, entity objects that
+do not exist in the context are added and then tracked. By default, if the entity object is already present in the context,
+it is not overwritten with the more recent database values.
+
+Find
+
+However, the DbSet object, which wraps each of our entity objects, exposes a Find() method. Specifically, Find()
+expects a single argument that represents the primary key of the entity object. If necessary, an array of values can be
+passed into Find() to support a composite key. Find() is very efficient, as it will first search the underlying context for
+the target object. If found, Find() returns the entity directly from the context object. If not found, then it automatically
+queries the underlying data store. If still not found, Find() simply returns NULL to the caller. Additionally, Find()
+will return entities that have been added to the context (think of having a state of “Added”), but not yet saved to the
+underlying database. Fortunately, the Find() method is available with any of three modeling approaches: Database-
+First, Model-First, or Code-First.
+
+
+var completeList =
+context.Clients.AsEnumerable()
+.Union(context.ObjectStateManager.GetObjectStateEntries
+(EntityState.Added)
+.Select(e => e.Entity)
+.OfType<client>()).ToList();
+
+
+
+16. Making Change Tracking with POCO Faster.
+
+When model is complex we turn on ChangeTracking approach.
+
+
+using (var context = new Recipe5Context())
+{
+   var watch = new Stopwatch();
+   watch.Start();
+   var accounts = context.Accounts.Include("Payments").ToList();
+   watch.Stop();
+
+   watch.Restart();
+   foreach (var account in accounts)
+   {
+      account.Balance += 10M;
+      account.Payments.First().Paid += 1M;
+   }
+   
+   context.SaveChanges();
+   watch.Stop();
+}
+
+
+17. Auto-Compiling LINQ Queries
+
+
+
+When executing against a database, Entity Framework must translate your strongly typed LINQ query to a
+corresponding SQL query, based upon your database provider (SQL Server, Oracle, and so on). Beginning with
+version 5 of Entity Framework, each query translation is cached by default. This process is referred to as auto-caching.
+With each subsequent execution of a given LINQ query, the corresponding SQL query is retrieved directly from
+query plan cache, bypassing the translation step. For queries containing parameters, changing parameter values will
+still retrieve the same query. Interestingly, this query plan cache is shared among all instances of a context object
+instantiated with the application’s AppDomain, meaning that, once cached, any context object in the AppDomain has
+access to it.
+
+
+18. Returning Partially Filled Entities
+
+Raw sql
+
+
+19. Optimistic cincurrency
+
+1. Add a column of type RowVersion to the table mapped to the Product entity.
+2. Right-click the TimeStamp property and select Properties. Change its Concurrency Mode
+property to Fixed.
+
+
+20. Managing Concurrency When Using Stored Procedures
+
+21. Reading Uncommitted Data
+
+
+using (var context = new EF6RecipesContext())
+{
+   using (var scope1 = new TransactionScope())
+   {
+      // save, but don't commit
+      var outerEmp = new Employee { Name = "Karen Stanfield" };
+      Console.WriteLine("Outer employee: {0}", outerEmp.Name);
+      context.Employees.Add(outerEmp);
+      context.SaveChanges();
+      // second transaction for read uncommitted
+      using (var innerContext = new EF6RecipesContext())
+      {
+          using (var scope2 = new TransactionScope(
+		                             TransactionScopeOption.RequiresNew, 
+									 new TransactionOptions { IsolationLevel = IsolationLevel.ReadUncommitted }))
+          {
+               var innerEmp = innerContext.Employees.First(e => e.Name == "Karen Stanfield");
+               Console.WriteLine("Inner employee: {0}", innerEmp.Name);
+               scope1.Complete();
+               scope2.Complete();
+          }
+      }
+   }
+}
+
+
+22. Implementing the “Last Record Wins” Strategy
+
+
+
+try
+{
+// refresh any changes to the TimeStamp
+var postEntry = context.Entry(post);
+postEntry.OriginalValues.SetValues(postEntry.GetDatabaseValues());
+context.SaveChanges();
+Console.WriteLine("No concurrency exception.");
+}
+catch (DbUpdateConcurrencyException exFirst)
+{
+try
+{
+// try one more time.
+var postEntry = context.Entry(post);
+postEntry.OriginalValues.SetValues(postEntry.GetDatabaseValues());
+context.SaveChanges();
+}
+catch (DbUpdateConcurrencyException exSecond)
+{
+// we tried twice...do something else
+}
+}
+
+
+
+
+
+
+
+
+
+
 
 				

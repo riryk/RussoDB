@@ -113,7 +113,7 @@ typedef struct SBufFreeListState
 	uint		completedCycles;     
 
 	/* Statistic information
-	 * allocated buffers. */
+	 * allocated buffers since the last reset. */
 	uint		bufferAllocated;
 
 	/* Notification latch.

@@ -469,12 +469,15 @@ void readBlock(
     IFileManager     fm     = _->fileManager;
 
 	FileSeg          seg;
-	off_t		     seekpos;
+	off_t		     seekpos, seekposret;
+	int              bytes;
 
 	seg     = _->findBlockSegm(_, fold, rel, part, block, EXTENSION_FAIL, REL_SEGM_SIZE);
     seekpos = (off_t)BLOCK_SIZE *(block % REL_SEGM_SIZE);
 
-
+    seekposret = fm->restoreFilePos(fm, seg->find, seekpos, SEEK_SET);    
+    
+	bytes = fm->readFile(fm, seg->find, buffer, BLOCK_SIZE);
 }
 
 FileSeg writeBlock(

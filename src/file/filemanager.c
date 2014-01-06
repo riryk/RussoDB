@@ -584,6 +584,47 @@ int openFileToCache(
 	return ind;
 } 
 
+int readFile(
+    void*       self, 
+    int         ind,
+    char*       buf,
+	int         len
+)
+{
+    IFileManager   _       = (IFileManager)self;
+    int            code    = _->reopenFile(_, ind);
+
+	if (code < 0)
+		return code;
+
+    CYCLE
+	{
+        code = read(it->fileDesc, buf, len);
+
+		if (code >= 0)
+		{
+		    it->seekPos += code;
+			break;
+		}
+
+		/*
+		 * Windows may run out of kernel buffers and return "Insufficient
+		 * system resources" error.  Wait a bit and retry to solve it.
+		 *
+		 * It is rumored that EINTR is also possible on some Unix filesystems,
+		 * in which case immediate retry is indicated.
+		 */
+		error = GetLastError();
+		if (error == ERROR_NO_SYSTEM_RESOURCES)
+			continue;
+
+		/* Trouble, so assume we don't know the file position anymore */
+		it->seekPos = FILE_POS_INVALID;
+		break;
+	}
+	return code;
+}
+
 /* The function writes a buffer into a file. */
 void writeFile(
     void*       self, 

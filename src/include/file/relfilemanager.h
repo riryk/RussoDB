@@ -78,6 +78,14 @@ FileSeg writeBlock(
     uint             block,
 	char*            buffer);
 
+void readBlock(
+    void*            self,
+    char*            fold,
+    RelData          rel, 	
+	FilePartNumber   part,
+	uint             block,
+	char*            buffer);
+
 void pushFSyncRequest(
     void*            self,
     char*            fold,
