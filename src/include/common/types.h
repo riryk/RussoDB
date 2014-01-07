@@ -147,25 +147,6 @@ typedef union SType_4b
 		           : ( ((len) == -1) ? (SIZE(p)) : (strlen((char*)(p)) + 1) ) \
 	)
 
-/*
-#define SIZE_BY_LEN(len, p) \
-( \
-	((len) > 0) ? \
-	   (len) \
-    : \ 
-	( \
-	  ((len) == -1) ? \
-	  ( \
-	     SIZE(p) \   	 
-	  ) \
-	  : \
-	  ( \
-	     (strlen((char*)(p)) + 1) \
-	  ) \
-    ) \
-)
-*/
-
 /* Mark as a short variable-length attribute and set the next 7 bits */
 #define MARK_AS_SHORT_VAR_LEN(p,len) \
 	(((Type_1b)p)->header = (((uint8)len) << 1) | 0x01)

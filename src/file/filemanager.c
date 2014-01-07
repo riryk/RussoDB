@@ -593,6 +593,8 @@ int readFile(
 {
     IFileManager   _       = (IFileManager)self;
     int            code    = _->reopenFile(_, ind);
+    FCacheEl       it      = &fileCache[ind];
+    DWORD		   error;
 
 	if (code < 0)
 		return code;

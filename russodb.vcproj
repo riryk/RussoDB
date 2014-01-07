@@ -215,10 +215,6 @@
 						>
 					</File>
 					<File
-						RelativePath="src\include\file\relation_storage.h"
-						>
-					</File>
-					<File
 						RelativePath="src\include\file\relfile.h"
 						>
 					</File>
@@ -230,10 +226,6 @@
 				<Filter
 					Name="error"
 					>
-					<File
-						RelativePath="src\include\error\error.h"
-						>
-					</File>
 				</Filter>
 				<Filter
 					Name="memory"
@@ -272,10 +264,6 @@
 					</File>
 					<File
 						RelativePath="src\include\common\lock.h"
-						>
-					</File>
-					<File
-						RelativePath="src\include\common\set.h"
 						>
 					</File>
 					<File
@@ -350,26 +338,6 @@
 				<Filter
 					Name="commands"
 					>
-					<File
-						RelativePath="src\include\commands\freespacemanager.h"
-						>
-					</File>
-					<File
-						RelativePath="src\include\commands\modify.h"
-						>
-					</File>
-					<File
-						RelativePath="src\include\commands\old_buffermanager.h"
-						>
-					</File>
-					<File
-						RelativePath="src\include\commands\parser.h"
-						>
-					</File>
-					<File
-						RelativePath="src\include\commands\tranlog.h"
-						>
-					</File>
 					<Filter
 						Name="relation"
 						>
@@ -504,7 +472,7 @@
 								Name="file_manager"
 								>
 								<File
-									RelativePath=".\file_manager_helper.h"
+									RelativePath="src\include\tests\unit\file\file_manager\file_manager_helper.h"
 									>
 								</File>
 							</Filter>
@@ -516,15 +484,7 @@
 				Name="file"
 				>
 				<File
-					RelativePath="src\file\file.c"
-					>
-				</File>
-				<File
 					RelativePath="src\file\filemanager.c"
-					>
-				</File>
-				<File
-					RelativePath="src\file\relation_storage.c"
 					>
 				</File>
 				<File
@@ -535,10 +495,6 @@
 			<Filter
 				Name="error"
 				>
-				<File
-					RelativePath="src\error\error.c"
-					>
-				</File>
 			</Filter>
 			<Filter
 				Name="memory"
@@ -575,38 +531,6 @@
 			<Filter
 				Name="commands"
 				>
-				<File
-					RelativePath="src\commands\bufferwriter.c"
-					>
-				</File>
-				<File
-					RelativePath="src\commands\createtable.c"
-					>
-				</File>
-				<File
-					RelativePath="src\commands\freespacemanager.c"
-					>
-				</File>
-				<File
-					RelativePath="src\commands\modify.c"
-					>
-				</File>
-				<File
-					RelativePath="src\commands\old_buffermanager.c"
-					>
-				</File>
-				<File
-					RelativePath="src\commands\parser.c"
-					>
-				</File>
-				<File
-					RelativePath="src\commands\planner.c"
-					>
-				</File>
-				<File
-					RelativePath="src\commands\tranlog.c"
-					>
-				</File>
 				<Filter
 					Name="relation"
 					>
@@ -893,7 +817,7 @@
 							Name="file_manager"
 							>
 							<File
-								RelativePath=".\file_manager_helper.c"
+								RelativePath="src\tests\unit\file\file_manager\file_manager_helper.c"
 								>
 							</File>
 							<Filter
@@ -903,11 +827,11 @@
 									Name="positive"
 									>
 									<File
-										RelativePath=".\when_cache_insert.c"
+										RelativePath="src\tests\unit\file\file_manager\when_cache_insert.c"
 										>
 									</File>
 									<File
-										RelativePath=".\when_cache_insert_multiple_times.c"
+										RelativePath="src\tests\unit\file\file_manager\when_cache_insert_multiple_times.c"
 										>
 									</File>
 								</Filter>
@@ -927,7 +851,7 @@
 									Name="positive"
 									>
 									<File
-										RelativePath=".\when_cache_realloc.c"
+										RelativePath="src\tests\unit\file\file_manager\when_cache_realloc.c"
 										>
 									</File>
 								</Filter>
@@ -943,15 +867,15 @@
 									Name="positive"
 									>
 									<File
-										RelativePath=".\when_cache_get_all_free_items.c"
+										RelativePath="src\tests\unit\file\file_manager\when_cache_get_all_free_items.c"
 										>
 									</File>
 									<File
-										RelativePath=".\when_cache_get_free.c"
+										RelativePath="src\tests\unit\file\file_manager\when_cache_get_free.c"
 										>
 									</File>
 									<File
-										RelativePath=".\when_cache_get_free_several_times.c"
+										RelativePath="src\tests\unit\file\file_manager\when_cache_get_free_several_times.c"
 										>
 									</File>
 								</Filter>
@@ -967,7 +891,7 @@
 									Name="positive"
 									>
 									<File
-										RelativePath=".\when_cache_delete.c"
+										RelativePath="src\tests\unit\file\file_manager\when_cache_delete.c"
 										>
 									</File>
 								</Filter>
@@ -983,11 +907,11 @@
 									Name="positive"
 									>
 									<File
-										RelativePath=".\when_open_file_with_create_flag.c"
+										RelativePath="src\tests\unit\file\file_manager\when_open_file_with_create_flag.c"
 										>
 									</File>
 									<File
-										RelativePath=".\when_open_more_than_allowed.c"
+										RelativePath="src\tests\unit\file\file_manager\when_open_more_than_allowed.c"
 										>
 									</File>
 								</Filter>
@@ -1003,7 +927,7 @@
 									Name="positive"
 									>
 									<File
-										RelativePath=".\when_estimate_file_count.c"
+										RelativePath="src\tests\unit\file\file_manager\when_estimate_file_count.c"
 										>
 									</File>
 								</Filter>
@@ -1015,7 +939,7 @@
 									Name="positive"
 									>
 									<File
-										RelativePath=".\when_close_recent_file.c"
+										RelativePath="src\tests\unit\file\file_manager\when_close_recent_file.c"
 										>
 									</File>
 								</Filter>
@@ -1035,7 +959,7 @@
 									Name="positive"
 									>
 									<File
-										RelativePath=".\when_open_more_than_max.c"
+										RelativePath="src\tests\unit\file\file_manager\when_open_more_than_max.c"
 										>
 									</File>
 								</Filter>
@@ -1051,11 +975,11 @@
 									Name="positive"
 									>
 									<File
-										RelativePath=".\when_reopen_closed_file.c"
+										RelativePath="src\tests\unit\file\file_manager\when_reopen_closed_file.c"
 										>
 									</File>
 									<File
-										RelativePath=".\when_reopen_opened_file.c"
+										RelativePath="src\tests\unit\file\file_manager\when_reopen_opened_file.c"
 										>
 									</File>
 								</Filter>
@@ -1071,7 +995,7 @@
 									Name="positive"
 									>
 									<File
-										RelativePath=".\when_write_file.c"
+										RelativePath="src\tests\unit\file\file_manager\when_write_file.c"
 										>
 									</File>
 								</Filter>
@@ -1184,11 +1108,7 @@
 					>
 				</File>
 				<File
-					RelativePath="src\common\set.c"
-					>
-				</File>
-				<File
-					RelativePath=".\snprintf.c"
+					RelativePath="src\common\snprintf.c"
 					>
 				</File>
 				<Filter

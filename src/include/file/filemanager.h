@@ -5,8 +5,8 @@
 #include <stdio.h>
 #include <io.h>
 #include <errno.h>
-#include "osfile.h"
 #include "file.h"
+#include "osfile.h"
 #include "trackmemmanager.h"
 
 #ifndef FILE_MANAGER_H
