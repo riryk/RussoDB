@@ -226,6 +226,10 @@
 				<Filter
 					Name="error"
 					>
+					<File
+						RelativePath=".\error.h"
+						>
+					</File>
 				</Filter>
 				<Filter
 					Name="memory"
@@ -495,6 +499,10 @@
 			<Filter
 				Name="error"
 				>
+				<File
+					RelativePath=".\errorlogger.c"
+					>
+				</File>
 			</Filter>
 			<Filter
 				Name="memory"
@@ -686,15 +694,15 @@
 										Name="positive"
 										>
 										<File
-											RelativePath=".\when_get_buffer_from_empty_free_list.c"
+											RelativePath="src\tests\unit\commands\relation\buffer\get_buffer_from_ring\positive\when_get_buffer_from_empty_free_list.c"
 											>
 										</File>
 										<File
-											RelativePath=".\when_get_buffer_from_ring.c"
+											RelativePath="src\tests\unit\commands\relation\buffer\get_buffer_from_ring\positive\when_get_buffer_from_ring.c"
 											>
 										</File>
 										<File
-											RelativePath=".\when_get_the_most_popular_buffers.c"
+											RelativePath="src\tests\unit\commands\relation\buffer\get_buffer_from_ring\positive\when_get_the_most_popular_buffers.c"
 											>
 										</File>
 									</Filter>
@@ -827,11 +835,11 @@
 									Name="positive"
 									>
 									<File
-										RelativePath="src\tests\unit\file\file_manager\when_cache_insert.c"
+										RelativePath="src\tests\unit\file\file_manager\cache_insert\positive\when_cache_insert.c"
 										>
 									</File>
 									<File
-										RelativePath="src\tests\unit\file\file_manager\when_cache_insert_multiple_times.c"
+										RelativePath="src\tests\unit\file\file_manager\cache_insert\positive\when_cache_insert_multiple_times.c"
 										>
 									</File>
 								</Filter>
@@ -851,7 +859,7 @@
 									Name="positive"
 									>
 									<File
-										RelativePath="src\tests\unit\file\file_manager\when_cache_realloc.c"
+										RelativePath="src\tests\unit\file\file_manager\cache_realloc\positive\when_cache_realloc.c"
 										>
 									</File>
 								</Filter>
@@ -867,15 +875,15 @@
 									Name="positive"
 									>
 									<File
-										RelativePath="src\tests\unit\file\file_manager\when_cache_get_all_free_items.c"
+										RelativePath="src\tests\unit\file\file_manager\cache_getfree\positive\when_cache_get_all_free_items.c"
 										>
 									</File>
 									<File
-										RelativePath="src\tests\unit\file\file_manager\when_cache_get_free.c"
+										RelativePath="src\tests\unit\file\file_manager\cache_getfree\positive\when_cache_get_free.c"
 										>
 									</File>
 									<File
-										RelativePath="src\tests\unit\file\file_manager\when_cache_get_free_several_times.c"
+										RelativePath="src\tests\unit\file\file_manager\cache_getfree\positive\when_cache_get_free_several_times.c"
 										>
 									</File>
 								</Filter>
@@ -891,7 +899,7 @@
 									Name="positive"
 									>
 									<File
-										RelativePath="src\tests\unit\file\file_manager\when_cache_delete.c"
+										RelativePath="src\tests\unit\file\file_manager\cache_delete\positive\when_cache_delete.c"
 										>
 									</File>
 								</Filter>
@@ -907,11 +915,11 @@
 									Name="positive"
 									>
 									<File
-										RelativePath="src\tests\unit\file\file_manager\when_open_file_with_create_flag.c"
+										RelativePath="src\tests\unit\file\file_manager\open_file\positive\when_open_file_with_create_flag.c"
 										>
 									</File>
 									<File
-										RelativePath="src\tests\unit\file\file_manager\when_open_more_than_allowed.c"
+										RelativePath="src\tests\unit\file\file_manager\open_file\positive\when_open_more_than_allowed.c"
 										>
 									</File>
 								</Filter>
@@ -927,7 +935,7 @@
 									Name="positive"
 									>
 									<File
-										RelativePath="src\tests\unit\file\file_manager\when_estimate_file_count.c"
+										RelativePath="src\tests\unit\file\file_manager\estimate_file_count\positive\when_estimate_file_count.c"
 										>
 									</File>
 								</Filter>
@@ -939,7 +947,7 @@
 									Name="positive"
 									>
 									<File
-										RelativePath="src\tests\unit\file\file_manager\when_close_recent_file.c"
+										RelativePath="src\tests\unit\file\file_manager\close_recent_file\positive\when_close_recent_file.c"
 										>
 									</File>
 								</Filter>
@@ -959,7 +967,7 @@
 									Name="positive"
 									>
 									<File
-										RelativePath="src\tests\unit\file\file_manager\when_open_more_than_max.c"
+										RelativePath="src\tests\unit\file\file_manager\open_file_to_cache\positive\when_open_more_than_max.c"
 										>
 									</File>
 								</Filter>
@@ -975,11 +983,11 @@
 									Name="positive"
 									>
 									<File
-										RelativePath="src\tests\unit\file\file_manager\when_reopen_closed_file.c"
+										RelativePath="src\tests\unit\file\file_manager\reopen_file\positive\when_reopen_closed_file.c"
 										>
 									</File>
 									<File
-										RelativePath="src\tests\unit\file\file_manager\when_reopen_opened_file.c"
+										RelativePath="src\tests\unit\file\file_manager\reopen_file\positive\when_reopen_opened_file.c"
 										>
 									</File>
 								</Filter>
@@ -995,7 +1003,7 @@
 									Name="positive"
 									>
 									<File
-										RelativePath="src\tests\unit\file\file_manager\when_write_file.c"
+										RelativePath="src\tests\unit\file\file_manager\write_file\positive\when_write_file.c"
 										>
 									</File>
 								</Filter>
@@ -1015,7 +1023,7 @@
 									Name="positive"
 									>
 									<File
-										RelativePath=".\when_open_rel.c"
+										RelativePath="src\tests\unit\file\rel_file_manager\open_rel\positive\when_open_rel.c"
 										>
 									</File>
 								</Filter>
@@ -1031,7 +1039,7 @@
 									Name="positive"
 									>
 									<File
-										RelativePath=".\when_open_rel_segm.c"
+										RelativePath="src\tests\unit\file\rel_file_manager\open_rel_segm\positive\when_open_rel_segm.c"
 										>
 									</File>
 								</Filter>
@@ -1047,11 +1055,11 @@
 									Name="positive"
 									>
 									<File
-										RelativePath=".\when_get_blocks_num.c"
+										RelativePath="src\tests\unit\file\rel_file_manager\get_blocks_num\positive\when_get_blocks_num.c"
 										>
 									</File>
 									<File
-										RelativePath=".\when_get_blocks_num_given_the_last_segm_is_filled.c"
+										RelativePath="src\tests\unit\file\rel_file_manager\get_blocks_num\positive\when_get_blocks_num_given_the_last_segm_is_filled.c"
 										>
 									</File>
 								</Filter>
@@ -1067,7 +1075,7 @@
 									Name="positive"
 									>
 									<File
-										RelativePath=".\when_find_block_segment.c"
+										RelativePath="src\tests\unit\file\rel_file_manager\find_block_segment\positive\when_find_block_segment.c"
 										>
 									</File>
 								</Filter>
@@ -1083,7 +1091,7 @@
 									Name="positive"
 									>
 									<File
-										RelativePath=".\when_write_block.c"
+										RelativePath="src\tests\unit\file\rel_file_manager\write_block\positive\when_write_block.c"
 										>
 									</File>
 								</Filter>

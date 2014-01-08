@@ -692,6 +692,434 @@ Singleton<TYPE, LOCK>::instance (void) {
 	           |  observer.Update()    |
 			    -----------------------
 
+    19. State pattern.
+
+	 --------------                                  ---------------
+    | Context      |--<>----------------------->    |  State        |
+    |--------------|                                |---------------|
+	| state        |                                | moveToNext()  |
+	| operation()  |                                | operation()   |
+	 --------------                                  ---------------
+	 |                                                     ^
+	 |     -------------------                             |
+	  --->| state.operation() |                            |
+	       -------------------                    --------- ---------
+                                                 |                   |  	  
+	                                             |                   |
+	                                   ------------------        ------------------
+	                                  | ConcreteStateA   |      |  ConcreteStateB  |
+	                                  |------------------|      |------------------|
+                                      | moveToNext()     |      | moveToNext()     |
+                                      | operation()      |      | operation()      |
+                                       ------------------        ------------------
+									  
+
+	20. Strategy.
+
+     --------------                      --------------
+    | Context      |----<>----------->  | Strategy     |									  
+    |--------------|                    |--------------|
+    | strategy     |	                | operation()  |
+	| operation()  | 					 --------------			   
+     --------------                          ^
+	                                         |
+                                             |
+                                   ---------- ----------------
+                                  |                           |
+                            -------------------       -------------------
+						   | ConcreteStrategyA |     | ConcreteStrategyB |
+						   |-------------------|	 |-------------------|				  
+						   |  operation()      |	 | operation()       |
+							-------------------		  -------------------		  
 	
+	21. Template methods.
+	
+	Define the skeleton of an algorithm in an operation, deferring somesteps to
+    subclasses. Template Method lets subclasses redefinecertain steps of an algorithm
+    without changing the algorithm'sstructure.
+	
+	 -----------------------
+	| Base Class            |
+	|-----------------------|
+	| TemplateMethod()      |---
+	| abstract Operation1() |   |
+	| abstract Operation2() |   |
+	|-----------------------|   | 
+	     ^                      |
+	     |                      V
+	     |       ------------------ 
+	     |      | call operation1  |
+         |      | call operation2  |
+         |		 ------------------   				
+	     |               ---------------------
+	     |              |  Derived class      |
+	      ------------- |-------------------- |
+	                    | Operation1()        |
+	                    | Operation2()        |
+						 ---------------------
+	
+    20. Give an example where you prefer abstract class over interface ?
+
+    1. In Java you can only extend one class but implement multiple interface. 
+	   So if you extend a class you lost your chance of extending another class.
+
+	2. Interface are used to represent adjective or behavior e.g. Runnable, Clonable, Serializable etc, 
+	   so if you use an abstract class to represent behavior 
+	   your class can not be Runnable and Clonable at same time 
+	   because you can not extend two class in Java 
+	   but if you use interface your class can have multiple behavior at same time.
+	   
+	3. On time critical application prefer abstract class is slightly faster than interface.
+
+    4. If there is a genuine common behavior across the inheritance hierarchy 
+	   which can be coded better at one place than abstract class is preferred choice. 
+	   Some time interface and abstract class can work together also 
+	   where defining function in interface and default functionality on abstract class.
     
-   
+	5. Got the following statement from an MSDN article. 
+	   It says that the abstract classes have an advantage over interfaces 
+	   because it is possible to alter an abstract class to add new members. 
+	   
+	   
+    
+	21. Design a Vending Machine which can accept different coins, deliver different products?
+	
+    22. Why is access to non-static variables not allowed from static methods in Java?
+	
+       You can not access non-static data from static context in Java 
+	   simply because non-static variables are associated with 
+	   a particular instance of object while Static is not associated with any instance. 
+	   You can also see my post why non static variable are not accessible in static context for more detailed discussion.
+
+    23. What is design patterns ? Have you used any design pattern in your code ?
+	
+       Design patterns are tried and tested way to solve particular 
+	   design issues by various programmers in the world. 
+	   Design patterns are extension of code reuse.
+    
+    24. What is the difference between Factory and Abstract Factory?
+	
+	   
+    25. When to use Strategy Design Pattern in Java?
+	
+       Strategy pattern in quite useful for implementing 
+	   set of related algorithms e.g. compression algorithms, 
+	   filtering strategies etc. 
+	   Strategy design pattern allows you to create Context classes, 
+	   which uses Strategy implementation classes for applying business rules. 
+	   This pattern follow open closed design principle and quite useful in Java. 
+	   One example of Strategy pattern from JDK itself is a Collections.sort() 
+	   method and Comparator interface, 
+	   which is a strategy interface and defines strategy for comparing objects. 
+	   Because of this pattern, we don't need to modify sort() method 
+	   (closed for modification) to compare any object, 
+	   at same time we can implement Comparator interface to define new comparing strategy (open for extension).
+
+    26. What is Observer design pattern in Java? When do you use Observer pattern in Java?
+	
+	27. Difference between Strategy and State design Pattern in Java?
+	
+       This is an interesting Java design pattern interview questions 
+	   as both Strategy and State pattern has same structure. 
+	   If you look at UML class diagram for both pattern 
+	   they look exactly same, but there intent is totally different. 
+	   State design pattern is used to define and mange state of object, 
+	   while Strategy pattern is used to define a set of interchangeable algorithm 
+	   and let's client to choose one of them. 
+	   So Strategy pattern is a client driven pattern while Object can manage there state itself.
+	   
+	28. What is decorator pattern in Java? Can you give an example of Decorator pattern?   
+	
+	   class Stream
+	   {
+          void ReadByte();	   
+	   }
+	   
+	   class FileStream : Stream
+	   {
+          void ReadByte();	   	   
+	   }
+	   
+	   class NetworkStream : Stream
+	   {
+	      void ReadByte();	   	   
+	   }
+	
+       class BufferStream : Stream
+	   {
+	      Stream inwardStream;
+
+          public BufferStream(Stream stream)
+          {
+		     inwardStream = stream;
+		  }		  
+		  
+		  override void ReadByte();	 // substitute ReadByte method  	   
+	   }
+	   
+	   class CryptoStream : Stream
+	   {
+	      Stream inwardStream;
+
+          public CryptoStream(Stream stream)
+          {
+		     inwardStream = stream;
+		  }		  
+		  
+		  override void ReadByte();	 // substitute ReadByte method  	   
+	   }
+	   
+	29. When to use Composite design Pattern in Java? Have you used previously in your project?
+	
+    This design pattern question is asked on Java interview not just 
+	to check familiarity with Composite pattern but also, 
+	whether candidate has real life experience or not. 
+	Composite pattern is also a core Java design pattern, 
+	which allows you to treat both whole and part object to treat in similar way. 
+	Client code, which deals with Composite or individual object doesn't differentiate on them, 
+	it is possible because Composite class also implement same interface as there individual part. 
+	One of the good example of Composite pattern from JDK is JPanel class, 
+	which is both Component and Container. 
+	
+    30. Other patterns application in .NET Framework.
+	
+	Abstract Factory : 
+	    System.Data.Common.DbProviderFactory. Every member function of this class is a factory method
+		
+	Builder : 
+	    The WCF channel construction infrastructure
+	
+    Factory Method : 
+	    System.Data.IDbConnection.BeginTransaction(). 
+		The type of transaction created depends on the underlying IDbConnection implementation.
+	
+	Adapter : 
+	    The ADO.NET providers, eg System.Data.SqlClient.SqlConnection,
+	
+    Composite : 
+	    many examples:
+        System.Windows.Forms.Control and its derived classes.
+        System.Web.UI.Control and its derived classes.
+        System.Xml.XmlNode and its derived classes.
+									  
+	Facade : 
+	    System.Xml.Serialization.XmlSerializer. 
+		XmlSerializer hides a complex task (that includes generating assemblies on the fly!) 
+		behind a very easy-to-use class.								  
+									
+	Chain of Responsibility : 
+	    System.Web.UI.Control.OnBubbleEvent() and System.Web.UI.Control.RaiseBubbleEvent().
+    
+    Command : 
+	    System.Windows.Input.ICommand (in WPF)
+    
+    Interpreter : 
+	    System.Linq.Expressions.Expression and related classes.
+
+    Iterator : 
+	    many examples :
+        System.Collections.IEnumerable.
+        System.Collections.Generic.IEnumerable<T>.
+        System.Data.IDataReader.
+		
+    Memento : 
+	    The .NET Serializable pattern is a variation on the Memento pattern.
+		
+    Observer : 
+	    The .NET event mechanism.
+		
+    Strategy : 
+	    Microsoft.Practices.EnterpriseLibrary.ExceptionHandling.ExceptionPolicy 
+		and related classes (ok it's not in the framework itself).
+		
+    Visitor : 
+	    System.Linq.Expressions.ExpressionVisitor (used internally by LINQ).
+
+		
+		
+	30. When to use Template method design Pattern in Java?
+	
+	Template pattern is another popular core Java design pattern interview question. 
+	I have seen it appear many times in real life project itself. 
+	Template pattern outlines an algorithm in form of template method 
+	and let subclass implement individual steps. 
+	Key point to mention, while answering this question is that template method should be final, 
+	so that subclass can not override and change steps of algorithm, 
+	but same time individual step should be abstract, so that child classes can implement them.
+
+	31. What is Factory pattern in Java? 
+	    What is advantage of using static factory method to create object?
+		
+	32. Difference between Decorator and Proxy pattern in Java?	
+	
+	Another tricky Java design pattern question and trick here is 
+	that both Decorator and Proxy implements interface 
+	of the object they decorate or encapsulate. 
+	As I said, many Java design pattern can have similar 
+	or exactly same structure but they differ in there intent. 
+	Decorator pattern is used to implement functionality on 
+	already created object, 
+	while Proxy pattern is used for controlling access to object. 
+	One more difference between Decorator and Proxy design pattern is that, 
+	Decorator doesn't create object, 
+	instead it get object in it's constructor, while Proxy actually creates objects.
+	
+	33. When to use Setter and Constructor Injection in Dependency Injection pattern?
+	
+	Construction injection drawbacks:
+	
+	1. No reconfiguration and re-injection
+	
+	So indeed, using constructor injection when no setters exist, 
+	you cannot reconfigure the constructed bean by injecting new dependencies into it.
+    If you want to “reconfigure” the bean, 
+	you’ll have to construct a new bean instance using 
+	the new dependencies and discard the other one.
+	
+	2.  
+	
+	While it’s not a recommended scenario, 
+	you could create a circular dependency using Spring. 
+	But not by using constructor-based injection. 
+	If you want to create a circular dependency, 
+	you’ll have to use setter-based injection.
+	
+	
+	34. When to use Adapter pattern in Java? Have you used it before in your project?
+	
+	Use Adapter pattern when you need to make two class work with incompatible interfaces. 
+	Adapter pattern can also be used to encapsulate third party code, 
+	so that your application only depends upon Adapter, 
+	which can adapt itself when third party code changes 
+	or you moved to a different third party library. 
+	By the way this Java design pattern question 
+	can also be asked by providing actual scenario.
+	
+	
+	35 Can you write code to implement producer consumer design pattern in Java?
+	
+	A producer/consumer queue is a common requirement in threading. Here’s how it works:
+    A queue is set up to describe work items — or data upon which work is performed.
+    When a task needs executing, it’s enqueued, allowing the caller to get on with other things.
+    One or more worker threads plug away in the background, picking off and executing queued items.
+
+	class ProducerConsumerQueue : IDisposable
+    {
+       EventWaitHandle _wh      = new AutoResetEvent (false);
+       Thread          _worker;
+	   
+       readonly object _locker  = new object();
+       Queue<string> _tasks     = new Queue<string>();
+	   
+	   public ProducerConsumerQueue()
+       {
+           _worker = new Thread(Work);
+           _worker.Start();
+       }
+	   
+	   public void EnqueueTask (string task)
+       {
+            lock (_locker) 
+			{
+			   _tasks.Enqueue (task);
+			}
+			
+            _wh.Set();
+       }
+	   
+	   void Work()
+       {
+           while (true)
+           {
+               string task = null;
+			   
+               lock (_locker)
+			   {
+                   if (_tasks.Count > 0)
+                   {
+                       task = _tasks.Dequeue();
+                       if (task == null) 
+					       return;
+                   }
+			   }
+				   
+               if (task != null)
+               {
+                   Console.WriteLine ("Performing task: " + task);
+                   Thread.Sleep (1000);  // simulate work...
+               }
+               else
+                   _wh.WaitOne();         // No more tasks - wait for a signal
+           }
+        }
+		
+		public void Dispose()
+        {
+            EnqueueTask (null);     // Signal the consumer to exit.
+            _worker.Join();         // Wait for the consumer's thread to finish.
+            _wh.Close();            // Release any OS resources.
+        }
+    }
+	
+	
+ AutoReset Event
+ 
+ It is applied to send messages among threads.
+ From start is in unsignalled state:  new AutoResetEvent(false)
+ Run several threads: 
+ In each thread start waiting AutoResentEvent.WaitOne().
+ All threads are waiting for event.
+ The main thread runs AutoResetEvent.Set()
+ It wakes up only one thread and becomes unsignalled again.
+ 
+ 
+    16. What is Open closed design principle in Java? 
+	
+	
+	Open closed design principle is one of the SOLID principle defined by Robert C. Martin, 
+	popularly known as Uncle Bob. 
+	This principle advices that a code should be open for extension but close for modification. 
+	At first this may look conflicting but once you explore power of polymorphism, 
+	you will start finding patterns which can provide stability and flexibility of this principle. 
+	One of the key example of this is State and Strategy design pattern, 
+	where Context class is closed for modification 
+	and new functionality is provided by writing new code by implementing new state of strategy. 
+	See this article to know more about Open closed principle.
+    
+	
+	In Simple language Open closed design principles says 
+	that new functionality should be added by introducing new classes, 
+	methods or fields instead of modifying already tried and tested code. 
+	
+	One of the way to achieve this is Inheritance 
+	where class is extended to introduce 
+	new functionality on top of inherited basic features.
+
+    Benefit or Open Closed Design Principle:
+	
+    1) Application will be more robust because we are not changing already tested class.
+    2) Flexible because we can easily accommodate new requirements.
+    3) Easy to test and less error prone.
+
+    Basic principle of making your code extensible 
+	and following open closed principle is providing object to class at run time 
+	and making use of polymorphism to invoke extended functionality.
+	
+    If functionality is hard Coded than it wouldn’t be extensible 
+	but if you write interface and provide implementation 
+	of that interface at run time you make it extensible.
+
+	
+	
+	
+	http://java67.blogspot.com/2012/09/top-10-java-design-pattern-interview-question-answer.html
+
+
+
+    
+ 
+ 
+ 
+ 
+	 
+	
