@@ -5,18 +5,58 @@
 jmp_buf*  exceptionStack = NULL;
 int	      stackDepth     = -1;
 
+/* checks if errorLevel is logically more 
+ * than min error level or not. 
+ *
+ * Generally this is the right thing for testing
+ * whether a message should go to the postmaster log.
+ */
+Bool compareErrorLevels(int errorLevel, int minErrorLevel)
+{
+	Bool isLog         = errorLevel == LOG_LOG;
+	Bool isCommErr     = errorLevel == LOG_COMMUNICATION_ERROR;
+    Bool moreThanFatal = errorLevel >= LOG_FATAL;
+
+	Bool isMinLessThanError = minErrorLevel <= LOG_ERROR;
+    Bool isMinEqualToLog    = minErrorLevel == LOG_LOG;
+
+	/* LOG messages and COMMUNICATION errors 
+	 * are always send to the server unless min error
+	 * level is more than ERROR. 
+	 */
+    if (isLog || isCommErr)
+	{
+        if (isMinLessThanError)
+			return True;
+	}
+	else if (isMinEqualToLog)
+	{
+        if (moreThanFatal)
+			return True;
+	}
+	else if (errorLevel >= minErrorLevel)
+		return True;
+
+	return False;
+}
 
 Bool beginerror(
+    void*         self,
     int           level, 
     char*         filename, 
     int           linenum,
     char*         funcname, 
     char*         domain)
 {
-	int         i;
+    IErrorLogger             _   = (IErrorLogger)self;
+    IErrorLoggerConfManager  em  = _->errLogConfgMan;    
 
-	Bool		writeToServer;
-	Bool		writeToClient = False;
+	int           i;
+
+	Bool		  writeToServer;
+	Bool		  writeToClient = False;
+
+	int           minLogLevel   = em->getMinLogLevel();
 
 	if (level >= LOG_ERROR)
 	{

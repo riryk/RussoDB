@@ -230,6 +230,14 @@
 						RelativePath=".\error.h"
 						>
 					</File>
+					<File
+						RelativePath=".\errorlogger.h"
+						>
+					</File>
+					<File
+						RelativePath=".\ierrorlogger.h"
+						>
+					</File>
 				</Filter>
 				<Filter
 					Name="memory"
@@ -303,6 +311,22 @@
 						</File>
 						<File
 							RelativePath="src\include\common\hashtable\ihashtablemanager.h"
+							>
+						</File>
+					</Filter>
+					<Filter
+						Name="common"
+						>
+						<File
+							RelativePath=".\confmanager.h"
+							>
+						</File>
+						<File
+							RelativePath=".\iconfmanager.h"
+							>
+						</File>
+						<File
+							RelativePath=".\ierrorconfmanager.h"
 							>
 						</File>
 					</Filter>
@@ -1136,6 +1160,18 @@
 					</File>
 					<File
 						RelativePath="src\common\hashtable\hashtablemanager.c"
+						>
+					</File>
+				</Filter>
+				<Filter
+					Name="config"
+					>
+					<File
+						RelativePath=".\confmanager.c"
+						>
+					</File>
+					<File
+						RelativePath=".\errorconfmanager.c"
 						>
 					</File>
 				</Filter>

@@ -14,7 +14,7 @@ typedef struct SIRelationManager
 	IHashtableManager hashtableManager;
 	IRelRowManager    relRowManager;
 	IRelFileManager   relFileManager;
-    void*             bufferManager;
+    IBufferManager    bufferManager;
     IPageManager      pageManager;
 
 	void (*createRelation)(

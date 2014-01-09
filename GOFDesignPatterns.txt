@@ -1,5 +1,12 @@
 
 
+
+The term was introduced by Robert C. Martin in an article by the same name 
+as part of his Principles of Object Oriented Design,
+made popular by his book Agile Software Development, Principles, Patterns, and Practices.
+
+
+
 Site improvements
 Alterations to the land that enhance the utility of any structure placed on the site.
 Example: Common site improvements include:
@@ -1109,10 +1116,277 @@ Singleton<TYPE, LOCK>::instance (void) {
 	but if you write interface and provide implementation 
 	of that interface at run time you make it extensible.
 
+	In object-oriented programming, the open/closed principle states 
+	"software entities (classes, modules, functions, etc.) should be open for extension, 
+	but closed for modification";
+	
+	[1] that is, such an entity can allow its behaviour to be modified without altering its source code. 
+	This is especially valuable in a production environment, 
+	where changes to source code may necessitate code reviews, unit tests, and other such procedures 
+	to qualify it for use in a product: 
+	code obeying the principle doesn't change when it is extended, and therefore needs no such effort.
+	
+	The name open/closed principle has been used in two ways. 
+	Both ways use inheritance to resolve the apparent dilemma, 
+	but the goals, techniques, and results are different.
+	
+	The idea was that once completed, the implementation of a class 
+	could only be modified to correct errors; 
+	new or changed features would require that a different class be created. 
+	That class could reuse coding from the original class through inheritance. 
+	The derived subclass might or might not have the same interface as the original class.
+	
+    Meyer's definition advocates implementation inheritance. 
+	Implementation can be reused through inheritance 
+	but interface specifications need not be. 
+	The existing implementation is closed to modifications, 
+	and new implementations need not implement the existing interface.
+	
+	During the 1990s, the open/closed principle became popularly redefined 
+	to refer to the use of abstracted interfaces, 
+	where the implementations can be changed and multiple implementations 
+	could be created and polymorphically substituted for each other.
+	
+    In contrast to Meyer's usage, this definition advocates inheritance from abstract base classes. 
+	Interface specifications can be reused through inheritance but implementation need not be. 
+	The existing interface is closed to modifications and new implementations must, 
+	at a minimum, implement that interface.
+	
+
+   36. 	What is Builder design pattern in Java? When do you use Builder pattern?
+  
+    Builder pattern in Java is another creational design pattern in Java 
+	and often asked in Java interviews because of its specific use 
+	when you need to build an object which requires multiple properties some optional and some mandatory. 
+	See When to use Builder pattern in Java for more details.
+	
+	As I said earlier Builder pattern is a creational design pattern it means 
+	its solves problem related to object creation. 
+	Constructors in Java are used to create object 
+	and can take parameters required to create object. 
+	
+	Problem starts when an Object can be created with lot of parameters, 
+	some of them may be mandatory and others may be optional. 
+	Consider a class which is used to create Cake, 
+	now you need number of item like egg, milk, flour to create cake. 
+	many of them are mandatory and some  of them are optional like cherry, fruits etc. 
+	If we are going to have overloaded constructor for different kind of cake 
+	then there will be many constructor and even worst they will accept many parameter.
+
+	Problems:
+    1) too many constructors to maintain.
+    2) error prone because many fields has same type e.g. sugar 
+	   and and butter are in cups so instead of 2 cup sugar 
+	   if you pass 2 cup butter, your compiler will not complain 
+	   but will get a buttery cake with almost no sugar with high cost of wasting butter.
+    
+	You can partially solve this problem by creating Cake 
+	and then adding ingredients but that will impose 
+	another problem of leaving Object on inconsistent state during building, 
+	ideally cake should not be available until its created. 
+	
+	Both of these problem can be solved by using Builder design pattern in Java. 
+	Builder design pattern not only improves readability but also reduces 
+	chance of error by adding ingredients explicitly 
+	and making object available once fully constructed. 
+
+	Examples in .NET: 
+	
+
+string connectionString = new SqlConnectionStringBuilder
+{
+    DataSource = "localhost",
+    InitialCatalog = "MyDatabase",
+    IntegratedSecurity = true,
+    Pooling = false
+}.ConnectionString;
+
+
+   
+   37. Can you give an example of  SOLID design principles in .NET?
+   
+   1. DRY (Don't repeat yourself)
+   
+      Our first object oriented design principle is DRY, 
+	  as name suggest DRY (don't repeat yourself) 
+	  means don't write duplicate code, 
+	  instead use Abstraction to abstract common things in one place. 
+	  If you have block of code in more than two place consider making it a separate method, 
+	  or if you use a hard-coded value more than one time make them public final constant.
+   
+   2. Encapsulate What Changes
+   
+      Only one thing is constant in software field and that is "Change", 
+	  So encapsulate the code you expect or suspect to be changed in future. 
+	  Benefit of this OOPS Design principle is that 
+	  Its easy to test and maintain proper encapsulated code. 
+	  If you are coding in Java then follow principle of making variable 
+	  and methods private by default and increasing access step by step e.g. 
+	  from private to protected and not public.
+   
+   3. Open Closed Design Principle.
+      
+	  Classes, methods or functions should be Open for extension (new functionality) 
+	  and Closed for modification. This is another beautiful SOLID design principle, 
+	  which prevents some-one from changing already tried and tested code. 
+	  Ideally if you are adding new functionality only than your code 
+	  should be tested and that's the goal of Open Closed Design principle. 
+	  By the way, Open Closed principle is "O" from SOLID acronym.
+      
+	  
+   4. Single Responsibility Principle (SRP)
+   
+      Single Responsibility Principle is another SOLID design principle, 
+	  and represent  "S" on SOLID acronym. 
+	  As per SRP, there should not be more than one reason for a class to change, 
+	  or a class should always handle single functionality. 
+	  If you put more than one functionality in one Class in Java  
+	  it introduce coupling between two functionality and even 
+	  if you change one functionality there is chance you broke coupled functionality,  
+	  which require another round of testing to avoid any surprise on production environment.
+
+    5. Dependency Injection or Inversion principle.
+	
+	  Don't ask for dependency it will be provided to you by framework. 
+	  This has been very well implemented in Spring framework, 
+	  beauty of this design principle is 
+	  that any class which is injected by DI framework 
+	  is easy to test with mock object 
+	  and easier to maintain because object creation code is centralized in framework 
+	  and client code is not littered with that.
+	  There are multiple ways to  implemented Dependency injection 
+	  like using  byte code instrumentation which some AOP (Aspect Oriented programming) framework 
+	  like AspectJ does or by using proxies just like used in Spring. 
+	  See this example of IOC and DI design pattern to learn more about this SOLID design principle. It represent "D" on SOLID acronym.
+
+      As name suggest Inversion of control pattern 
+	  Inverts responsibility of managing life cycle of object e.g. creating object, 
+	  setting there dependency etc from application to framework, 
+	  which makes writing Java application even more easy.
+	  
+	  Programmer often confused between IOC and DI, 
+	  well both words used interchangeably in Java world 
+	  but Inversion of Control is more general concept 
+	  and Dependency Injection is a concrete design pattern. 
+
+      Dependency Injection is a design pattern on which dependency of object 
+	  (in this case AuditDAO is a dependency for AuditServiceImpl Object) 
+	  is injected by framework rather than created by Object itself. 
+	  Dependency Injection reduces coupling between 
+	  multiple object as its dynamically injected by framework.
+      
+      In Constructor Injection, dependency of Object is injected using constructor, 
+	  while in Setter Injection, Dependency is provided by setter method. 
+	  Both has there pros and cons. Constructor DI allows object to be created 
+	  in complete state and follows principle of fully functional object 
+	  while Setter DI allows object to be created without its dependency. 
+	  which may result in incomplete object if dependency is not available.
+
+      1) Reduce coupling
+      both constructor and setter dependency injection reduce coupling. 
+	  like in above example coupling between AuditService and AuditDAO is reduced by using Dependency Injection.
+
+      2) Improves testability
+      Dependency Injection allows to replace actual object with mock object 
+	  which improves testability by writing simple JUnit tests which uses mock object.
+
+	  3) Flexibility
+      This is another advantage which comes as side benefit of reduced coupling, 
+	  because of DI you can replace non performance implementation with better one later.
+	  
+	  Most readers will be familiar with Bob Martin's famous dependency inversion principle, which states -
+	  
+      High-level modules should not depend on low-level modules. 
+	  Both should depend on abstractions
+      Abstractions should not depend upon details. 
+	  Details should depend upon abstractions.
+	  
+	  What he's saying here is that you should avoid a scenario 
+	  where a base class takes a dependency to meet the need of a descendant. 
+	  Let's look at the case of a Switch and its descendant the TimedSwitch. 
+	  The TimedSwitch is a Switch that resets itself after a certain amount of time. 
+	  We have the TimedObject class already so 
+	  it would make sense for TimedSwitch to derive from it...
+	  however TimedSwitch already derives from Switch. 
+	  So in order to meet the needs of the TimedSwitch, 
+	  Switch will inherit from TimedObject even though 
+	  it doesn't need that functionality itself.
+	  
+	  
+	  
+   6. Favor Composition over Inheritance.
+   
+      Always favor composition over inheritance ,if possible. 
+	  Some of you may argue this, but I found that Composition is lot more flexible than Inheritance. 
+	  Composition allows to change behavior of a class at runtime 
+	  by setting property during runtime and by using Interfaces 
+	  to compose a class we use polymorphism 
+	  which provides flexibility of to replace with better implementation any time. 
+	  Even Effective Java advise to favor composition over inheritance.
+
+   7. Liskov Substitution Principle (LSP).
+      
+	  According to Liskov Substitution Principle, 
+	  Subtypes must be substitutable for super type 
+	  i.e. methods or functions which uses super class type 
+	  must be able to work with object of sub class without any issue". 
+	  
+	  LSP is closely related to Single responsibility principle and Interface Segregation Principle. 
+	  If a class has more functionality than subclass might not support some of the functionality ,
+	  and does violated LSP. 
+	  
+	  In order to follow LSP SOLID design principle, 
+	  derived class or sub class must enhance functionality, 
+	  but not reduce them. LSP represent  "L" on SOLID acronym.
+
+      Motivation
+
+      All the time we design a program module and we create some class hierarchies. 
+	  Then we extend some classes creating some derived classes.
+      We must make sure that the new derived classes just extend 
+	  without replacing the functionality of old classes. 
+	  Otherwise the new classes can produce undesired effects 
+	  when they are used in existing program modules.
+	  
+	  A derived class should only extend and supplement the base's class functionality,
+	  not make it narrower or change it. So that the derived class can be put in place of 
+	  the base class in a client's code and it will work.
+	  
+	  So is we have written test for some functionality which depends on the base class.
+	  Now we create a derived class and override some methods which affects and changes other 
+	  base functionality. In this case the test will fail.
+	  
+	  The Switch (abstraction) is dependent on the details of TimedSwitch. 
+	  To fix this violation of the DIP, we have TimedSwitch 
+	  implement ITimedObject and delegate to a contained 
+	  TimedObject class (prefer composition over inheritance).
+	  
+	  
+	  
+	  
+
+
+
+
+
+	  
+	  
+      
+	  
+
+
+     
+    
+
+
+
+
+
+   
 	
 	
 	
-	http://java67.blogspot.com/2012/09/top-10-java-design-pattern-interview-question-answer.html
+	
 
 
 

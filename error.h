@@ -1,10 +1,32 @@
 
 
-#define LOG_ERROR		20		/* user error - abort transaction; 
-                                 * return to known state */
+/* Error level codes */
+#define LOG_DEBUG5		            10			
+#define LOG_DEBUG4		            11
+#define LOG_DEBUG3		            12
+#define LOG_DEBUG2		            13
+#define LOG_DEBUG1		            14			
 
-#define LOG_FATAL		21		/* fatal error - abort process */
-#define LOG_PANIC		22		/* take down the other backends with me */
+#define LOG_LOG			            15	    /* Server messages. Send only to server */
+
+
+#define LOG_COMMUNICATION_ERROR	    16	    /* Client communication problem. 
+                                             * Simply log it to the server. */
+
+#define LOG_INFO		            17	    /* Messages that are sent to client. */
+
+#define LOG_NOTICE		            18	    /* Helpful messages to users about query
+								             * operation; sent to client and server log by
+								             * default. */
+
+#define LOG_WARNING		            19	    /* Warnings.  NOTICE is for expected message
+								             * WARNING is for unexpected messages. */
+
+#define LOG_ERROR		            20		/* user error - abort transaction; 
+                                             * return to known state */
+
+#define LOG_FATAL		            21		/* fatal error - abort process */
+#define LOG_PANIC		            22		/* take down the other backends with me */
 
 
 /* The structure contains complete information 
