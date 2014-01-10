@@ -765,6 +765,45 @@ Singleton<TYPE, LOCK>::instance (void) {
 	                    | Operation2()        |
 						 ---------------------
 	
+	22. Visitor.
+	
+	Represent an operation to be performed on the elements of an objectstructure.
+    Visitor lets you define a new operation without changing theclasses of the elements
+    on which it operates.
+	
+	We have a tree and a lot of nodes and we want to add a lot of new methods
+	which is too complicated. So we want to separate this code from the nodes.
+	             ----------------
+	            |   BaseNode     |
+				} ---------------|
+				| TypeCheck()    |
+				| GenerateCode() |
+	            | PrettyPrint()  |
+				 ----------------
+	                    ^
+						|
+						|
+			 /----------- -------------\ 			
+		    V				            V
+	 ----------------            ------------------   
+	| VariableRefNode|          | AssignmentNode   |   
+	} ---------------|          |------------------|
+	| TypeCheck()    |          |
+	| GenerateCode() |
+	| PrettyPrint()  |
+     ----------------					
+
+       We can have both by packaging related operations from each class in aseparate
+    object, called a visitor, and passing it to elements of the abstract syntax tree
+    as it's traversed. 
+	
+	   When an element"accepts" the visitor, it sends a request to
+    the visitor that encodes the element's class. It also includes the element as an
+    argument. The visitor will then execute the operation for that element—theoperation
+    that used to be in the class of the element.	 
+	
+	
+	
     20. Give an example where you prefer abstract class over interface ?
 
     1. In Java you can only extend one class but implement multiple interface. 
@@ -1361,39 +1400,350 @@ string connectionString = new SqlConnectionStringBuilder
 	  implement ITimedObject and delegate to a contained 
 	  TimedObject class (prefer composition over inheritance).
 	  
+	public class Rectangle
+    {
+        protected int _width;
+        protected int _height;
+        public int Width
+        {
+            get { return _width; }
+        }
+        public int Height
+        {
+            get { return _height; }
+        }
+
+        public virtual void SetWidth(int width)
+        {
+            _width = width;
+        }
+        public virtual void SetHeight(int height)
+        {
+            _height = height;
+        }
+        public int getArea()
+        {
+            return _width * _height;
+        }
+    }
+
+    public class Square : Rectangle 
+    {
+        public override void SetWidth(int width)
+        {
+            _width = width;
+            _height = width;
+        }
+
+        public override void SetHeight(int height)
+        {
+            _height = height;
+            _width = height;
+        }
+    }  
 	  
 	  
+            var square = new Square();
+            square.SetHeight(10);
+            square.SetWidth(5);
+            var area1 = square.getArea(); // Should be 5 * 5
+
+            var rectangle = (Rectangle)square;
+            rectangle.SetHeight(10);
+            rectangle.SetWidth(5);
+            var area12 = square.getArea(); // Should be 10 * 5
+
+            // Square is a rectangle. So when we convert Square type
+            // to Rectangle type it should behave like a rectangle
+    
+	
+	8. Interface Segregation principle (ISP).
+				
+	Interface Segregation Principle stats that, 
+	a client should not implement an interface, if it doesn't use that. 
+	This happens mostly when one interface contains more than one functionality, 
+	and client only need one functionality and not other.
+	Interface design is tricky job because once you release your interface 
+	you can not change it without breaking all implementation. 
+	Another benefit of this design principle in Java is, 
+	interface has disadvantage to implement all method 
+	before any class can use it so having single functionality means less method to implement.
+
+    The interface-segregation principle (ISP) states 
+	that no client should be forced to depend on methods it does not use.[1] 
+	ISP splits interfaces which are very large into smaller 
+	and more specific ones so that clients will only have to know about the methods 
+	that are of interest to them. 
+	Such shrunken interfaces are also called role interfaces.[2] 
+	ISP is intended to keep a system decoupled and thus easier to refactor, change, and redeploy. 	
+			
+    Within object-oriented design, interfaces provide layers of abstraction 
+	that facilitate conceptual explanation of the code 
+	and creates a barrier preventing dependencies.
+	
+    According to many software experts who have signed the Manifesto for Software Craftsmanship, 
+	writing well crafted and explanatory software is almost as important as writing working software.[4] 
+	Using interfaces to further describe the intent of the software is often a good idea.
+    It is also true that a system may become so coupled with a lot of levels 
+	so that it is no longer possible to make a change in one place 
+	without having a ripple effect throughout the design, 
+	having to make subsequent changes in many places.[1] 
+	Using an interface or an abstract class can prevent this side effect.
+			
+			
+    9. Programming for Interface not implementation.
 	  
+	Always program for interface and not for implementation this will lead to flexible code 
+	which can work with any new implementation of interface. 
+	So use interface type on variables, 
+	return types of method or argument type of methods in Java. 
+	This has been advised by many Java programmer including in Effective Java and head first design pattern book.
 
+    
+	10. Delegation principle.
+	
+	Don't do all stuff  by yourself,  delegate it to respective class. 
+	Classical example of delegation design principle is equals() and hashCode() method in Java. 
+	In order to compare two object for equality 
+	we ask class itself to do comparison instead of Client class doing that check. 
+	Benefit of this design principle is no duplication of code and pretty easy to modify behavior.
 
-
-
-
+    11. What is difference between Abstraction and Encapsulation in Java?
+	
+	Abstraction represent taking out the behavior from How exactly its implemented, 
+	one example of abstraction in Java is interface 
+	while Encapsulation means hiding details of implementation 
+	from outside world so that when things change no body gets affected
+    
+	
+    38. What does polymorphism mean?
+	
+	
+	In programming languages and type theory, polymorphism is the provision 
+	of a single interface to entities of different types.
 	  
+    | one common interface | is implemented by many implementations.
 	  
-      
-	  
-
-
+    So polymorphism is the ability (in programming) to present 
+	the same interface for differing underlying forms (data types).
+	
+	For example, integers and floats are implicitly polymorphic 
+	since you can add, subtract, multiply and so on, 
+	irrespective of the fact that the types are different. 
+	They're rarely considered as objects in the usual term.
      
-    
-
-
-
-
-
+    But, in that same way, a class like BigDecimal or Rational or Imaginary 
+	can also provide those operations, even though they operate on different data types.  
    
-	
-	
-	
-	
-
-
-
+    The classic example is the Shape class and all the classes 
+	that can inherit from it (square, circle, dodecahedron, irregular polygon, splat and so on)
     
+	With polymorphism, each of these classes will have different underlying data. 
+	A point shape needs only two co-ordinates 
+	(assuming it's in a two-dimensional space of course). 
+	A circle needs a center and radius. 
+	A square or rectangle needs two co-ordinates for the top left 
+	and bottom right corners (and possibly) a rotation. 
+	An irregular polygon needs a series of lines.
+    
+    And, by making the class responsible for its code as well as its data, 
+	you can achieve polymorphism. 
+	In this example, every class would have its own Draw() function 
+	and the client code could simply do:
+
+    A polymorphic type is a type whose operations can also be applied 
+	to values of some other type, or types.[2] 
+	There are several fundamentally different kinds of polymorphism:    
+	
+	1. In programming languages, ad hoc polymorphism[1] is a kind of polymorphism 
+	   in which polymorphic functions can be applied to arguments of different types, 
+	   because a polymorphic function can denote a number of distinct 
+	   and potentially heterogeneous implementations 
+	   depending on the type of argument(s) to which it is applied. 
+	   It is also known as function overloading or operator overloading. 
+	   
+	2. If the code is written without mention of any specific type 
+	   and thus can be used transparently with any number of new types, 
+	   it is called parametric polymorphism. 
+	   In the object-oriented programming community, 
+	   this is often known as generics or generic programming. 
+	   In the functional programming community, this is often simply called polymorphism.
+	
+	3. Subtyping (or inclusion polymorphism) is a concept 
+	   wherein a name may denote instances of many different classes 
+	   as long as they are related by some common superclass.[3] 
+	   In object-oriented programming, this is often referred to simply as polymorphism.
+	
+    
+	Chris Strachey[4] chose the term ad hoc polymorphism to refer 
+	to polymorphic functions which can be applied to arguments of different types, 
+	but which behave differently depending 
+	on the type of the argument to which they are applied 
+	(also known as function overloading or operator overloading). 
+	
+	program Adhoc;
  
+    function Add( x, y : Integer ) : Integer;
+    begin
+        Add := x + y
+    end;
  
+    function Add( s, t : String ) : String;
+    begin
+        Add := Concat( s, t )
+    end;
  
+    begin
+        Writeln(Add(1, 2));
+        Writeln(Add('Hello, ', 'World!'));
+    end.
+	
+	Parametric polymorphism is also available in several object-oriented languages, 
+	where it often goes under the name "generics" (for example, Java) or "templates" (C++ and D):
+	
+    Some languages employ the idea of subtyping to restrict the range of types 
+	that can be used in a particular case of polymorphism. 
+	
+	In these languages, subtype polymorphism 
+	(sometimes referred to as inclusion polymorphism or dynamic polymorphism[citation needed]) 
+	allows a function to be written to take an object of a certain type T, 
+	but also work correctly if passed an object that belongs to a type S 
+	that is a subtype of T (according to the Liskov substitution principle). 
+	This type relation is sometimes written S <: T. Conversely, T is said to be a supertype of S—written T :> S.    
+    
+	
+abstract class Animal {
+    abstract String talk();
+}
  
-	 
+class Cat extends Animal {
+    String talk() { return "Meow!"; }
+}
+ 
+class Dog extends Animal {
+    String talk() { return "Woof!"; }
+}
+ 
+public class MyClass {
+ 
+    public static void write(Animal a) {
+        System.out.println(a.talk());
+    }
+ 
+    public static void main() {
+        write(new Cat());
+        write(new Dog());
+    }
+ 
+}
+    
+	39. What is inheritance mean?
+	
+  As the name inheritance suggests an object is able 
+  to inherit characteristics from another object. 
+  In more concrete terms, an object is able to pass on its state 
+  and behaviors to its children. 
+  For inheritance to work the objects need to have characteristics in common with each other.
+ 
+    40. How does inheritance differ from subtyping?
+
+  We say that A is a subtype of B if all A-typed values 
+  can be used in every context 
+  where B-typed values are expected. 
+  Or, to put another way, A-typed values can "masquerade" as B-typed values.
+ 
+  If such masquerading poses no issues with type checking, i.e., 
+  plugging in A-typed values where B-typed values are needed 
+  continues to type check, we call it "structural subtyping". 
+  
+  If it cause no issues with behaviour, i.e., 
+  such plugging does not alter the behaviour expected, 
+  then we call it "behavioural subtyping". 
+  (The "behaviour expected" will have to be formalised separately and many notions of behaviour are possible.)
+  
+  
+  Structural subtyping does not ensure behavioural subtyping 
+  because the structure of a type might match for accidental reasons. 
+  However, defining the behaviour expected is not easy. 
+  So, many programming languages use an intermediate point, 
+  where the user has to declare which type is a subtype of which. 
+  
+  This is referred to as "nominal subtyping". 
+  See the question on Implicit vs explicit subtyping for a discussion of this issue. 
+  The idea is that the programmer has to ensure behavioural subtyping 
+  for all declared subtypes using his own ingenuity. 
+  
+  The language cannot offer any help. 
+  However, all declared subtypes must be at least structural subtypes. 
+  Otherwise, the program would fail to type check. 
+  The language can help ensure this. 
+  (Some programming languages don't have good enough t
+   ype systems to ensure this at compile-time. 
+   If so, the type failure would be detected at run-time, 
+   or perhaps wrong results might be produced. 
+   Such type holes are obviously undesirable.)
+   
+
+  There are important differences between subtypes and subclasses in supporting reuse. 
+  Subclasses allow one to reuse the code inside classes 
+  - both instance variable declarations and method definitions. 
+  Thus they are useful in supporting code reuse inside a class.   
+  
+    41. Encapsulation.
+	
+  In programming languages, encapsulation is used to refer to one of 
+  two related but distinct notions, and sometimes to the combination[1][2] thereof:
+  
+     A language mechanism for restricting access to some of the object's components.[3][4]
+     A language construct that facilitates the bundling of data with 
+	 the methods (or other functions) operating on that data.[5][6]
+  
+  Under this definition, encapsulation means that 
+  the internal representation of an object is generally hidden 
+  from view outside of the object's definition. 
+  
+  Typically, only the object's own methods can directly inspect or manipulate its fields. 
+  Some languages like Smalltalk and Ruby only allow access via object methods, 
+  but most others (e.g. C++, C# or Java) offer the programmer 
+  a degree of control over what is hidden, typically via keywords like public and private
+ 
+  In general, encapsulation is one of the four fundamentals of OOP (object-oriented programming). 
+  Encapsulation is used to hide the values or state of a structured data object inside a class, 
+  preventing unauthorized parties direct access to them. 
+  Publicly accessible methods are generally provided in the class 
+  (so-called getters and setters) to access the values, 
+  and other client classes call these methods to retrieve and modify the values within the object
+  
+    
+    42.  ACID versus BASE for database transactions.
+	
+Database developers all know the ACID acronym. It says that database transactions should be:
+
+Atomic: Everything in a transaction succeeds or the entire transaction is rolled back.
+Consistent: A transaction cannot leave the database in an inconsistent state.
+Isolated: Transactions cannot interfere with each other.
+Durable: Completed transactions persist, even when servers restart etc.
+
+Amazon might instead use cached data. 
+Users would not see not the inventory count at this second, 
+but what it was say an hour ago when the last snapshot was taken. 
+Also, Amazon might violate the “I” in ACID by tolerating a small probability 
+that simultaneous transactions could interfere with each other. 
+
+For example, two customers might both believe 
+that they just purchased the last copy of a certain book. 
+The company might risk having to apologize to one of the two customers 
+(and maybe compensate them with a gift card) 
+rather than slowing down their site and irritating myriad other customers.
+	
+	An alternative to ACID is BASE:
+
+Basic Availability
+Soft-state
+Eventual consistency
+
+
+    43. How would you (have you?) implement Distributed Session Management?
+	
+	
 	

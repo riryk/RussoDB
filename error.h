@@ -1,5 +1,13 @@
 
 
+typedef enum
+{
+	OutputNone,					/* output is discarded */
+	OutputDebug,				/* output is sent to debugging output */
+	OutputRemote				/* results sent to frontend process */
+} OutputDestination;
+
+
 /* Error level codes */
 #define LOG_DEBUG5		            10			
 #define LOG_DEBUG4		            11

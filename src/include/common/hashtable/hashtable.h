@@ -81,9 +81,8 @@ typedef struct SHashtable
     int                     maxSegmsAmount;
 	/* This is a current number of allocated segments */
 	uint                    nSegs;
-
 	uint                    hashListSize;
-    struct HashtableHeader* header;
+    //struct HashtableHeader* header;
 	HashItem*               startSegm;		
 	uint                    partNum;
     hashFunc                hashFunc;	    /* hash function */
@@ -103,6 +102,7 @@ typedef struct SHashtable
 	Bool                    isWithoutExtention;
 } SHashtable, *Hashtable;
 
+/*
 struct HashtableHeader
 {
 	long             ItemsNumber;
@@ -118,6 +118,7 @@ struct HashtableHeader
 	int              DataItemSize;
 	int              ItemsNumToAllocAtOnce;
 };
+*/
 
 #define HASH_FUNC	            0x001
 #define HASH_CMP	            0x002
@@ -133,6 +134,7 @@ struct HashtableHeader
 
 #define Max(x, y)		((x) > (y) ? (x) : (y))
 
+/*
 struct HashSequenceItem
 {
 	Hashtable              Table;
@@ -142,5 +144,6 @@ struct HashSequenceItem
 
 static struct Hashtable* SequenceScans[SEQUENCE_MAX_SCANS];
 static int SequenceScansCount = 0;
+*/
 
 #endif

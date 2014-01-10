@@ -243,7 +243,19 @@
 					Name="memory"
 					>
 					<File
+						RelativePath=".\imemcontainermanager.h"
+						>
+					</File>
+					<File
 						RelativePath="src\include\memory\imemorymanager.h"
+						>
+					</File>
+					<File
+						RelativePath=".\memcontainermanager.h"
+						>
+					</File>
+					<File
+						RelativePath=".\memory.h"
 						>
 					</File>
 					<File
@@ -531,6 +543,10 @@
 			<Filter
 				Name="memory"
 				>
+				<File
+					RelativePath=".\memcontainermanager.c"
+					>
+				</File>
 				<File
 					RelativePath="src\memory\trackmemmanager.c"
 					>

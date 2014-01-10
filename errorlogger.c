@@ -40,7 +40,7 @@ Bool compareErrorLevels(int errorLevel, int minErrorLevel)
 	return False;
 }
 
-Bool beginerror(
+Bool beginError(
     void*         self,
     int           level, 
     char*         filename, 
@@ -49,14 +49,19 @@ Bool beginerror(
     char*         domain)
 {
     IErrorLogger             _   = (IErrorLogger)self;
+    IConfManager             cm  = _->confManager;;
     IErrorLoggerConfManager  em  = _->errLogConfgMan;    
 
-	int           i;
+	int                i;
 
-	Bool		  writeToServer;
-	Bool		  writeToClient = False;
+	Bool		       writeToServer  = False;
+	Bool		       writeToClient  = False;
 
-	int           minLogLevel   = em->getMinLogLevel();
+	int                minLogLevel    = em->getMinLogLevel();
+    int                minClientLevel = em->getMinClientLogLevel()
+
+	Bool               isPostmaster   = cm->getIsPostmaster();
+    OutputDestination  outputDest     = cm->getOutputDest();
 
 	if (level >= LOG_ERROR)
 	{
@@ -74,17 +79,15 @@ Bool beginerror(
 			level = Max(elevel, errordata[i].elevel);
 	}
 
-	/*
-	 * Now decide whether we need to process this report at all; if it's
-	 * warning or less and not enabled for logging, just return FALSE without
-	 * starting up any error logging machinery.
-	 */
+	writeToServer = IsPostmaster ? 
+		compareErrorLevels(level, minLogLevel) :
+	    (level >= minLogLevel);
 
-    /* Determine whether message is enabled for server log output */
-	if (IsPostmaster)
-		writeToServer = is_log_level_output(elevel, log_min_messages);
-	else
-		/* In bootstrap/standalone case, do not sort LOG out-of-order */
-		writeToServer = (elevel >= log_min_messages);
-
+	if (outputDest == OutputRemote && level != LOG_COMMUNICATION_ERROR)
+        writeToClient = (level >= minClientLevel || level == LOG_INFO);
+	
+    /* Skip processing effort if non-error message will not be output */
+	if (level < LOG_ERROR && !writeToServer && !writeToClient)
+		return False;
 }
+

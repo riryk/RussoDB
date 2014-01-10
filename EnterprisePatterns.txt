@@ -1,0 +1,4 @@
+﻿
+1. What is Transaction Script pattern?
+
+  Organizes business logic by procedures where each procedure handles a single request from the presentation.

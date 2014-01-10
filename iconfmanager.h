@@ -1,4 +1,6 @@
 
+#include "error.h"
+
 #ifndef ICONFMANAGER_H
 #define ICONFMANAGER_H
 
@@ -17,6 +19,9 @@ typedef struct SIConfManager
 
 	Bool  (*getIsPostmaster)();
     void  (*setIsPostmaster)(Bool isPostmaster);
+
+    OutputDestination (*getOutputDest)();
+	void              (*setOutputDest)(OutputDestination dest);
 } SIConfManager, *IConfManager;
 
 #endif
