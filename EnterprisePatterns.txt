@@ -1,4 +1,927 @@
 ﻿
+Domain Logic Patterns: 
+
 1. What is Transaction Script pattern?
 
-  Organizes business logic by procedures where each procedure handles a single request from the presentation.
+  Organizes business logic by procedures where each procedure 
+  handles a single request from the presentation.
+  
+  Most business applications can be thought of as a series of transactions. 
+  A transaction may view some information as organized in a particular way, 
+  another will make changes to it. 
+  Each interaction between a client system and a server system 
+  contains a certain amount of logic. 
+  In some cases this can be as simple as displaying information in the database. 
+  In others it may involve many steps of validations and calculations.
+
+  A Transaction Script organizes all this logic primarily as a single procedure, 
+  making calls directly to the database or through a thin database wrapper. 
+  Each transaction will have its own Transaction Script, 
+  although common subtasks can be broken into subprocedures.
+  
+ 2. What is Domain Model?
+   -------------------------
+  |  Contract               | 
+  |-------------------------|
+  | recognizedRevenue(data) |
+  | calculateRecognitions   |
+   ------------------------- 
+          ^ 
+		  |
+   ----------------------------------
+  |    Product                       |                       ----------------------
+  |----------------------------------|                      | Recognition strategy |
+  | strategy                         |-----<>------------->  ----------------------
+  | calculateRecognitions(contract)  |
+   ----------------------------------
+
+  At its worst business logic can be very complex. 
+  Rules and logic describe many different cases and slants of behavior, 
+  and it's this complexity that objects were designed to work with. 
+  A Domain Model creates a web of interconnected objects, 
+  where each object represents some meaningful individual, 
+  whether as large as a corporation or as small as a single line on an order form.     
+  
+  As a result I see two styles of Domain Model in the field. A simple Domain Model looks very much like the
+  database design with mostly one domain object for each database table. A rich Domain Model can look
+  different from the database design, with inheritance, strategies, and other [Gang of Four] patterns, and
+  complex webs of small interconnected objects. A rich Domain Model is better for more complex logic, but is
+  harder to map to the database. A simple Domain Model can use Active Record (160), whereas a rich Domain
+  
+  Domain Model 112Model requires Data Mapper (165)
+  
+  3. Table module?
+  
+  A single instance that handles the business logic for all rows in a database table or view.
+  A Table Module organizes domain logic with one class per table in the data-base, 
+  and a single instance of a class contains the various procedures that will act on the data. 
+  The primary distinction with Domain Model (116) is that, 
+  if you have many orders, 
+  a Domain Model (116) will have one order object per order 
+  while a Table Module will have one object to handle all orders.
+  
+  4. Service Layer?
+  
+  Defines an application's boundary with a layer of services 
+  that establishes a set of available operations 
+  and coordinates the application's response in each operation.
+  
+  A Service Layer defines an application's boundary [Cockburn PloP] 
+  and its set of available operations from the perspective of interfacing client layers. 
+  It encapsulates the application's business logic, 
+  controlling transactions and coor-dinating responses in the implementation of its operations.
+  
+Data Source Architectural Patterns:
+
+  5. Table Data Gateway?
+  
+  Person
+  -------------------
+  lastName
+  firstName
+  numberOfDependents
+  
+  
+  Person Gateway
+  ----------------------
+  find(id)
+  findForCompany(companyId)
+  update 
+  insert
+  
+  6. Active record?
+  
+  An object that wraps a row in a database table or view, 
+  encapsulates the database access, and adds domain logic on that data.
+  
+  Person
+  -------------------
+  lastName
+  firstName
+  numberOfDependents
+  
+  getExemption()
+  getTaxableEarnings()
+  
+  
+  An object carries both data and behavior. 
+  Much of this data is persistent and needs to be stored in a database. 
+  Active Record uses the most obvious approach, 
+  putting data access logic in the domain object. 
+  This way all people know how to read and write their data to and from the database.
+  
+  7. 
+     Person 
+	 ---------------
+     lastName
+	 firstName
+	 
+	 PersonMapper
+	 ----------------
+	 insert
+	 update
+	 delete
+  
+  
+    The Data Mapper is a layer of software that separates the in-memory objects from the database. 
+	Its responsibility is to transfer data between the two 
+	and also to isolate them from each other. 
+	With Data Mapper the in-memory objects needn't know even 
+	that there's a database present; 
+	they need no SQL interface code, and certainly no knowledge of the database schema. 
+	(The database schema is always ignorant of the objects that use it.) 
+	Since it's a form of Mapper (473), Data Mapper itself is even unknown to the domain layer.
+	
+	
+Object-Relational Behavioral Patterns:
+
+   8. Unit of work?
+   
+   Maintains a list of objects affected by a business transaction 
+   and coordinates the writing out of changes 
+   and the resolution of concurrency problems.
+   
+   Unit Of Work
+   ------------------
+   registerNew(object)
+   registerDirty(object)
+   registerClean(object)
+   registerDeleted(object)
+   commit
+   rollback
+   
+   
+   Every time you create, change, or delete an object you tell the Unit of Work. 
+   You can also let it know about objects you've read 
+   so that it can check for inconsistent reads by verifying 
+   that none of the objects changed on the database during the business transaction.
+
+   The key thing about Unit of Work is that, when it comes time to commit, the Unit of Work decides what to
+   do. It opens a transaction, does any concurrency checking (using Pessimistic Offline Lock (426) or Optimistic
+   Offline Lock (416)), and writes changes out to the database. Application programmers never explicitly call
+   methods for database updates. This way they don't have to keep track of what's changed or worry about how
+   referential integrity affects the order in which they need to do things.
+   
+   9. Identity Map?
+   
+   Ensures that each object gets loaded only once 
+   by keeping every loaded object in a map. 
+   Looks up objects using the map when referring to them.
+   
+   An Identity Map keeps a record of all objects 
+   that have been read from the database in a single business transaction. 
+   Whenever you want an object, you check the Identity Map first to see if you already have it.
+   
+   There are a number of implementation choices to worry about. 
+   Also, since Identity Maps interact with concurrency management, 
+   so you should consider Optimistic Offline Lock (416) as well.
+
+   10. Lazy Load?
+   
+   An object that doesn't contain all of the data you need but knows how to get it.
+   
+   There are four main varieties of lazy load. 
+   Lazy Initialization uses a special marker value (usually null) to indicate a field isn't loaded. 
+   Every access to the field checks the field for the marker value and if unloaded, loads it. 
+   Virtual Proxy is an object with the same interface as the real object. 
+   The first time one of its methods are called it loads the real object and then delegates.
+   
+Object-Relational Structural Patterns:
+   
+   11. Identity field?
+   
+   Saves a database ID field in an object to maintain identity between an in-memory object and a database row.
+    
+   12. Foreign Key Mapping?
+   13. Serialized LOB?
+   
+   Saves a graph of objects by serializing them into a single large object (LOB), which it stores in a database field.
+   
+   14. Single Table Inheritance?
+   
+   Represents an inheritance hierarchy of classes as a single table 
+   that has columns for all the fields of the various classes.
+   
+   Relational databases don't support inheritance, 
+   so when mapping from objects to databases we have to consider 
+   how to represent our nice inheritance struc-tures in relational tables. 
+   When mapping to a relational database, we try to minimize the joins 
+   that can quickly mount up when processing an inheritance structure in multiple tables. 
+   Single Table Inheritance maps all fields of all classes of an inheritance structure into a single table.
+   
+   15. Class Table Inheritance?
+   
+   Represents an inheritance hierarchy of classes with one table for each class.
+   A very visible aspect of the object-relational mismatch 
+   is the fact that relational databases don't support inheritance. 
+   You want database structures that map clearly to the objects 
+   and allow links anywhere in the inheritance structure. 
+   Class Table Inheritance supports this by using 
+   one database table per class in the inheritance structure.
+   
+   16. Inheritance Mappers?
+   
+   A structure to organize database mappers that handle inheritance hierarchies.
+   
+Object-Relational Metadata Mapping Patterns:
+   
+   17. Query Object?
+   
+   An object that represents a database query.
+   
+   SQL can be an involved language, and many developers aren't particularly familiar with it. 
+   Furthermore, you need to know what the database schema looks like to form queries. 
+   You can avoid this by creating specialized finder methods that hide the SQL inside parameterized methods, 
+   but that makes it dif-ficult to form more ad hoc queries. 
+   It also leads to duplication in the SQL state-ments should the database schema change.
+
+   A Query Object is an interpreter [Gang of Four], that is, 
+   a structure of objects that can form itself into a SQL query. 
+   You can create this query by refer-ring to classes and fields rather than tables and columns. 
+   In this way those who write the queries can do so independently 
+   of the database schema and changes to the schema can be localized in a single place.
+   
+   18. Repository?
+
+   Mediates between the domain and data mapping layers 
+   using a collection-like interface for accessing domain objects.
+   
+   A Repository mediates between the domain and data mapping layers, 
+   acting like an in-memory domain object collection. 
+   
+   Client objects construct query specifications declaratively 
+   and submit them to Repository for satisfaction.
+   
+   
+   // This interface will give define a contract for CRUD operations on
+// Books entity
+interface IBooksRepository
+{
+    List<Book> GetAllBooks();
+    Book GetBookById(int id);
+    void AddBook(Book book);
+    void UpdateBook(int id, Book book);
+    void DeleteBook(Book book);
+    void Save();
+}
+
+
+public class BooksRepository : IBooksRepository, IDisposable
+{
+    SampleDatabaseEntities entities = new SampleDatabaseEntities();
+
+    #region IBooksRepository Members
+
+    BooksRepository()
+    {
+        entities = new SampleDatabaseEntities();
+    }
+
+    public List<Book> GetAllBooks()
+    {
+        return entities.Books.ToList();
+    }
+
+    public Book GetBookById(int id)
+    {
+        return entities.Books.SingleOrDefault(book => book.ID == id);
+    }
+
+    public void AddBook(Book book)
+    {
+        entities.Books.AddObject(book);
+    }
+
+    public void UpdateBook(int id, Book book)
+    {
+        Book b = GetBookById(id);
+        b = book;
+    }
+
+    public void DeleteBook(Book book)
+    {
+        entities.Books.DeleteObject(book);
+    }
+
+    public void Save()
+    {
+        entities.SaveChanges();
+    }
+    
+    #endregion
+
+    #region IDisposable Members
+
+    public void Dispose()
+    {
+        Dispose(true);
+        
+        GC.SuppressFinalize(this);
+    }
+
+    protected virtual void Dispose(bool disposing)
+    {
+        if (disposing == true)
+        {
+            entities = null;
+        }
+    }
+
+    ~BooksRepository()
+    {
+        Dispose(false);
+    }
+
+    #endregion
+}
+
+UnitOfWork:
+
+
+public class UnitOfWork : IDisposable
+{
+    private SampleDatabaseEntities entities = null;
+
+    // This will be called from controller default constructor
+    public UnitOfWork()           
+    {
+        entities = new SampleDatabaseEntities();
+        BooksRepository = new BooksRepositoryEn(entities);
+    }
+
+    // This will be created from test project and passed on to the
+    // controllers parameterized constructors
+    public UnitOfWork(IBooksRepository booksRepo)
+    {
+        BooksRepository = booksRepo;
+    }
+
+    public IBooksRepository BooksRepository
+    {
+        get;
+        private set;
+    }
+
+    #region IDisposable Members
+
+    public void Dispose()
+    {
+        Dispose(true);
+        
+        GC.SuppressFinalize(this);
+    }
+
+    protected virtual void Dispose(bool disposing)
+    {
+        if (disposing == true)
+        {
+            entities = null;
+        }
+    }
+
+    ~UnitOfWork()
+    {
+        Dispose(false);
+    }
+
+    #endregion
+}
+
+
+In CHUP:
+
+
+public interface IBaseCompanyRepository<out T,TKey> : IQueryable<T> where T : IApplicationEntity<TKey>
+    {
+        Guid CurrentCompanyId { get; }
+        long CurrentUserId { get; }
+        IDataContextResolver DataContextResolver { get; set; }
+        IEnumerable<ValidationResult> SaveChanges();
+    }
+	
+	
+public interface IBuildingRepository : IBaseCompanyRepository<Building, long>
+    {
+        Building GetById(long id);
+        IEnumerable<Building> GetByLocationId(long locationId);
+
+        Section GetSectionById(long sectionId);
+    }
+	
+public interface ILocationRepository : IBaseCompanyRepository<Location, long>
+    {
+        Location GetById(long id, Load hierarchy = Load.UseLazyLoad);
+        IEnumerable<Location> GetAllByPolicyId(long policyId, Load hierarchy = Load.UseLazyLoad);
+
+    }
+	
+public interface IDataContext
+    {
+        string User { get; set; }
+        IEnumerable<ValidationResult> SaveChanges();
+        IEnumerable<ValidationResult> Save<T,TKey>(T entity) where T : class, IApplicationEntity<TKey>;
+        void Delete<T, TKey>(TKey id) where T : class, IApplicationEntity<TKey>;
+        IEnumerable<ValidationResult> Validate(object obj);
+    }
+	
+ public interface IPolicyContext : IDataContext
+    {
+        IQueryable<Location> Locations { get; }
+        IQueryable<Building> Buildings { get; }
+	}
+	
+ public sealed class PolicyContext : DataContext, IPolicyContext
+    {
+        static PolicyContext()
+        {
+            Database.SetInitializer<PolicyContext>(null);
+        }
+
+        public PolicyContext()
+        { }
+		
+        public PolicyContext(IConfigProvider provider)
+            : base(provider.GetConnectionString(ConnectionConfig.PolicyDatabase))
+        {}
+
+
+        private readonly IDataContextResolver _dataContextResolver;
+        internal PolicyContext(IDataContextResolver dataContextResolver, string connectionString)
+            : base(connectionString)
+        {
+            _dataContextResolver = dataContextResolver;
+        }
+		
+        public DbSet<Building> Buildings { get; set; }
+        public DbSet<Location> Locations { get; set; }
+		
+        protected override void OnModelCreating(DbModelBuilder modelBuilder)
+        {
+            modelBuilder.Configurations.Add(new BuildingConfiguration());
+            modelBuilder.Configurations.Add(new LocationProfileConfiguration());
+        }
+		
+        IQueryable<Building> IPolicyContext.Buildings
+        {
+            get
+            {
+                return Buildings.Where(x => x.Location.InsurancePolicy.CompanyId == _dataContextResolver.CompanyId)
+                        .Include(x => x.Location).Include(x => x.Location.Address)
+                        .AsQueryable();
+            }
+        }
+		
+        IQueryable<Location> IPolicyContext.Locations(Load level)
+        {
+            // return locations
+        }
+    }
+	
+	
+public abstract class BasePolicyRepository<T> : BaseCompanyRepository<T, long> where T : ApplicationEntity<long>
+    {
+      protected BasePolicyRepository(IPolicyContext context)
+        : base(new Lazy<IDataContext>(() => context))
+        {
+
+        }
+
+        public IPolicyContext Context { get { return (IPolicyContext)InnerContext.Value; } }
+    }
+
+public class BuildingRepository : BasePolicyRepository<Building>, IBuildingRepository
+    {
+        public BuildingRepository(IPolicyContext context):base(context) { }
+		
+        protected override IQueryable<Building> Entities
+        {
+            get { return Context.Buildings; }
+        }
+		
+        public Building GetById(long id)
+        {
+            return Context.Buildings.FirstOrDefault(x => x.Id == id);
+        }
+  
+        public Section GetSectionById(long sectionId)
+        {
+            return Context.Sections.FirstOrDefault(s => s.Id == sectionId);
+        }
+
+        public IEnumerable<Building> GetByLocationId(long locationId)
+        {
+            return Context.Buildings.Where(b => b.LocationId == locationId);
+        }      
+    }
+
+public class LocationRepository : BasePolicyRepository<Location>, ILocationRepository
+    {
+        public LocationRepository(IPolicyContext context)
+            : base(context) { }
+
+        public Location GetById(long id, Load hierarchy = Load.UseLazyLoad)
+        {
+            return Context.Locations(hierarchy).FirstOrDefault(x => x.Id == id);
+        }
+
+        public IQueryable<Location> WithChildren(Load hierarchy = Load.UseLazyLoad)
+        {
+            return Context.Locations(hierarchy);
+        }
+        public IEnumerable<Location> GetAllByPolicyId(long policyId, Load hierarchy = Load.UseLazyLoad)
+        {
+            return Context.Locations(hierarchy).Where(x => x.PolicyId == policyId);
+        }
+
+        protected override IQueryable<Location> Entities
+        {
+            get { return Context.Locations(); }
+        }
+    }	
+	
+IPolicyContext is EntityFramework central object and it is passed as parameter to each repository.
+The main idea is to put the same object to every repository. This problem is solved by Unit Of Work pattern.
+
+
+public interface IUnitOfWork
+    {
+        IList<ValidationResult> Commit();
+        void Delete(object entity);
+        void Insert(object entity);
+        void Update(object entity);
+    }
+	
+public interface IPolicyUnitOfWork : IUnitOfWork, IDisposable
+    {
+        IPolicyRepository    PolicyRepository { get;  }
+        IBuildingRepository  BuildingRepository { get;  }
+        ILocationRepository  LocationRepository { get; }
+    }
+	
+public sealed class PolicyUnitOfWork : IPolicyUnitOfWork
+    {
+        private readonly PolicyContext _context;
+        private readonly IDataContextResolver _dataContextResolver;
+		
+        public IPolicyRepository PolicyRepository { get; private set; }
+        public IBuildingRepository BuildingRepository { get; private set; }
+        public ILocationRepository LocationRepository { get; private set; }
+		
+        public PolicyUnitOfWork(): this(new DataContextResolver()) { }
+
+        public PolicyUnitOfWork(PolicyContext context, IDataContextResolver dataContextResolver)
+        {
+            _context = context;
+            _dataContextResolver = dataContextResolver;
+            InitializeRepositories();
+        }
+
+        public PolicyUnitOfWork(IDataContextResolver dataContextResolver) 
+        {
+            var policyConnectionStr = ServiceLocator.Current.GetInstance<IConfigProvider>().GetConnectionString(ConnectionConfig.PolicyDatabase);
+            _context = new PolicyContext(dataContextResolver, policyConnectionStr);
+            _dataContextResolver = dataContextResolver;
+            InitializeRepositories();
+        }
+		
+        private void InitializeRepositories()
+        {
+            PolicyRepository = new PolicyRepository(_context) { DataContextResolver = _dataContextResolver };
+            BuildingRepository = new BuildingRepository(_context) { DataContextResolver = _dataContextResolver };
+            LocationRepository = new LocationRepository(_context) { DataContextResolver = _dataContextResolver };
+        }
+
+        public IList<ValidationResult> Commit()
+        {
+            var result = new List<ValidationResult>();
+            try
+            {
+                if (string.IsNullOrEmpty(_context.User))
+                {
+                    _context.User = _dataContextResolver.UserName;
+                }
+                result.AddRange(((IDataContext) _context).SaveChanges());
+            }
+            catch (DbEntityValidationException e)
+            {
+                foreach (var eve in e.EntityValidationErrors)
+                {
+                    result.Add(
+                        new ValidationResult(
+                            String.Format(
+                                "Entity of type \"{0}\" in state \"{1}\" has the following validation errors:",
+                                eve.Entry.Entity.GetType().Name, eve.Entry.State)));
+
+                    result.AddRange(eve.ValidationErrors
+                                       .Select(
+                                           ve =>
+                                           new ValidationResult(String.Format("- Property: \"{0}\", Error: \"{1}\"",
+                                                                              ve.PropertyName,
+                                                                              ve.ErrorMessage))));
+                }
+            }
+
+            return result.ToList();
+
+        }
+
+        public void Delete(object entity)
+        {
+            var soft = entity as ISupportSoftDelete;
+            if (soft == null)
+            {_context.Entry(entity).State = EntityState.Deleted;}
+            else
+            {
+                soft.Delete();
+                Update(soft);
+            }
+        }
+
+        public void Insert(object entity)
+        {
+            _context.Entry(entity).State = EntityState.Added;
+        }
+        public void Update(object entity)
+        {
+            _context.Entry(entity).State = EntityState.Modified;
+        }
+
+        public void Dispose()
+        {
+            _context.Dispose();
+        }
+    }
+
+19. MVC?
+  -----------                          --------------
+ |  View     |<---------------------->|  Controller  |
+  -----------                          --------------
+     |                                     |
+     |                                     |
+     |	                                   |
+     -------------     --------------------
+                  |   |        
+                  |   |
+				  V   V
+			------------------
+           |  Model           |			
+			------------------	  
+				  
+The view represents the display of the model in the UI. Thus, if our model is a customer object our view
+might be a frame full of UI widgets or an HTML page rendered with information from the model. The view is
+only about display of information; any changes to the information are handled by the third member of the
+MVC trinity: the controller. The controller takes user input, manipulates the model, and causes the view to
+update appropriately. In this way UI is a combination of the view and the controller.
+
+Depending on context, users want to see the same basic model information in different ways.
+Separating presentation and view allows you to develop multiple presentationsindeed, entirely
+different interfacesand yet use the same model code. Most noticeably this could be providing the
+same model with a rich client, a Web browser, a remote API, and a command-line interface. Even
+within a single Web interface you might have different customer pages at different points in an
+application.
+
+This principle introduces a common issue. With a rich-client interface of multiple windows it's likely that
+there will be several presentations of a model on a screen at once. If a user makes a change to the model from
+one presentation, the others need to change as well. To do this without creating a dependency you usually
+need an implementation of the Observer pattern [Gang of Four], such as event propagation or a listener. The
+presentation acts as the observer of the model: whenever the model changes it sends out an event and the
+presentations refresh the information.
+
+The second division, the separation of view and controller, is less important. Indeed, the irony is that almost
+every version of Smalltalk didn't actually make a view/controller separation. The classic example of why
+you'd want to separate them is to support editable and noneditable behavior, which you can do with one view
+and two controllers for the two cases, where the controllers are strategies [Gang of Four] for the view. In
+practice most systems have only one controller per view, however, so this separation is usually not done. It
+has come back into vogue with Web interfaces where it becomes useful for separating the controller and view
+again.
+
+
+20. Page Controller?
+
+As a result, Page Controller has one input controller for each logical page of the Web site. 
+That controller may be the page itself, as it often is in server page environments, 
+or it may be a separate object that corresponds to that page.
+   ------------------------
+  |  Page Controller       |
+  |------------------------|
+  | Handles http request   |
+  | and decides which view |
+  | or model to use        |
+   ------------------------
+
+21. Front Controller.
+
+A controller that handles all requests for a Web site.
+
+A Front Controller handles all calls for a Web site, and is usually structured in two parts: a Web handler and a
+command hierarchy. The Web handler is the object that actually receives post or get requests from the Web
+server. It pulls just enough information from the URL and the request to decide what kind of action to initiate
+and then delegates to a command to carry out the action (see Figure 14.2).
+
+   -----------------                        ------------------
+  |  Handler        |---<>------------>    |  Command         |
+  |                 |                      | Process          |
+  |-----------------|                       ------------------
+  | doGet()         |                             ^
+  | doPost()        |                             |
+  |-----------------|                             |
+                                        ---------- -----------
+                                       |                      |
+                                       V                      V
+                            --------------------     ---------------------
+						   |  ConcreteCommand1  |   |  ConcreteCommand2   |
+						    --------------------     ---------------------
+							
+22. Template View?
+
+Renders information into HTML by embedding markers in an HTML page.
+
+23. Transform View?
+
+You can write a Transform View in any language; at the moment, however, the dominant choice is XSLT.
+The interesting thing about this is that XSLT is a functional programming language, similar to Lisp, Haskell,
+and other languages that never quite made it into the IS mainstream. As such it has a different kind of
+structure to it. For example, rather than explicitly calling routines, XSLT recognizes elements in the domain
+data and then invokes the appropriate rendering transformations
+
+24. Application Controller?
+
+A centralized point for handling screen navigation and the flow of an application.
+
+
+25. Remote Facade
+
+Provides a coarse-grained facade on fine-grained objects to improve efficiency over a network.
+
+Within a single address space fine-grained interaction works well, 
+but this happy state does not exist when you make calls between processes. 
+Remote calls are much more expensive because there's a lot more to do: 
+Data may have to be marshaled, security may need to be checked, 
+packets may need to be routed through switches. 
+
+If the two processes are running on machines on opposite sides of the globe, 
+the speed of light may be a factor. 
+The brutal truth is that any inter-process call is orders 
+of magnitude more expensive than an in-process call 
+- even if both processes are on the same machine. 
+Such a perfor-mance effect cannot be ignored, even for believers in lazy optimization.
+
+
+26. Data Transfer Object
+
+An object that carries data between processes in order to reduce the number of method calls.
+
+When you're working with a remote interface, such as Remote Facade (388), 
+each call to it is expensive. As a result you need to reduce the number of calls, 
+and that means that you need to transfer more data with each call. 
+One way to do this is to use lots of parameters. However, this is often awkward to program - 
+indeed, it's often impossible with languages such as Java that return only a single value.
+
+The solution is to create a Data Transfer Object that can hold all the data for the call. 
+It needs to be serializable to go across the connection. 
+Usually an assembler is used on the server side to transfer data between the DTO and any domain objects.
+
+Although the main reason for using a Data Transfer Object is to batch up 
+what would be multiple remote calls into a single call, 
+it's worth mentioning that another advantage is to encapsulate the serialization mechanism 
+for transferring data over the wire. 
+By encapsulating the serialization like this, 
+the DTOs keep this logic out of the rest of the code 
+and also provide a clear point to change serialization should you wish.
+
+
+27. Optimistic offline lock.
+
+Two variants:
+1. It is implemented through version column.
+2. It is implemented through DateTime field. 
+
+28. Pesimistic offline lock.
+
+One custom implementation:
+
+create table lock(lockableid bigint primary key, ownerid bigint)
+
+public void acquireLock(Long lockable, String owner) throws ConcurrencyException 
+{
+   if (!hasLock(lockable, owner)) 
+   {
+     Connection conn = null;
+     PreparedStatement pstmt = null;
+	 
+     try 
+	 {
+         conn  = ConnectionManager.INSTANCE.getConnection();
+         pstmt = conn.prepareStatement(INSERT_SQL); // insert into lock values(?, ?)
+		 
+         pstmt.setLong(1, lockable.longValue());
+         pstmt.setString(2, owner);
+         pstmt.executeUpdate();
+     } 
+	 catch (SQLException sqlEx) 
+	 {
+         throw new ConcurrencyException("unable to lock " + lockable);
+     } 
+	 finally 
+	 {
+         closeDBResources(conn, pstmt);
+     }
+ }
+ 
+ public void releaseLock(Long lockable, String owner) 
+ {
+     Connection conn = null;
+     PreparedStatement pstmt = null;
+	 
+     try 
+	 {
+         conn  = ConnectionManager.INSTANCE.getConnection();
+         pstmt = conn.prepareStatement(DELETE_SINGLE_SQL);  // delete from lock where lockableid = ? and ownerid = ?
+         pstmt.setLong(1, lockable.longValue());
+         pstmt.setString(2, owner);
+         pstmt.executeUpdate();
+     } 
+	 catch (SQLException sqlEx) 
+	 {
+         throw new SystemException("unexpected error releasing lock on " + lockable);
+     } 
+	 finally 
+	 {
+         closeDBResources(conn, pstmt);
+     }
+ }
+
+ 
+ 29. Coarse-Grained Lock 
+ 
+A Coarse-Grained Lock is a single lock that covers many objects. 
+It not only simplifies the locking action itself 
+but also frees you from having to load all the members of a group in order to lock them.
+
+The first step in implementing Coarse-Grained Lock is to create a single point of contention for locking a group
+of objects. This makes only one lock necessary for locking the entire set. Then you provide the shortest path
+possible to finding that single lock point in order to minimize the group members that must be identified and
+possibly loaded into memory in the process of obtaining that lock.
+
+With Optimistic Offline Lock (416), having each item in a group share a version (see Figure 16.2) creates the
+single point of contention, which means sharing the same version, not an equal version. Incrementing this
+version will lock the entire group with a shared lock. Set up your model to point every member of the group at
+the shared version and you have certainly minimized the path to the point of contention.
+
+
+ 30. Implicit Lock
+ 
+ Allows framework or layer supertype code to acquire offline locks.
+ 
+ One solution is to not allow developers to make such a mistake. 
+ Locking tasks that cannot be overlooked should be handled not explicitly by developers 
+ but implicitly by the application. 
+ The fact that most enterprise applications make use of some combination of framework, 
+ Layer Supertypes (475), and code generation provides us 
+ with ample opportunity to facilitate Implicit Lock.
+ 
+ Session State Patterns:
+ 
+  31. Client Session State
+  
+  Stores session state on the client.
+  How It Works
+  Even the most server-oriented designs need at least a little Client Session State, if only to hold a session
+  identifier. With some applications you can consider putting all of the session data on the client, in which case
+  the client sends the full set of session data with each request and the server sends back the full session state
+  with each response. This allows the server to be completely stateless.
+  
+  With an HTML interface, things get a bit more complicated. 
+  There are three common ways to do client session state: URL parameters, hidden fields, and cookies.
+  
+  The last, and sometimes controversial, choice is cookies, which are sent back and forth automatically. Just like
+  a hidden field you can use a cookie by serializing the session state into it. You're limited in how big the cookie
+  can be.
+  
+  Realize that cookies are no more secure than anything else, so assume that prying of all kinds can happen.
+  Cookies also work only within a single domain name, so if your site is separated into different domain names
+  the cookies won't travel between them.
+
+  Client Session State contains a number of advantages. In particular, it reacts well in supporting stateless server
+  objects with maximal clustering and failover resiliency. Of course, if the client fails all is lost, but often the
+  user expects that anyway.
+ 
+  There's also the security issue. Any data sent to the client is vulnerable to being looked at and altered.
+  Encryption is the only way to stop this, but encrypting and decrypting with each request are a performance
+  burden. Without encryption you have to be sure you aren't sending anything you would rather hide from
+  prying eyes. Fingers can pry too, so don't assume that what got sent out is the same as what gets sent back.
+  Any data coming back will need to be completely revalidated
+ 
+  You almost always have to use Client Session State for session identification. Fortunately, this should be just
+  one number, which won't burden any of the above schemes. You should still be concerned about session
+  stealing, which is what happens when a malicious user changes his session ID to see if he can snag someone
+  else's session. Most platforms come up with a random session ID to reduce this risk; if not run, a simple
+  session ID through a hash.
+ 
+ 
+
+
+
+
+
+						   

@@ -6,6 +6,10 @@
 #define MIN_CHUNK_POWER_OF_2	    3	
 #define MEMORY_SET_FREELISTS_NUM	11
 
+/* The maximum allowed memory chunk size
+ */
+#define MEMORY_CHUNK_MAX_SIZE  (1 << (MEMORY_SET_FREELISTS_NUM-1+MIN_CHUNK_POWER_OF_2))
+
 typedef enum MemContType
 {
    MCT_Invalid         = 0,
@@ -86,7 +90,7 @@ typedef struct SMemorySet
 
     /* effective chunk size limit */
 	size_t		       chunkMaxSize;
-	MemoryBlock	       keeper;	
+	MemoryBlock	       keeperBlock;	
 } SMemorySet, *MemorySet;
 
 

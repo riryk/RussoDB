@@ -146,14 +146,104 @@ void* allocSetAlloc(
 
 		if (availSpace < (chunkSize + MEM_CHUNK_SIZE))
 		{
+			size_t  minPosChunkSize = (1 << MIN_CHUNK_POWER_OF_2) + MEM_CHUNK_SIZE;
+
 			/* The availiable space does not come up 
 			 * for this chunk. But we can use this space in the future
 			 * Now we carve up this space into chunks and add it 
 			 * to the free list.
+			 * Here availiable space is less than chunkSize and so
+			 * less than MEMORY_CHUNK_MAX_SIZE.
 			 */
+            while (availSpace >= minPosChunkSize)
+			{
+                size_t   availChunkSize = availSpace - MEM_CHUNK_SIZE;
+				int		 availFreeInd   = calculateFreeListIndex(availChunkSize);
+                size_t   actualSpace    = (size_t)(1 << (availFreeInd + MIN_CHUNK_POWER_OF_2));
 
+				if (availChunkSize != actualSpace)
+				{
+					availFreeInd--;
+					availChunkSize = actualSpace;
+				}
+
+				chunk = (MemoryChunk)(block->freeStart);
+                
+				block->freeStart += (availChunkSize + MEM_CHUNK_SIZE);
+                availSpace       -= (availChunkSize + MEM_CHUNK_SIZE); 
+ 
+				chunk->size          = availChunkSize;
+				chunk->sizeRequested = 0;		
+
+				chunk->memsetorchunk        = (void*)set->freelist[availFreeInd];
+				set->freelist[availFreeInd] = chunk;
+			}
+
+			block == NULL;
 		}
 	}
+
+	/* If the actual active block does not contain enough
+	 * free space for the chunk we should create a new block.
+	 */
+	if (block == NULL)
+	{
+        size_t		requiredSize;    
+
+		/* Set blockSize. We keep track of all block sizes
+		 * And we allocate blocks in increase order of their size.
+		 * We start from initBlockSize and always double the blockSize
+		 * until we reach maxBlockSize.
+		 */
+		blockSize = set->nextBlockSize;
+        set->nextBlockSize << 1;
+		if (set->nextBlockSize > set->maxBlockSize)
+            set->nextBlockSize = set->maxBlockSize;
+
+        /* We have a restriction for chunkSize:
+		 * chunkSize < maxChunkSize
+		 * We start blockSize from initialBlockSize
+		 * Sometimes initialBlockSize can be less than maxChunkSize
+		 * and so initialBlockSize < maxChunkSize.
+		 * We double bloclSize until we reach the requiredSize.
+		 */
+		requiredSize = chunkSize + MEM_BLOCK_SIZE + MEM_CHUNK_SIZE;
+		while (blockSize < requiredSize)
+			blockSize <<= 1;
+
+		/* Allocate a new block */
+		block = (MemoryBlock)malloc(blockSize);
+        
+		if (block == NULL)
+		    ; /* Out of memory. We should report an error. */
+
+		block->memset    = set;
+		block->freeStart = ((char*)block) + MEM_BLOCK_SIZE;
+		block->freeEnd   = ((char*)block) + blockSize; 
+
+		if (set->keeperBlock == NULL && blockSize == set->initBlockSize)
+			set->keeperBlock = block;
+
+		/* Insert the new block into the head of the freelist */
+		block->next    = set->blockList
+		set->blockList = block;
+	}
+
+    /* do the allocation */
+	chunk = (MemoryChunk)block->freeStart;
+
+	block->freeStart += (chunkSize + MEM_CHUNK_SIZE);
+
+	chunk->memsetorchunk = (void*)set;
+	chunk->size = chunkSize;
+	chunk->sizeRequested = size;		
+
+    chunkPtr = MemoryChunkGetPointer(chunk);
+
+    if (size < chunkSize)
+       ((char*)chunkPtr)[size] = UNUSED_SPACE_MARK;
+
+	return chunkPtr;
 }
 
 
