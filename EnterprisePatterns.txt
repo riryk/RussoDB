@@ -918,10 +918,3346 @@ the shared version and you have certainly minimized the path to the point of con
   else's session. Most platforms come up with a random session ID to reduce this risk; if not run, a simple
   session ID through a hash.
  
+  
+  32. Server Session State
+  
+  In the simplest form of this pattern a session object is held in memory on an application server. You can have
+some kind of map in memory that holds these session objects keyed by a session ID; all the client needs to do
+is to give the session ID and the session object can be retrieved from the map to process the request.
+
+This basic scenario assumes, of course, that the application server carries enough memory to perform this
+task. It also assumes that there's only one application serverthat is, no clusteringand that, if the application
+server fails, it's appropriate for the session to be abandoned and all work done so far to be lost in the great
+bit-bucket in the sky.
+  
+This brings us to the question of where to store the Server Session State. An obvious possibility is on the
+application server itself, either in the file system or in a local database. This is the simple route, but it may not
+support efficient clustering or failover. To support these the passivated Server Session State needs to be
+somewhere generally accessible, such as on shared server. This will support clustering and failover at the cost
+of a longer time to activate the serveralthough caching may well eliminate much of this cost.
+
+Kai Yu told me about an approach he used
+with success: partitioning the session table into twelve database segments and every two hours rotating the
+segments, deleting everything in the oldest segment and then directing all inserts to it. While this meant that
+any session that was active for twenty-four hours got unceremoniously dumped, that would be sufficiently
+rare to not be a problem.  
+  
+   
+   33. Database Session State
+   
+ When a call goes out from the client to the server, the server object first pulls the data required for the request
+from the database. Then it does the work it needs to do and saves back to the database all the data required.
+In order to pull information from the database, the server object will need some information about the session,
+which requires at least a session ID number to be stored on the client. Usually, however, this information is
+nothing more than the appropriate set of keys needed to find the appropriate amount of data in the database.
+ 
+   34. Gateway
+   
+  An object that encapsulates access to an external system or resource.
+  
+When accessing external resources like this, you'll usually get APIs for them. 
+However, these APIs are naturally going to be somewhat complicated 
+because they take the nature of the resource into account. 
+Anyone who needs to under-stand a resource needs to understand its API 
+- whether JDBC and SQL for rela-tional databases or W3C or JDOM for XML. 
+Not only does this make the software harder to understand, 
+it also makes it much harder to change should you shift some data 
+from a relational database to an XML message at some point in the future.
+
+The answer is so common that it's hardly worth stating. 
+Wrap all the special API code into a class whose interface looks like a regular object. 
+Other objects access the resource through this Gateway, 
+which translates the simple method calls into the appropriate specialized API.
+
+   35. Mapper
+   
+  An object that sets up a communication between two independent objects. 
+  
+Sometimes you need to set up communications between two subsystems 
+that still need to stay ignorant of each other. 
+This may be because you can't modify them or you can but 
+you don't want to create dependencies 
+between the two or even between them and the isolating element.
+
+   36. Separated interface
+
+Defines an interface in a separate package from its implementation
+
+As you develop a system, you can improve the quality of its design by reducing the coupling between the
+system's parts. A good way to do this is to group the classes into packages and control the dependencies
+between them.You can then follow rules about how classes in one package can call classes in anotherfor
+example, one that says that classes in the domain layer may not call classes in the presentation package.
+
+However, you might need to invoke methods that contradict the general dependency structure. If so, use
+Separated Interface to define an interface in one package but implement it in another. This way a client that
+needs the dependency to the interface can be completely unaware of the implementation. The Separated
+Interface provides a good plug point for Gateway (466).
+
+   37. Layer Supertype
+   
+ A type that acts as the supertype for all types in its layer.
+It's not uncommon for all the objects in a layer to have methods you don't want to have duplicated throughout
+the system. You can move all of this behavior into a common Layer Supertype.
+  
+   Layer Supertype is a simple idea that leads to a very short pattern. All you need is a superclass for all the
+objects in a layerfor example, a Domain Object superclass for all the domain objects in a Domain Model
+(116). Common features, such as the storage and handling of Identity Fields (216), can go there. Similarly all
+Data Mappers (165) in the mapping layer can have a superclass that relies on the fact that all domain objects
+have a common superclass.
+
+   38. Registry.
+   
+A well-known object that other objects can use to find common objects and services.
+
+   39. Value object.
+   
+A small simple object, like money or a date range, whose equality isn't based on identity.
+With object systems of various kinds, 
+I've found it useful to distinguish between reference objects and Value Objects. 
+Of the two a Value Object is usually the smaller; 
+it's similar to the primitive types present in many languages that aren't purely object-oriented. 
+
+The key difference between reference and value objects lies in how they deal with equality. A reference object
+uses identity as the basis for equalitymaybe the identity within the programming system, such as the built-in
+identity of OO programming languages, or maybe some kind of ID number, such as the primary key in a
+relational database. A Value Object bases its notion of equality on field values within the class. Thus, two date
+objects may be the same if their day, month, and year values are the same.
+
+    40. Money.
+	
+Represents a monetary value.
+
+    41. Special Case.
+
+A subclass that provides special behavior for particular cases.
+Nulls are awkward things in object-oriented programs because they defeat polymorphism. 
+Usually you can invoke foo freely on a variable reference 
+of a given type without worrying about whether the item is the exact type or a sub-class. 
+With a strongly typed language you can even have the compiler check that the call is correct. 
+However, since a variable can contain null, you may run into a runtime 
+error by invoking a message on null, which will get you a nice, friendly stack trace.
+
+    42. Plugin.
+
+Links classes during configuration rather than compilation.
+Separated Interface (476) is often used when application code runs in multiple runtime environments, 
+each requiring different implementations of particular behavior. 
+Most developers supply the correct implementation by writing a fac-tory method. 
+Suppose you define your primary key generator with a Separated Interface (476) 
+so that you can use a simple in-memory counter for unit testing 
+but a database-managed sequence for production.
+
+
+
+
+
+
+EXAMPLES OF CODE
+
+
+
+
+
+1.	Class Table Inheritance 
+Represents an inheritance hierarchy of classes with one table for each class. 
+Class inheritance 
+Class Player
+{
+       String name { get; set; }
+}
+Class Footballer : Player
+{
+       String club { get; set; }
+}
+
+Class Criketer : Player
+{
+       String BattingAverage { get; set; }
+}
+
+Class Bowler : Criketer
+{
+       String BowlingAverage { get; set; }
+}
+
+Database relations structure
+Create table Players
+{
+       Name nvarchar(255)
+}
+Create table Footballers
+{
+       Name nvarchar(255),
+       Club nvarchar(255)
+}
+Create table Criketers
+{
+       Name nvarchar(255),
+       BattingAverage nvarchar(255)
+}
+Create table Bowlers
+{
+       Name nvarchar(255),
+       BattingAverage nvarchar(255),
+       BowlingAverage nvarchar(255)
+}
+
+2.	Mapper inheritance.
+Class Mapper
+{
+      Insert(Domain Object);
+      Update(Domain Object);
+      Delete(Domain Object);
+}
+
+Class PlayerMapper : Mapper {}
+Class FootballerPlayerMapper : PlayerMapper { }
+Class CricketerMapper : PlayerMapper {}
+Class BowlerMapper : CriketerMapper {}
+
+       
+3.	Single Table Inheritance.
+4.	Class Player
+5.	{
+6.	       String name { get; set; }
+7.	}
+8.	Class Footballer : Player
+9.	{
+10.	       String club { get; set; }
+11.	}
+12.	
+13.	Class Criketer : Player
+14.	{
+15.	       String BattingAverage { get; set; }
+16.	}
+17.	
+18.	Class Bowler : Criketer
+19.	{
+20.	       String BowlingAverage { get; set; }
+21.	}
+
+
+And we have only one table in the database
+
+Create table Palyers
+{
+      Name nvarchar(255)
+      Club nvarchar(255)
+      BattingAverage nvarchar(255)
+      BowlingAverage nvarchar(255)
+      Type integer
+}
+
+  
+4.	Identify Field.
+When we have many tables with inheritance. So we decided to have unique keys.
+CREATE TABLE keys (name varchar primary key, nextID int) 
+INSERT INTO keys VALUES ('orders', 1)
+
+Database keys generator
+
+class KeyGenerator
+{
+   private Connection conn;
+   private String keyName;
+   private long nextId;
+   private long maxId;
+   private int incrementBy;
+
+   public KeyGenerator(Connection conn, String keyName, int incrementBy) 
+   {
+      this.conn = conn;
+      this.keyName = keyName;
+      this.incrementBy = incrementBy;
+      nextId = maxId = 0;
+       
+      try 
+      {
+         conn.setAutoCommit(false);
+      } 
+      catch(SQLException exc) 
+      {
+         throw new ApplicationException(
+             "Unable to turn off autocommit", exc);
+      }
+   }
+
+   public synchronized Long nextKey() 
+   {
+      if (nextId == maxId) 
+      {
+         reserveIds();
+      }
+
+      return new Long(nextId++);
+   }
+ 
+   private void reserveIds() 
+ {
+    SELECT nextID FROM keys WHERE name = ? FOR UPDATE;    
+      UPDATE keys SET nextID = ? WHERE name = ?;
+   }       
+}
+
+
+5.	Active Record.
+    An object that wraps a row in a database table or view, encapsulates the database access, and adds domain logic on that data. This pattern contains both data and behavior. 
+Class Person
+{
+   String lastName { get; set; }
+   String firstName { get; set; }
+   Int NumberOfDependents { get; set; } 
+   
+   Void Insert(Person);
+   Void Update(Person);
+   Void Delete(Person);
+    
+}
+6.	Organizes business logic by procedures where each procedure handles a single request from the presentation
+CREATE TABLE products 
+(
+   ID int primary key, 
+   name varchar, 
+   type varchar
+) 
+
+   CREATE TABLE contracts 
+   (
+      ID int primary key, 
+      product int, 
+      revenue decimal, 
+      dateSigned date
+   )
+
+   CREATE TABLE revenueRecognitions 
+   (
+      contract int, 
+      amount decimal, 
+      recognizedOn date,
+            PRIMARY KEY (contract, recognizedOn)
+      )
+
+class Gateway
+{
+       public ResultSet findRecognitionsFor(long contractID, MfDate asof)
+       {
+              "SELECT amount " +
+       "FROM revenueRecognitions " +
+       "WHERE contract = ? AND recognizedOn <= ?";
+
+       }
+ }
+class RecognitionService
+{
+   public Money recognizedRevenue(long contractNumber, MfDate asOf) 
+   {
+      Money result = Money.dollars(0);
+      ResultSet rs = db.findRecognitionsFor(contractNumber, asOf);
+      while (rs.next()) 
+      {
+         result = result.add(Money.dollars(rs.getBigDecimal("amount")));
+      }
+      return result;
+   }
+}
+
+7.	Foreign Key Mapping
+Maps an association between objects to a foreign key reference between tables
+ class Artist
+ {
+     private String name;
+
+     public Artist(Long ID, String name) 
+     {
+        super(ID);
+        this.name = name;
+     }
+
+     public String getName() 
+     {
+        return name;
+     }
+
+     public void setName(String name) {
+        this.name = name;
+     }
+ }
+
+ class Album
+ {
+     private String title;
+     private Artist artist;
+
+     public Album(Long ID, String title, Artist artist) 
+     {
+       super(ID);
+       this.title = title;
+       this.artist = artist;
+     }
+
+     public String getTitle() 
+     {
+        return title;
+     }
+
+     public void setTitle(String title) 
+     {
+        this.title = title;
+     }
+
+     public Artist getArtist() 
+     {
+        return artist;
+     }
+
+     public void setArtist(Artist artist) 
+     {
+        this.artist = artist;
+     }
+  }
+
+8.	The Three Principal Layers
+Maps an association between objects to a foreign key reference between tables
+
+Domain Logic Patterns
+1.	Transactional Script
+2.	Domain Model
+3.	class RevenueRecognition
+4.	{ 
+5.	   private Money amount;
+6.	   private MfDate date;
+7.	   public RevenueRecognition(Money amount, MfDate date) {
+8.	      this.amount = amount;
+9.	      this.date = date;
+10.	   }
+11.	   public Money getAmount() {
+12.	      return amount;
+13.	   }
+14.	   boolean isRecognizableBy(MfDate asOf) {
+15.	      return asOf.after(date) || asOf.equals(date);
+16.	   }
+17.	}
+
+ class Contract
+ {
+     private List revenueRecognitions = new ArrayList();
+     public Money recognizedRevenue(MfDate asOf) 
+     {
+        Money result = Money.dollars(0);
+        Iterator it = revenueRecognitions.iterator();
+        while (it.hasNext()) 
+        {
+           RevenueRecognition r = (RevenueRecognition) it.next();
+           if (r.isRecognizableBy(asOf))
+            result = result.add(r.getAmount());
+        }
+        return result;
+     }
+ }
+
+ class Product
+ {
+     private String name;
+     private RecognitionStrategy recognitionStrategy;
+     public Product(String name, RecognitionStrategy recognitionStrategy) 
+     {
+        this.name = name;
+        this.recognitionStrategy = recognitionStrategy;
+     }
+ }
+
+ class RecognitionStrategy
+ {
+     abstract void calculateRevenueRecognitions(Contract contract);
+ }
+
+ class CompleteRecognitionStrategy
+ {
+     void calculateRevenueRecognitions(Contract contract) 
+     {
+         contract.addRevenueRecognition(
+              new RevenueRecognition(
+                contract.getRevenue(), 
+              contract.getWhenSigned()));
+      }
+ }
+
+ class ThreeWayRecognitionStrategy
+ {
+    private int firstRecognitionOffset;
+    private int secondRecognitionOffset;
+    public ThreeWayRecognitionStrategy(
+                     int firstRecognitionOffset,
+                     int secondRecognitionOffset)
+    {
+       this.firstRecognitionOffset = firstRecognitionOffset;
+       this.secondRecognitionOffset = secondRecognitionOffset;
+    }
+
+    void calculateRevenueRecognitions(Contract contract) 
+   {
+       Money[] allocation = contract.getRevenue().allocate(3);
+   
+       contract.addRevenueRecognition(
+          new RevenueRecognition (allocation[0], contract.getWhenSigned()));
+
+       contract.addRevenueRecognition(
+          new RevenueRecognition(allocation[1],  
+                                contract.getWhenSigned()
+                                        .addDays(firstRecognitionOffset)));
+
+       contract.addRevenueRecognition(
+          new RevenueRecognition(allocation[2],             contract.getWhenSigned()
+        .addDays(secondRecognitionOffset)));
+   }
+
+
+      3. Table Model
+class TableModule
+{
+    protected DataTable table;
+    protected TableModule(DataSet ds, String tableName) 
+    {
+         table = ds.Tables[tableName];
+    }
+}
+
+Class Contract : TableModule
+{
+    public Contract (DataSet ds) : base (ds, "Contracts") {}
+    
+    public DataRow this [long key] 
+    {
+       get 
+       {
+          String filter = String.Format("ID = {0}", key);
+          return table.Select(filter)[0];
+       }
+    }
+
+}
+
+public void CalculateRecognitions (long contractID) 
+{
+    DataRow contractRow = this[contractID];
+    Decimal amount = (Decimal)contractRow["amount"];
+    ……….
+}
+
+
+      4. Service Layer.
+public class ApplicationService 
+{ 
+   protected EmailGateway getEmailGateway() 
+   {
+      //return an instance of EmailGateway
+   }
+ 
+   protected IntegrationGateway getIntegrationGateway() 
+   {
+      //return an instance of IntegrationGateway
+   }
+}
+
+public interface EmailGateway 
+{
+   void sendEmailMessage(String toAddress, String subject, String body);
+}
+
+public interface IntegrationGateway 
+{
+   void publishRevenueRecognitionCalculation(Contract contract);
+}
+
+public class RecognitionService : ApplicationService 
+{
+   public void calculateRevenueRecognitions(long contractNumber) 
+   {
+      Contract contract = Contract.readForUpdate(contractNumber);
+      contract.calculateRecognitions();
+      getEmailGateway().sendEmailMessage(
+         contract.getAdministratorEmailAddress(),
+         "RE: Contract #" + contractNumber,
+         contract + " has had revenue recognitions calculated.");
+      getIntegrationGateway().publishRevenueRecognitionCalculation(contract);
+   }
+
+   public Money recognizedRevenue(long contractNumber, Date asOf) 
+   {
+      return Contract.read(contractNumber).recognizedRevenue(asOf);
+   }
+}
+
+
+Data Source Architectural Patters.
+1.	Table Data Gateway
+An object that acts as a Gateway (466) to a database table. One instance handles all the rows in the table.
+
+class PersonGateway
+{
+      public IDataReader FindAll() {
+         String sql = "select * from person";
+         return new OleDbCommand(sql, DB.Connection).ExecuteReader();
+      }
+
+      public IDataReader FindWithLastName(String lastName) {
+         String sql = "SELECT * FROM person WHERE lastname = ?";
+         IDbCommand comm = new OleDbCommand(sql, DB.Connection);
+         comm.Parameters.Add(new OleDbParameter("lastname", lastName));
+         return comm.ExecuteReader();
+      }
+
+      public IDataReader FindWhere(String whereClause) {
+         String sql = String.Format(
+         "select * from person where {0}", whereClause);
+         return new OleDbCommand(sql, DB.Connection).ExecuteReader();
+      }
+
+      public Object[] FindRow (long key) 
+      {
+         String sql = "SELECT * FROM person WHERE id = ?";
+         IDbCommand comm = new OleDbCommand(sql, DB.Connection);
+         comm.Parameters.Add(new OleDbParameter("key",key));
+         IDataReader reader = comm.ExecuteReader();
+         reader.Read();
+         Object [] result = new Object[reader.FieldCount];
+         reader.GetValues(result);
+         reader.Close();
+         return result;
+      }
+       
+    public void Update (long key, String lastname, 
+                        String firstname, long numberOfDependents)
+      {
+         String sql = @"
+               UPDATE person
+                  SET lastname = ?, firstname = ?, numberOfDependents = ?
+                  WHERE id = ?";
+         IDbCommand comm = new OleDbCommand(sql, DB.Connection);
+         comm.Parameters.Add(new OleDbParameter ("last", lastname));
+         comm.Parameters.Add(new OleDbParameter ("first", firstname));
+         comm.Parameters.Add(new OleDbParameter 
+          ("numDep",    numberOfDependents));
+         comm.Parameters.Add(new OleDbParameter ("key", key));
+         comm.ExecuteNonQuery();
+      }
+
+      public long Insert(String lastName, 
+                         String firstName, long numberOfDependents) 
+      {
+         String sql = "INSERT INTO person VALUES (?,?,?,?)";
+         long key = GetNextID();
+         IDbCommand comm = new OleDbCommand(sql, DB.Connection);
+         comm.Parameters.Add(new OleDbParameter ("key", key));
+         comm.Parameters.Add(new OleDbParameter ("last", lastName));
+         comm.Parameters.Add(new OleDbParameter ("first", firstName));
+         comm.Parameters.Add(new OleDbParameter 
+                         ("numDep", numberOfDependents));
+         comm.ExecuteNonQuery();
+         return key;
+      }
+
+      public void Delete (long key) 
+      {
+          String sql = "DELETE FROM person WHERE id = ?";
+          IDbCommand comm = new OleDbCommand(sql, DB.Connection);
+          comm.Parameters.Add(new OleDbParameter ("key", key));
+          comm.ExecuteNonQuery();
+      }
+}
+
+Example with DataSet
+
+class DataSetHolder
+{
+      public DataSet Data = new DataSet();
+      private Hashtable DataAdapters = new Hashtable();
+
+      public void FillData(String query, String tableName) 
+      {
+         if (DataAdapters.Contains(tableName)) 
+             throw new MutlipleLoadException();
+
+         OleDbDataAdapter da = new OleDbDataAdapter(query, DB.Connection);
+         OleDbCommandBuilder builder = new OleDbCommandBuilder(da);
+         da.Fill(Data, tableName);
+         DataAdapters.Add(tableName, da);
+      }
+      
+      
+}
+
+class DataGateway
+{
+      protected DataSetGateway() 
+      {
+         Holder = new DataSetHolder();
+      }
+
+      protected DataSetGateway(DataSetHolder holder) 
+      {
+         this.Holder = holder;
+      }
+
+      public void LoadAll() 
+      {
+         String commandString = String.Format(
+            "select * from {0}", TableName);
+         Holder.FillData(commandString, TableName);
+      }
+
+      public void LoadWhere(String whereClause)
+      {
+         String commandString =
+            String.Format(
+                "select * from {0}where {1}", 
+                TableName, whereClause);
+
+         Holder.FillData(commandString, TableName);
+      }
+
+      abstract public String TableName {get;}
+
+      public DataRow this[long key] 
+      {
+         get 
+         {
+            String filter = String.Format("id = {0}", key);
+            return Table.Select(filter)[0];
+         }
+      }
+ 
+      public override DataTable Table 
+      {
+         get {return Data.Tables[TableName];}
+      }
+}
+ 
+2.	Row Data Gateway
+ An object that acts as a Gateway (466) to a single record in a data source. There is one instance per row
+create table people (ID int primary key, lastname varchar, 
+                     firstname varchar, number_of_dependents int)
+
+class PersonGateway
+{
+   private String lastName;
+   private String firstName;
+   private int numberOfDependents;
+   public String getLastName() {
+      return lastName;
+   }
+   public void setLastName(String lastName) {
+      this.lastName = lastName;
+   }
+   public String getFirstName() {
+      return firstName;
+   }
+   public void setFirstName(String firstName) {
+      this.firstName = firstName;
+   }
+   public int getNumberOfDependents() {
+      return numberOfDependents;
+   }
+   public void setNumberOfDependents(int numberOfDependents) {
+      this.numberOfDependents = numberOfDependents;
+   }
+
+   private static final String updateStatementString =
+         "UPDATE people " +
+         "  set lastname = ?, firstname = ?, number_of_dependents = ? " +
+         "  where id = ?";
+
+   public void update() 
+   {
+      PreparedStatement updateStatement = null;
+      try {
+         updateStatement = DB.prepare(updateStatementString);
+         updateStatement.setString(1, lastName);
+         updateStatement.setString(2, firstName);
+         updateStatement.setInt(3, numberOfDependents);
+         updateStatement.setInt(4, getID().intValue());
+         updateStatement.execute();
+      } catch (Exception e) {
+         throw new ApplicationException(e);
+      } finally {DB.cleanUp(updateStatement);
+      }
+   }
+
+   private static final String insertStatementString =
+         "INSERT INTO people VALUES (?, ?, ?, ?)";
+
+   public Long insert() 
+   {
+      PreparedStatement insertStatement = null;
+      try {
+         insertStatement = DB.prepare(insertStatementString);
+         setID(findNextDatabaseId());
+         insertStatement.setInt(1, getID().intValue());
+         insertStatement.setString(2, lastName);
+         insertStatement.setString(3, firstName);
+         insertStatement.setInt(4, numberOfDependents);
+         insertStatement.execute();
+         Registry.addPerson(this);
+         return getID();
+      } catch (SQLException e) {
+         throw new ApplicationException(e);
+      } finally {DB.cleanUp(insertStatement);
+   }
+
+}
+
+class PersonFinder
+{
+   private final static String findStatementString =
+         "SELECT id, lastname, firstname, number_of_dependents " +
+         "  from people " +
+         "  WHERE id = ?";
+
+   public PersonGateway find(Long id) 
+   {
+      PersonGateway result = (PersonGateway) Registry.getPerson(id);
+      if (result != null) return result;
+      PreparedStatement findStatement = null;
+      ResultSet rs = null;
+      try {
+         findStatement = DB.prepare(findStatementString);
+         findStatement.setLong(1, id.longValue());
+         rs = findStatement.executeQuery();
+         rs.next();
+         result = PersonGateway.load(rs);
+         return result;
+      } catch (SQLException e) {
+         throw new ApplicationException(e);
+      } finally {DB.cleanUp(findStatement, rs);
+      }
+   }
+
+   public PersonGateway find(long id) 
+   {
+      return find(new Long(id));
+   }
+}
+
+3.	Data Maper.
+4.	class Person
+5.	{
+6.	
+7.	   private String lastName;
+8.	   private String firstName;
+9.	         private int numberOfDependents;
+10.	   }
+create table people (ID int primary key, lastname varchar, firstname varchar, number_of_dependents int)
+class PersonMapper
+{
+   protected String findStatement() 
+   {
+      return "SELECT " + COLUMNS +
+         "  FROM people" +
+         "  WHERE id = ?";
+   }
+
+   public static final String COLUMNS = " 
+            id, lastname, 
+            firstname, number_of_dependents ";
+
+   public Person find(Long id) 
+   {
+      return (Person) abstractFind(id);
+   }
+
+   public Person find(long id) 
+   {
+      return find(new Long(id));
+   }
+
+   private static String findLastNameStatement =
+         "SELECT " + COLUMNS +
+         "  FROM people " +
+         "  WHERE UPPER(lastname) like UPPER(?)" +
+         "  ORDER BY lastname";
+
+   public List findByLastName(String name) 
+   {
+       PreparedStatement stmt = null;
+       ResultSet rs = null;
+       try 
+       {
+           stmt = DB.prepare(findLastNameStatement);
+           stmt.setString(1, name);
+           rs = stmt.executeQuery();
+           return loadAll(rs);
+       } 
+       catch (SQLException e) 
+       {
+           throw new ApplicationException(e);
+       } 
+       finally 
+       {
+           DB.cleanUp(stmt, rs);
+       }
+   }
+
+}
+
+class AbstractMapper
+{
+   protected Map loadedMap = new HashMap();
+   abstract protected String findStatement();
+
+   protected DomainObject abstractFind(Long id) 
+   {
+      DomainObject result = (DomainObject) loadedMap.get(id);
+
+      if (result != null) 
+          return result;
+
+      PreparedStatement findStatement = null;
+
+      findStatement = DB.prepare(findStatement());
+      findStatement.setLong(1, id.longValue());
+      ResultSet rs = findStatement.executeQuery();
+      rs.next();
+      result = load(rs);
+      return result;
+   }
+
+   protected DomainObject load(ResultSet rs)
+   {
+      Long id = new Long(rs.getLong(1));
+      if (loadedMap.containsKey(id)) 
+          return (DomainObject) loadedMap.get(id);
+
+      DomainObject result = doLoad(id, rs);
+      loadedMap.put(id, result);
+      return result;
+   }
+
+   abstract protected DomainObject doLoad(Long id, ResultSet rs) 
+
+}
+
+   Object-Relational Behavioral Patterns.
+1.	Unit of Work.
+       Maintains a list of objects affected by a business transaction and coordinates the writing out of changes and the resolution of concurrency problems. The main goal of UnitOfWork is to keep track of the changes. We can also let it know about objects we've read so that it can check for inconsistent reads by verifying that none of the objects changed on the database during the business transaction.
+       The key thing about Unit of Work is that, when it comes time to commit, the Unit of Work decides what to do. It opens a transaction, does any concurrency checking (using Pessimistic Offline Lock (426) or Optimistic Offline Lock (416)), and writes changes out to the database.
+
+class UnitOfWork... 
+
+   private List newObjects = new ArrayList();
+   private List dirtyObjects = new ArrayList();
+   private List removedObjects = new ArrayList();
+
+   public void registerNew(DomainObject obj) 
+   {
+      Assert.notNull("id not null", obj.getId());
+      Assert.isTrue("object not dirty", !dirtyObjects.contains(obj));
+      Assert.isTrue("object not removed", !removedObjects.contains(obj));
+      Assert.isTrue("object not already registered new",     !newObjects.contains(obj));
+      newObjects.add(obj);
+   }
+
+   public void registerDirty(DomainObject obj) 
+   {
+      Assert.notNull("id not null", obj.getId());
+      Assert.isTrue("object not removed", !removedObjects.contains(obj));
+      if (!dirtyObjects.contains(obj) && !newObjects.contains(obj)) 
+      {
+         dirtyObjects.add(obj);
+      }
+   }
+
+   public void registerRemoved(DomainObject obj) 
+   {
+      Assert.notNull("id not null", obj.getId());
+      if (newObjects.remove(obj)) return;
+      dirtyObjects.remove(obj);
+      if (!removedObjects.contains(obj)) {
+         removedObjects.add(obj);
+      }
+   }
+
+   public void registerClean(DomainObject obj) 
+   {
+      Assert.notNull("id not null", obj.getId());
+   }
+
+   public void commit() 
+   {
+      insertNew();
+      updateDirty();
+      deleteRemoved();
+   }
+
+   private void insertNew() 
+   {
+      for (Iterator objects = newObjects.iterator(); objects.hasNext();) {
+         DomainObject obj = (DomainObject) objects.next();
+         MapperRegistry.getMapper(obj.getClass()).insert(obj);
+      }
+   }
+
+
+   As each business transaction executes within a single thread we can associate the Unit of Work with the currently executing thread using the java.lang.ThreadLocal class.
+
+
+class UnitOfWork
+{
+   private static ThreadLocal current = new ThreadLocal();
+
+   public static void newCurrent() 
+   {
+      setCurrent(new UnitOfWork());
+   }
+   public static void setCurrent(UnitOfWork uow) 
+   {
+      current.set(uow);
+   }
+
+   public static UnitOfWork getCurrent() 
+   {
+      return (UnitOfWork) current.get();
+   }
+}
+
+How to use our Unit Of Work. For each thread we create new 
+class DomainObject
+{
+   protected void markNew() 
+   {
+      UnitOfWork.getCurrent().registerNew(this);
+   }
+
+   protected void markClean() 
+   {
+      UnitOfWork.getCurrent().registerClean(this);
+   }
+
+   protected void markDirty() 
+   {
+      UnitOfWork.getCurrent().registerDirty(this);
+   }
+
+   protected void markRemoved() 
+   {
+      UnitOfWork.getCurrent().registerRemoved(this);
+   }
+}
+Concrete domain objects need to remember to mark themselves new and dirty where appropriate.
+class Album
+{
+   public static Album create(String name) 
+   {
+      Album obj = new Album(IdGenerator.nextId(), name);
+      obj.markNew();
+      return obj;
+   }
+
+   public void setTitle(String title) 
+   {
+      this.title = title;
+      markDirty();
+   }
+}
+How to use UnitOfWork pattern
+class EditAlbumScript
+{
+   public static void updateTitle(Long albumId, String title) 
+   {
+      UnitOfWork.newCurrent();
+      Mapper mapper = MapperRegistry.getMapper(Album.class);
+      Album album = (Album) mapper.find(albumId);
+      album.setTitle(title);
+      UnitOfWork.getCurrent().commit();
+  }
+}
+
+How to organize an appropriate servlet to manage UnitOfWork
+
+class UnitOfWorkServlet
+{
+   final protected void doGet(HttpServletRequest request, 
+                              HttpServletResponse response)
+   throws ServletException, IOException 
+   {
+      try 
+      {
+         UnitOfWork.newCurrent();
+         handleGet(request, response);
+         UnitOfWork.getCurrent().commit();
+      }
+      finally 
+      {
+         UnitOfWork.setCurrent(null);
+      }
+   }
+
+   abstract void handleGet(HttpServletRequest request, 
+                           HttpServletResponse response)
+         throws ServletException, IOException;
+}
+
+
+2.	Identity Map.
+       Ensures that each object gets loaded only once by keeping every loaded object in a map. Looks up objects using the map when referring to them.
+       An Identity Map keeps a record of all objects that have been read from the database in a single business transaction. Whenever you want an object, you check the Identity Map first to see if you already have it.
+      The first thing to consider is the key for the map. The obvious choice is the primary key of the corresponding database table. This works well if the key is a single column and immutable. 
+private Map people = new HashMap(); 
+
+public static void addPerson(Person arg) 
+{
+   soleInstance.people.put(arg.getID(), arg);
+}
+
+public static Person getPerson(Long key) 
+{
+   return (Person)soleInstance.people.get(key);
+}
+
+public static Person getPerson(long key) 
+{
+   return getPerson(new Long(key));
+}
+3.	Lazy Load.
+An object that doesn't contain all of the data you need but knows how to get it.
+3.1	Lazy Initialization. 
+class Supplier
+{
+   public List getProducts() 
+   {
+    if (products == null) 
+    {
+       products = Product.findForSupplier(getID());
+    }
+       return products;
+   }
+}
+
+3.2	 Virtual Proxy.
+   The key to the virtual proxy is providing a class that looks like the actual class you normally use but that actually holds a simple wrapper around the real class. Thus, a list of products for a supplier would be held with a regular list field
+class SupplierVL
+{
+    private List products;  
+}
+
+public interface VirtualListLoader 
+{ 
+    List load();
+}
+
+Public class ProductLoader : VirtualListLoader
+{
+    private Long id;
+
+    public ProductLoader(Long id) 
+    {
+        this.id = id;
+    }
+
+    public List load() 
+    {
+        return ProductMapper.create().findForSupplier(id);
+    }
+}
+
+public class SupplierMapper
+{
+    protected DomainObject doLoad(Long id, ResultSet rs)
+    {
+        String nameArg = rs.getString(2);
+        SupplierVL result = new SupplierVL(id, nameArg);
+        result.setProducts(new VirtualList(new ProductLoader(id)));
+        return result;
+    }
+}
+
+public class VirtualList
+{
+   private List source;
+   private VirtualListLoader loader;
+
+   public VirtualList(VirtualListLoader loader) 
+   {
+      this.loader = loader;
+   }
+
+   private List getSource() 
+   {
+      if (source == null) 
+          source = loader.load();
+
+      return source;
+   }
+
+   public int size() 
+   {
+      return getSource().size();
+   }
+
+   public boolean isEmpty() 
+   {
+      return getSource().isEmpty();
+   }
+}
+
+   This way the domain class knows nothing about how the mapper class does the Lazy Load. Indeed, the domain class isn't even aware that there is a Lazy Load.
+
+
+3.3	Using a Value Holder.
+public class SupplierVH
+{
+private ValueHolder products;
+
+      public List getProducts() 
+      {
+         return (List) products.getValue();
+      }
+   }
+
+   public class ValueHolder
+   {
+      private Object value;
+      private ValueLoader loader;
+
+      public ValueHolder(ValueLoader loader) 
+      {
+         this.loader = loader;
+      }
+
+      public Object getValue() 
+      {
+         if (value == null) 
+         {
+            value = loader.load();
+         }
+         return value;
+   }
+
+public interface ValueLoader 
+{
+   Object load();
+}
+
+A mapper can set up the value holder by creating an implementation of the loader and putting it into the supplier object.
+public class SupplierMapper
+{
+   protected DomainObject doLoad(Long id, ResultSet rs) throws SQLException 
+   {
+      String nameArg = rs.getString(2);
+      SupplierVH result = new SupplierVH(id, nameArg);
+      result.setProducts(new ValueHolder(new ProductLoader(id)));
+      return result;
+   }
+}
+
+public static class ProductLoader implements ValueLoader 
+{
+   private Long id;
+   public ProductLoader(Long id) 
+   {
+      this.id = id;
+   }
+
+   public Object load() 
+   {
+      return ProductMapper.create().findForSupplier(id);
+   }
+}
+
+3.4	 Using Ghosts.
+   class Domain Object
+   {
+    LoadStatus Status;
+
+    public DomainObject (long key) 
+    {
+          this.Key = key;
+ }
+
+    public Boolean IsGhost 
+    {
+       get {return Status == LoadStatus.GHOST;}
+    }
+
+    public Boolean IsLoaded 
+    {
+       get {return Status == LoadStatus.LOADED;}
+    }
+
+    public void MarkLoading() 
+    {
+       Debug.Assert(IsGhost);
+       Status = LoadStatus.LOADING;
+    }
+
+       public void MarkLoaded() 
+       {
+       Debug.Assert(Status == LoadStatus.LOADING);
+       Status = LoadStatus.LOADED;
+    }
+
+       protected void Load() 
+       {
+          if (IsGhost)
+          {
+             DataSource.Load(this);
+          }
+       }
+}
+
+enum LoadStatus {GHOST, LOADING, LOADED};
+
+   public class Employee
+   {
+       public String Name 
+       {
+         get 
+         {
+            Load();
+            return _name;
+         }
+
+         set 
+         {
+            Load();
+            _name = value;
+         }
+       }
+
+       String _name;
+   }
+
+We need to implement Load method, but it is prohibited to put the link to DataMapper from Domain Object.
+
+
+Class DataSource
+public interface IDataSource 
+{
+    void Load (DomainObject obj);
+}
+
+public class DataSource
+{
+    public static void Load(DomainObject obj) 
+    {
+       instance.Load(obj);
+    }
+}
+
+public class MapperRegistry : IDataSource
+{ 
+    public void Load (DomainObject obj) 
+    {
+         Mapper(obj.GetType()).Load(obj);
+    }
+    public static Mapper Mapper(Type type) 
+    {
+         return (Mapper)instance.mappers[type];  
+    }
+
+    IDictionary mappers = new Hashtable();
+}
+
+   Object-Relational Structural Patterns.
+
+1.1	Association Table Mapping.
+Saves an association as a table with foreign keys to the tables that are linked by the association.
+1.2	Dependent Mapping
+        Has one class perform the database mapping for a child class. 
+class Track... 
+
+   private final String title;
+   public Track(String title) {
+      this.title = title;
+   }
+   public String getTitle() {
+      return title;
+   }
+
+class Album... 
+
+   private List tracks = new ArrayList();
+   public void addTrack(Track arg) {
+      tracks.add(arg);
+   }
+   public void removeTrack(Track arg) {
+      tracks.remove(arg);
+   };
+   public void removeTrack(int i) {
+      tracks.remove(i);
+   }
+   public Track[] getTracks() {
+      return (Track[]) tracks.toArray(new Track[tracks.size()]);
+   }
+
+class AlbumMapper... 
+
+   protected String findStatement() {
+      return
+         "SELECT ID, a.title, t.title as trackTitle" +
+         "  FROM albums a, tracks t" +
+         "  WHERE a.ID = ? AND t.albumID = a.ID" +
+         "  ORDER BY t.seq";
+   }
+        
+   protected DomainObject doLoad(Long id, ResultSet rs) throws SQLException {
+      String title = rs.getString(2);
+      Album result = new Album(id, title);
+      loadTracks(result, rs);
+      return result;
+   }
+
+   public void loadTracks(Album arg, ResultSet rs) throws SQLException {
+      arg.addTrack(newTrack(rs));
+      while (rs.next()) {
+         arg.addTrack(newTrack(rs));
+      }
+   }
+
+   private Track newTrack(ResultSet rs) throws SQLException {
+      String title = rs.getString(3);
+      Track newTrack = new Track (title);
+      return newTrack;
+   }
+
+When the album is updated all the tracks are deleted and reinserted.
+
+
+1.3	Embedded Value.
+Maps an object into several fields of another object's table. 
+class ProductOffering... 
+
+   private Product product;
+   private Money baseCost;
+   private Integer ID;
+
+Map the baseCost field as embedded value.  The money class has no persistence behavior at all.
+class ProductOffering... 
+
+   public static ProductOffering load(ResultSet rs) 
+   {
+      try 
+      {
+         Integer id = (Integer) rs.getObject("ID");
+         BigDecimal baseCostAmount = rs.getBigDecimal("base_cost_amount");
+         Currency baseCostCurrency = 
+         Registry.getCurrency(rs.getString("base_cost_currency"));
+
+         //Money class don’t have any mapper. This is embedded value.         
+
+         Money baseCost = new Money(baseCostAmount, baseCostCurrency);
+         Integer productID = (Integer) rs.getObject("product");
+         Product product = Product.find((Integer) rs.getObject("product"));
+         return new ProductOffering(id, product, baseCost);
+      } 
+      catch (SQLException e) 
+      {
+         throw new ApplicationException(e);
+      }
+   }
+ 
+
+
+class ProductOffering... 
+
+   public void update() 
+   {
+      PreparedStatement stmt = null;
+      try 
+      {
+         stmt = DB.prepare(updateStatementString);
+
+         //Taking data from embedded value         
+  
+         stmt.setBigDecimal(1, baseCost.amount());
+         stmt.setString(2, baseCost.currency().code());
+
+         stmt.setInt(3, ID.intValue());
+         stmt.execute();
+      } 
+      catch (Exception e) 
+      {
+         throw new ApplicationException(e);
+      } 
+      finally 
+      {
+         DB.cleanUp(stmt);
+      }
+   }
+
+   private String updateStatementString =
+         "UPDATE product_offerings" +
+         "  SET base_cost_amount = ?, base_cost_currency = ? " +
+         "  WHERE id = ?";
+ 
+1.4	 Serialized LOB.
+Object models often contain complicated graphs of small objects. Another form of persistence is serialization, where a whole graph of objects is written out as a single large object (LOB) in a table this Serialized LOB then becomes a form of memento.
+class Customer... 
+
+   private String name;
+   private List departments = new ArrayList();
+
+class Department...
+
+   private String name;
+   private List subsidiaries = new ArrayList();
+
+create table customers(ID int primary key, name varchar, departments varchar) 
+
+
+public Long insert() 
+{
+   PreparedStatement insertStatement = null;
+   try 
+   {
+         insertStatement = DB.prepare(insertStatementString);
+
+         setID(findNextDatabaseId());
+
+
+         insertStatement.setInt(1, getID().intValue());
+         insertStatement.setString(2, name);
+         insertStatement.setString(3,   XmlStringer.write(departmentsToXmlElement()));
+         insertStatement.execute();
+         Registry.addCustomer(this);
+         return getID();
+      } catch (SQLException e) {
+        throw new ApplicationException(e);
+      } finally {DB.cleanUp(insertStatement);
+      }
+   }
+
+
+//Simple xml serializer
+
+public Element departmentsToXmlElement() 
+{
+      Element root = new Element("departmentList");
+      Iterator i = departments.iterator();
+      while (i.hasNext()) {
+         Department dep = (Department) i.next();
+         root.addContent(dep.toXmlElement());
+      }
+      return root;
+}
+
+<?xml version="1.0" encoding="UTF-8"?> 
+<departmentList>
+   <department name="US">
+      <department name="New England">
+         <department name="Boston" />
+         <department name="Vermont" />
+      </department>
+      <department name="California" />
+      <department name="Mid-West" />
+   </department>
+   <department name="Europe" />
+</departmentList>
+
+
+
+   Object-Relational Metadata Mapping Pattern.
+1.1	Matadata Mapping. 
+        Holds details of object-relational mapping in metadata. Much of the code that deals with object-relational mapping describes how fields in the database correspond to fields in in-memory objects. 
+       1.1.2 Code Generation. 
+       With code generation you write a program whose input is the metadata and whose output is the source code of classes that do the mapping.
+       1.1.3 Reflection
+class DataMap
+{
+
+   private Class domainClass;
+   private String tableName;
+   private List columnMaps = new ArrayList();
+}
+
+class ColumnMap
+{
+   private String columnName;
+   private String fieldName;
+   private Field field;
+   private DataMap dataMap;
+
+   public ColumnMap(String columnName, String fieldName, DataMap dataMap) 
+   {
+      this.columnName = columnName;
+      this.fieldName = fieldName;
+      this.dataMap = dataMap;
+      initField();
+   }
+
+   private void initField() 
+   {
+      try 
+      {
+         field = dataMap.getDomainClass().getDeclaredField(getFieldName());
+         field.setAccessible(true);
+      } 
+      catch (Exception e) 
+      {
+         throw new ApplicationException(
+           "unable to set up field: " + fieldName, e);
+      }
+   }
+}
+
+
+class PersonMapper
+{
+   protected void loadDataMap()
+   {
+      dataMap = new DataMap(Person.class, "people");
+      dataMap.addColumn("lastname", "varchar", "lastName");
+      dataMap.addColumn("firstname", "varchar", "firstName");
+      dataMap.addColumn("number_of_dependents", "int", "numberOfDependents");
+   }
+}
+
+
+1.2	Query Object.
+       An object that represents a database query. A Query Object is an interpreter [Gang of Four], that is, a structure of objects that can form itself into a SQL query. The advantages of Query Object come with more sophisticated needs: keeping database schemas encapsulated, supporting multiple databases, supporting multiple schemas, and optimizing to avoid multiple queries.
+class QueryObject
+{
+   private Class klass;
+   private List criteria = new ArrayList();
+
+   public Set execute(UnitOfWork uow) 
+   {
+      this.uow = uow;
+      return uow.getMapper(klass).findObjectsWhere(generateWhereClause());
+   }
+
+   private String generateWhereClause() 
+   {
+      StringBuffer result = new StringBuffer();
+      for (Iterator it = criteria.iterator(); it.hasNext();) 
+      {
+         Criteria c = (Criteria)it.next();
+         if (result.length() != 0)
+            result.append(" AND ");
+         result.append(c.generateSql(uow.getMapper(klass).getDataMap()));
+      }
+      return result.toString();
+   } 
+}
+
+class Criteria
+{
+   private String sqlOperator;
+   protected String field;
+   protected Object value;
+   
+   public static Criteria greaterThan(String fieldName, int value) 
+   {
+      return Criteria.greaterThan(fieldName, new Integer(value));
+   }
+
+   public static Criteria greaterThan(String fieldName, Object value) 
+   {
+      return new Criteria(" > ", fieldName, value);
+   }
+
+   private Criteria(String sql, String field, Object value) 
+   {
+      this.sqlOperator = sql;
+      this.field = field;
+      this.value = value;
+   }
+}
+
+How to use Criteria interface
+QueryObject query = new QueryObject(Person.class);
+query.addCriteria(Criteria.greaterThan("numberOfDependents", 0));
+
+class Mapper
+{
+   public Set findObjectsWhere (String whereClause) 
+   {
+      String sql = "SELECT" + dataMap.columnList() 
+                            + " FROM " 
+                            + dataMap.getTableName() 
+                          + " WHERE "
+                            + whereClause;
+
+      PreparedStatement stmt = null;
+      ……
+   }
+}
+
+More complicated example
+
+
+QueryObject query = new QueryObject(Person.class); 
+query.addCriteria(Criteria.greaterThan("numberOfDependents", 0));
+query.addCriteria(Criteria.matches("lastName", "f%"));
+
+
+class Criteria
+{
+   public static Criteria matches(String fieldName, String pattern)
+   {
+     return new MatchCriteria(fieldName, pattern);
+   }
+}
+
+class MatchCriteria extends Criteria
+{
+   public String generateSql(DataMap dataMap) 
+   {
+      return "UPPER(" 
+         + dataMap.getColumnForField(field) 
+         + ") LIKE UPPER('" 
+         + value 
+       + "')";
+   }
+}
+
+
+1.3	Repository.
+       Mediates between the domain and data mapping layers using a collection-like interface for accessing domain objects. A Repository mediates between the domain and data mapping layers, acting like an in-memory domain object collection. In a large system with many domain object types and many possible queries, Repository reduces the amount of code needed to deal with all the querying that goes on. 
+Pattern Active Record
+
+public class Person 
+{ 
+   public List dependents() 
+   {
+      Repository repository = Registry.personRepository();
+      Criteria criteria = new Criteria();
+      criteria.equal(Person.BENEFACTOR, this);
+      return repository.matching(criteria);
+   }
+}
+
+It would be better to move create criteria logic to some wrapper, which is called Repository.
+public class PersonRepository extends Repository 
+{ 
+   public List dependentsOf(aPerson) 
+   {
+      Criteria criteria = new Criteria();
+      criteria.equal(Person.BENEFACTOR, aPerson);
+      return matching(criteria);
+   }
+}
+
+public class Person 
+{ 
+   public List dependents() 
+   {
+      return Registry.personRepository().dependentsOf(this);
+   }
+}
+
+
+abstract class Repository 
+{ 
+   private RepositoryStrategy strategy;
+
+   protected List matching(aCriteria) 
+   {
+      return strategy.matching(aCriteria);
+   }
+}
+
+public class RelationalStrategy : RepositoryStrategy 
+{ 
+   protected List matching(Criteria criteria) 
+   {
+      Query query = new Query(myDomainObjectClass())
+      query.addCriteria(criteria);
+      return query.execute(unitOfWork());
+   }
+}
+
+public class InMemoryStrategy implements RepositoryStrategy 
+{ 
+   private Set domainObjects;
+
+   protected List matching(Criteria criteria) 
+   {
+      List results = new ArrayList();
+      Iterator it = domainObjects.iterator();
+
+      while (it.hasNext()) 
+      {
+         DomainObject each = (DomainObject) it.next();
+         if (criteria.isSatisfiedBy(each))
+         results.add(each);
+      }
+
+      return results;
+   }
+}
+
+
+Web Presentation Patterns.
+
+1.1	Model View Controller.
+1.2	Page Controller.
+
+An object that handles a request for a specific page or action on a Web site.
+The Page Controller can be structured either as a script (CGI script, servlet, etc.) or as a server page (ASP, PHP, JSP, etc.).
+
+The basic responsibilities of a Page Controller are:
+•	Decode the URL and extract any form data to figure out all the data for the action.
+•	Create and invoke any model objects to process the data. All relevant data from the HTML request should be passed to the model so that the model objects don't need any connection to the HTML request.
+•	Determine which view should display the result page and forward the model information to it.
+
+
+The artist controller needs to implement a method to handle the request.
+public class ArtistController
+{
+   public void doGet(HttpServletRequest request, 
+                     HttpServletResponse response)
+               throws IOException, ServletException 
+   {
+        Artist artist = Artist.findNamed(request.getParameter("name"));
+        if (artist == null)
+        {
+            forward("/MissingArtistError.jsp", request, response);
+        }
+        else 
+        {
+            request.setAttribute("helper", new ArtistHelper(artist));
+            forward("/artist.jsp", request, response);
+        }
+   }
+}
+
+Example: Page Handler with a Code Behind (C#)
+Page controller pattern implementation in asp.net
+
+public class CricketPage
+{
+    protected void Page_Load(object sender, System.EventArgs e) 
+    {
+        db = new OleDbConnection(DB.ConnectionString);
+        if (hasMissingParameters())
+            errorTransfer (missingParameterMessage);
+        ………
+    }
+}
+
+1.3	Front Controller.
+
+    A controller that handles all requests for a Web site.
+    The Web handler is the object that actually receives post or get requests from the Web server. It pulls just enough information from the URL and the request to decide what kind of action to initiate and then delegates to a command to carry out the action. The dynamic case allows you to add new commands without changing the Web handler.
+
+
+public class FrontServlet
+{
+   public void doGet(HttpServletRequest request, 
+                     HttpServletResponse response)
+               throws IOException, ServletException 
+   {
+      FrontCommand command = getCommand(request);
+      command.init(getServletContext(), request, response);
+      command.process();
+   }
+
+   private FrontCommand getCommand(HttpServletRequest request) 
+   {
+      try 
+      {
+         return (FrontCommand) getCommandClass(request).newInstance();
+      } 
+      catch (Exception e) 
+      {
+         throw new ApplicationException(e);
+      }
+   }
+
+   private Class getCommandClass(HttpServletRequest request) 
+   {
+      Class result;
+      final String commandClassName =
+            "frontController." 
+          + (String) request.getParameter("command") + "Command";
+
+      try 
+      {
+         result = Class.forName(commandClassName);
+      } 
+      catch (ClassNotFoundException e) 
+      {
+         result = UnknownCommand.class;
+      }
+
+      return result;
+   }
+}
+
+class FrontCommand
+{
+   protected ServletContext context;
+   protected HttpServletRequest request;
+   protected HttpServletResponse response;
+
+   public void init(ServletContext context,
+                HttpServletRequest request,
+                HttpServletResponse response)
+   {
+      this.context = context;
+      this.request = request;
+      this.response = response;
+   }
+   
+   
+}
+
+1.4	Template View.
+      The best way to work is to compose the dynamic Web page as you do a static page but put in markers that can be resolved into calls to gather dynamic information. Since the static part of the page acts as a template for the particular response, I call this a Template View. 
+      One of the most popular forms of Template View is a server page such as ASP, JSP, or PHP.
+Example of template view. DSL based on xml
+<IF expression = "isHighSelling()"><B></IF> 
+<property name = "price"/>
+<IF expression = "isHighSelling()"></B></IF>
+
+<highlight condition = "isHighSelling" style = "bold"> 
+   <property name = "price"/>
+</highlight>
+
+Expressions
+
+<B> <%=helper.getName()%></B>
+<B><jsp:getProperty name="helper" property="name"/></B> 
+
+<UL> 
+<%
+   for (Iterator it = helper.getAlbums().iterator(); it.hasNext();) {
+      Album album = (Album) it.next();%>
+   <LI><%=album.getTitle()%></LI>
+<%   } %>
+</UL>
+
+
+1.5	Transform View.
+
+    The basic notion of Transform View is writing a program that looks at domain-oriented data and converts it to HTML. 
+
+    If you think about this in an imperative way, you might have a method called renderCustomer that takes a customer object and renders it into HTML. If the customer contains a lot of orders, this method loops over the orders calling renderOrder. 
+
+    You can write a Transform View in any language; at the moment, however, the dominant choice is XSLT. 
+
+    Model transforms to data transfer objects and then xml is generated and then xml is transformed to HTML.
+
+public void process() 
+{
+      try {
+         Album album = Album.findNamed(request.getParameter("name"));
+         Assert.notNull(album);
+         PrintWriter out = response.getWriter();
+         XsltProcessor processor = new SingleStepXsltProcessor("album.xsl");
+         out.print(processor.getTransformation(album.toXmlDocument()));
+      } catch (Exception e) {
+         throw new ApplicationException(e);
+}
+
+Serialized xml
+
+<album> 
+   <title>Stormcock</title>
+   <artist>Roy Harper</artist>
+   <trackList>
+      <track>
+          <title>Hors d'Oeuvres</title>
+          <time>8:37</time>
+      </track>
+      <track><title>The Same Old Rock</title><time>12:24</time></track>
+      <track><title>One Man Rock and Roll Band</title><time>7:23</time></track>
+      <track><title>Me and My Woman</title><time>13:01</time></track>
+   </trackList>
+</album>
+
+And then xslt transformation to html
+
+<xsl:template match="album"> 
+   <HTML><BODY bgcolor="white">
+   <xsl:apply-templates/>
+   </BODY></HTML>
+</xsl:template>
+<xsl:template match="album/title">
+   <h1><xsl:apply-templates/></h1>
+</xsl:template>
+<xsl:template match="artist">
+      <P><B>Artist: </B><xsl:apply-templates/></P>
+</xsl:template>
+
+ 
+1.6	Two Step View.
+   Turns domain data into HTML in two steps: first by forming some kind of logical page, then rendering the logical page into HTML. Two Step View deals with this problem by splitting the transformation into two stages. The first transforms the model data into a logical presentation without any specific formatting; The second stage takes that presentation-oriented structure and renders it into HTML. 
+   Example: Two Stage XSLT (XSLT)
+   This approach to a Two Step View uses a two-stage XLST transformation. The first stage transforms domain-specific XML into logical screen XML; the second transforms the logical screen XML into HTML.
+The initial domain oriented XML looks like this:
+<album> 
+   <title>Zero Hour</title>
+   <artist>Astor Piazzola</artist>
+   <trackList>
+      <track><title>Tanguedia III</title><time>4:39</time></track>
+      <track><title>Milonga del Angel</title><time>6:30</time></track>
+      <track><title>Concierto Para Quinteto</title><time>9:00</time></track>
+      <track><title>Milonga Loca</title><time>3:05</time></track>
+      <track><title>Michelangelo '70</title><time>2:50</time></track>
+      <track><title>Contrabajisimo</title><time>10:18</time></track>
+      <track><title>Mumuki</title><time>9:32</time></track>
+   </trackList>
+</album>
+
+
+The first stage XSLT processor transforms it into this screen-oriented XML:
+<screen> 
+   <title>Zero Hour</title>
+   <field label="Artist">Astor Piazzola</field>
+   <table>
+      <row><cell>Tanguedia III</cell><cell>4:39</cell></row>
+      <row><cell>Milonga del Angel</cell><cell>6:30</cell></row>
+      <row><cell>Concierto Para Quinteto</cell><cell>9:00</cell></row>
+      <row><cell>Milonga Loca</cell><cell>3:05</cell></row>
+      <row><cell>Michelangelo '70</cell><cell>2:50</cell></row>
+      <row><cell>Contrabajisimo</cell><cell>10:18</cell></row>
+      <row><cell>Mumuki</cell><cell>9:32</cell></row>
+   </table>
+</screen>
+
+
+1.7	Application Controller.
+
+    A centralized point for handling screen navigation and the flow of an application. 
+    An Application Controller has two main responsibilities: deciding which domain logic to run and deciding the view with which display the response.
+
+class FrontServlet
+{
+   public void service(HttpServletRequest request, 
+                       HttpServletResponse response)
+         throws IOException, ServletException
+   {
+      var appController = getApplicationController(request);
+      var commandString = (String)request.getParameter("command");
+      var comm = appController.getDomainCommand(
+                                   commandString, 
+                                   getParameterMap(request));
+      comm.run(getParameterMap(request));
+      var viewPage = "/" 
+                    + appController.getView(commandString, 
+                                            getParameterMap(request))     
+                    + ".jsp";
+
+      forward(viewPage, request, response);
+   }
+}
+
+   We find the right application controller for a given request, ask the application controller for the domain command, execute the domain command, ask the application controller for a view, and, finally, forward to the view.
+
+interface ApplicationController
+{
+   DomainCommand getDomainCommand (String commandString, Map params);
+   String getView (String commandString, Map params);
+}
+
+interface DomainCommand
+{
+   abstract public void run(Map params);
+}
+
+
+
+
+Distribution Patterns.
+
+1.1	Remote Facade.
+
+   Provides a coarse-grained facade on fine-grained objects to improve efficiency over a network. Within a single address space fine-grained interaction works well, but this happy state does not exist when you make calls between processes. 
+
+Remote facade
+
+public class AlbumService
+{
+   String play(String id) throws RemoteException;
+   String getAlbumXml(String id) throws RemoteException;
+   AlbumDTO getAlbum(String id) throws RemoteException;
+   void createAlbum(String id, String xml) throws RemoteException;
+   void createAlbum(String id, AlbumDTO dto) throws RemoteException;
+   void updateAlbum(String id, String xml) throws RemoteException;
+   void updateAlbum(String id, AlbumDTO dto) throws RemoteException;
+   void addArtistNamed(String id, String name) throws RemoteException;
+   void addArtist(String id, String xml) throws RemoteException;
+   void addArtist(String id, ArtistDTO dto) throws RemoteException;
+   ArtistDTO getArtist(String id) throws RemoteException;
+}
+
+   Methods have variants that use either the Data Transfer Object (401) or an XML string to move data into the remote service.
+
+   Web Service example
+   Domain Model
+
+class Album
+{
+      public String Title;
+      public Artist Artist;
+
+      public IList Tracks 
+      {
+         get {return ArrayList.ReadOnly(tracksData);}
+      }
+
+      public void AddTrack (Track arg) 
+      {
+         tracksData.Add(arg);
+      }
+ 
+      public void RemoveTrack (Track arg) 
+      {
+         tracksData.Remove(arg);
+      }
+
+      private IList tracksData = new ArrayList();
+ }
+
+ class Artist
+ {
+      public String Name;
+ }
+
+ class Track
+ {
+      public String Title;
+
+      public IList Performers 
+      {
+         get {return ArrayList.ReadOnly(performersData);}
+      }
+
+      public void AddPerformer (Artist arg) 
+      {
+         performersData.Add(arg);
+      }
+ 
+      public void RemovePerformer (Artist arg) 
+      {
+         performersData.Remove(arg);
+      }
+
+      private IList performersData = new ArrayList();
+  }
+
+Data Transfer Objects adapted for being used in the Web Service 
+
+class AlbumDTO
+{
+      public String Title;
+      public String Artist;
+      public TrackDTO[] Tracks;
+}
+
+class TrackDTO
+{
+      public String Title;
+      public String[] Performers;
+}
+
+Convertor for converting data to DataTransferObjects.
+
+class AlbumAssembler
+{
+      public AlbumDTO WriteDTO (Album subject) 
+      {
+         AlbumDTO result = new AlbumDTO();
+         result.Artist = subject.Artist.Name;
+         result.Title = subject.Title;
+         ArrayList trackList = new ArrayList();
+         foreach (Track t in subject.Tracks)
+            trackList.Add (WriteTrack(t));
+         result.Tracks = (TrackDTO[])trackList.ToArray(typeof(TrackDTO));
+         return result;
+      }
+
+      public TrackDTO WriteTrack (Track subject) 
+      {
+         TrackDTO result = new TrackDTO();
+         result.Title = subject.Title;
+         result.Performers = new String[subject.Performers.Count];
+         ArrayList performerList = new ArrayList();
+         foreach (Artist a in subject.Performers)
+            performerList.Add (a.Name);
+         result.Performers =                        (String[])performerList.ToArray(typeof (String));
+         return result;
+      }
+}
+
+
+
+1.2	Data Transfer Object.
+An object that carries data between processes in order to reduce the number of method calls.
+
+When you're working with a remote interface, such as Remote Facade (388), each call to it is expensive. As a result you need to reduce the number of calls, and that means that you need to transfer more data with each call.
+
+Write data transfer objects from domain model
+
+class AlbumAssembler
+{
+   public AlbumDTO writeDTO(Album subject) 
+   {
+      AlbumDTO result = new AlbumDTO();
+      result.setTitle(subject.getTitle());
+      result.setArtist(subject.getArtist().getName());
+      writeTracks(result, subject);
+      return result;
+   }
+
+   private void writeTracks(AlbumDTO result, Album subject) 
+   {
+      List newTracks = new ArrayList();
+      Iterator it = subject.getTracks().iterator();
+      while (it.hasNext()) 
+      {
+         TrackDTO newDTO = new TrackDTO();
+         Track thisTrack = (Track) it.next();
+         newDTO.setTitle(thisTrack.getTitle());
+         writePerformers(newDTO, thisTrack);
+         newTracks.add(newDTO);
+      }
+      result.setTracks((TrackDTO[]) newTracks.toArray(new TrackDTO[0]));
+   }
+
+   private void writePerformers(TrackDTO dto, Track subject) 
+   {
+      List result = new ArrayList();
+      Iterator it = subject.getPerformers().iterator();
+      while (it.hasNext()) 
+      {
+         Artist each = (Artist) it.next();
+         result.add(each.getName());
+      }
+      dto.setPerformers((String[]) result.toArray(new String[0]));
+   }
+}
+
+Convertor from Data Transfer Object to Domain Model.
+
+class AlbumAssembler
+{
+   public void createAlbum(String id, AlbumDTO source) 
+   {
+      Artist artist = Registry.findArtistNamed(source.getArtist());
+      if (artist == null)
+         throw new RuntimeException("No artist named " + source.getArtist());
+      Album album = new Album(source.getTitle(), artist);
+      createTracks(source.getTracks(), album);
+      Registry.addAlbum(id, album);
+   }
+
+   private void createTracks(TrackDTO[] tracks, Album album) 
+   {
+      for (int i = 0; i < tracks.length; i++) {
+         Track newTrack = new Track(tracks[i].getTitle());
+         album.addTrack(newTrack);
+         createPerformers(newTrack, tracks[i].getPerformers());
+      }
+   }
+
+   private void createPerformers(Track newTrack, String[] performerArray) 
+   {
+      for (int i = 0; i < performerArray.length; i++) 
+      {
+         Artist performer = Registry.findArtistNamed(performerArray[i]);
+         if (performer == null)
+            throw new 
+               RuntimeException("No artist named " 
+                              + performerArray[i]);
+         newTrack.addPerformer(performer);
+      }
+   }
+}
+
+Iproving clarity of data transfer objects using reflection
+
+class DataTransferObject
+{
+   public Map writeMapReflect() 
+   {
+      Map result = null;
+
+      try 
+      {
+         Field[] fields = this.getClass().getDeclaredFields();
+         result = new HashMap();
+         for (int i = 0; i < fields.length; i++)
+         {
+            result.put(fields[i].getName(), fields[i].get(this));
+         }
+      }
+      catch (Exception e) 
+      {
+         throw new ApplicationException (e);
+      }
+
+      return result;
+   }
+
+   public static TrackDTO readMapReflect(Map arg) 
+   {
+      TrackDTO result = new TrackDTO();
+
+      try 
+      {
+         Field[] fields = result.getClass().getDeclaredFields();
+         for (int i = 0; i < fields.length; i++)
+            fields[i].set(result, arg.get(fields[i].getName()));
+      }
+      catch (Exception e) 
+      {
+         throw new ApplicationException (e);
+      }
+      return result;
+   }
+}
+
+Offline Concurrency Patterns.
+
+1.1	Optimistic Offline Lock.
+
+   Prevents conflicts between concurrent business transactions by detecting a conflict and rolling back the transaction. An Optimistic Offline Lock is obtained by validating that, in the time since a session loaded a record, another session hasn't altered it. The version increment is what prevents inconsistent record data, as a session with an old version can't acquire the lock. 
+   Optimistic concurrency management is appropriate when the chance of conflict between any two business transactions is low. If conflicts are likely it's not user friendly to announce one only when the user has finished his work and is ready to commit.
+
+   Domain object should contain modified time and modified by properties.
+  
+class DomainObject
+{
+    private Timestamp modified;
+    private String modifiedBy;
+    private int version;
+    ……
+}
+
+Database structure
+
+create table customer
+(
+    id bigint primary key, 
+    name varchar, 
+    createdby varchar,
+    created datetime, 
+    modifiedby varchar, 
+    modified datetime, 
+    version int
+)
+
+Sql queries for working with this table
+
+Insert: INSERT INTO customer VALUES (?, ?, ?, ?, ?, ?, ?);
+Select: SELECT * FROM customer WHERE id = ?;
+Update: UPDATE customer SET name = ?, 
+                            modifiedBy = ?, 
+                            modified = ?, 
+                            version = ?
+        WHERE id = ? and version = ?
+Delete: DELETE FROM customer WHERE id = ? and version = ?
+
+
+Find customer item and put it into identity map for the future analyzing 
+
+Public class AbstractMapper
+{
+   public AbstractMapper(String table, String[] columns) 
+   {
+      this.table = table;
+      this.columns = columns;
+      buildStatements();
+   }
+
+   public DomainObject find(Long id) 
+   {
+      //Session is one per thread
+      //For every query web server launch 
+        new thread or gets thread from  
+        thread pool and keep user transaction data here.
+
+
+      DomainObject obj = AppSessionManager.getSession()
+                                          .getIdentityMap()
+                                          .get(id);
+
+      if (obj == null) 
+      {
+         Connection conn = null;
+         PreparedStatement stmt = null;
+         ResultSet rs = null;
+
+         try 
+         {
+            conn = ConnectionManager.INSTANCE.getConnection();
+            stmt = conn.prepareStatement(loadSQL);
+            stmt.setLong(1, id.longValue());
+            rs = stmt.executeQuery();
+            if (rs.next()) 
+            {
+               obj = load(id, rs);
+               String modifiedBy = rs.getString(columns.length + 2);
+               Timestamp modified = rs.getTimestamp(columns.length + 3);
+               int version = rs.getInt(columns.length + 4);
+               obj.setSystemFields(modified, modifiedBy, version);
+
+               //Put this object into per session identity map
+               //Every domain object has version
+               AppSessionManager.getSession().getIdentityMap().put(obj);
+            } 
+            else 
+            {
+               throw new SystemException(table 
+                                       + " " 
+                                       + id 
+                                       + " does not exist");
+            }
+         } 
+         catch (SQLException sqlEx) 
+         {
+            throw new SystemException(
+                         "unexpected error finding " 
+                       + table 
+                       + " " 
+                       + id);
+         } 
+         finally 
+         {
+            cleanupDBResources(rs, conn, stmt);
+         }
+      }
+      return obj;
+   }
+
+
+   protected abstract DomainObject load(Long id, ResultSet rs) throws SQLException;
+
+
+   The job here is to check that the database operation returns a row count of 1. If no rows have been updated, the optimistic lock can't be obtained and the mapper must then throw a concurrency exception. 
+   Delete operation.
+
+class class AbstractMapper
+{ 
+   public void delete(DomainObject object) 
+   {
+      AppSessionManager.getSession().getIdentityMap().remove(object.getId());
+      Connection conn = null;
+      PreparedStatement stmt = null;
+      try 
+      {
+         conn = ConnectionManager.INSTANCE.getConnection();
+         stmt = conn.prepareStatement(deleteSQL);
+         stmt.setLong(1, object.getId().longValue());
+         int rowCount = stmt.executeUpdate();
+
+         //Someone have already removed this item from the database
+         //We must throw an exception
+         if (rowCount == 0) 
+         {
+            throwConcurrencyException(object);
+         }
+      } 
+      catch (SQLException e) 
+      {
+         throw new SystemException("unexpected error deleting");
+      } 
+      finally 
+      {
+         cleanupDBResources(conn, stmt);
+      }
+   }
+
+   Here we use select for item version
+
+   protected void throwConcurrencyException(DomainObject object)
+      throws SQLException 
+   {
+      Connection conn = null;
+      PreparedStatement stmt = null;
+      ResultSet rs = null;
+
+      try 
+      {
+         conn = ConnectionManager.INSTANCE.getConnection();
+         stmt = conn.prepareStatement(checkVersionSQL);
+         stmt.setInt(1, (int)object.getId().longValue());
+         rs = stmt.executeQuery();
+         if (rs.next()) 
+         {
+            int version = rs.getInt(1);
+            String modifiedBy = rs.getString(2);
+            Timestamp modified = rs.getTimestamp(3);
+
+            if (version > object.getVersion()) 
+            {
+               String when = DateFormat
+                             .getDateTimeInstance()
+                             .format(modified);
+
+               throw new ConcurrencyException(table 
+                                              + " " 
+                                              + object.getId() 
+                                              + " modified by " 
+                                              + modifiedBy 
+                                              + " at " 
+                                              + when);
+            } 
+            else 
+            {
+               throw new SystemException(
+                   "unexpected error checking timestamp");
+            }
+         } 
+         else 
+         {
+            throw new ConcurrencyException(table + " " + object.getId() +
+                  " has been deleted");
+         }
+      } 
+      finally 
+      {
+         cleanupDBResources(rs, conn, stmt);
+      }
+   }
+
+   Here's a Unit of Work where we add consistent read checks to our commit process via the more drastic measure of incrementing the version because we don't know the isolation level.
+
+    
+ class UnitOfWork
+ {
+     private List reads = new ArrayList();
+
+     public void registerRead(DomainObject object) 
+     {
+        reads.add(object);
+     }
+
+     public void commit() 
+     {
+        try 
+        {
+           checkConsistentReads();
+           insertNew();
+           deleteRemoved();
+           updateDirty();
+        } 
+        catch (ConcurrencyException e) 
+        {
+           rollbackSystemTransaction();
+           throw e;
+        }
+     }
+
+     public void checkConsistentReads() 
+     {
+        for (Iterator iterator = reads.iterator(); iterator.hasNext();) 
+        {
+            DomainObject dependent = (DomainObject) iterator.next();
+            dependent.getVersion().increment();
+        }
+     }    
+ }
+ }
+
+In delete or update methods we as usually check the version.
+
+1.2	Pessimistic Offline Lock.
+
+   Prevents conflicts between concurrent business transactions by allowing only one business transaction at a time to access data.
+   The first approach to try is Optimistic Offline Lock (416). However, that pattern has its problems. If several people access the same data within a business transaction, one of them will commit easily but the others will conflict and fail. Pessimistic Offline Lock prevents conflicts by avoiding them altogether. 
+
+   There are several variants
+1.	Exclusive write lock + exclusive read lock
+   Explanation:
+       If Exclusive write lock is acquired onto some record, then no one will acquire neither exclusive write lock nor exclusive read lock. 
+
+2.	Read lock and write lock.
+
+    Read and write locks are mutually exclusive. A record can't be write-locked if any other business transaction owns a read lock on it; it can't be read-locked if any other business transaction owns a write lock on it. 
+
+              Concurrent read locks are acceptable. The existence of a single read lock prevents any business transaction from editing the record, so there's no harm in allowing any number of sessions as readers once one has been allowed to read.
+Lock manager
+
+
+interface ExclusiveReadLockManager
+{
+   public static final ExclusiveReadLockManager INSTANCE =
+        (ExclusiveReadLockManager)
+        Plugins.getPlugin(ExclusiveReadLockManager.class);
+
+   public void acquireLock(Long lockable, String owner) 
+        throws ConcurrencyException;
+   public void releaseLock(Long lockable, String owner);
+   public void relaseAllLocks(String owner);
+}
+
+   table lock
+
+
+create table lock(lockableid bigint primary key, ownerid bigint);
+
+
+public class ExclusiveReadLockManagerDBImpl : ExclusiveLockManager
+{
+   String INSERT_SQL = "insert into lock values(?, ?)";
+
+   String DELETE_SINGLE_SQL = "delete from lock where lockableid = ? 
+                                                  and ownerid = ?";
+
+   String DELETE_ALL_SQL = "delete from lock where ownerid = ?";
+
+   
+   String CHECK_SQL = "select lockableid from lock 
+                       where lockableid = ? and ownerid = ?";
+
+
+
+   //Insert into table lock new record
+   public void acquireLock(Long lockable, String owner) 
+                                        throws ConcurrencyException 
+   {
+      if (!hasLock(lockable, owner)) 
+      {
+          Connection conn = null;
+          PreparedStatement pstmt = null;
+
+          try 
+          {
+             conn = ConnectionManager.INSTANCE.getConnection();
+             pstmt = conn.prepareStatement(INSERT_SQL);
+             pstmt.setLong(1, lockable.longValue());
+             pstmt.setString(2, owner);
+             pstmt.executeUpdate();
+          } 
+          catch (SQLException sqlEx) 
+          {
+             throw new ConcurrencyException("unable to lock " + lockable);
+          } 
+          finally 
+          {
+             closeDBResources(conn, pstmt);
+          }
+      }
+   }
+
+   //Release lock from object is the same as to remove record from database
+   public void releaseLock(Long lockable, String owner) 
+   {
+      Connection conn = null;
+      PreparedStatement pstmt = null;
+      try 
+      {
+         conn = ConnectionManager.INSTANCE.getConnection();
+         pstmt = conn.prepareStatement(DELETE_SINGLE_SQL);
+         pstmt.setLong(1, lockable.longValue());
+         pstmt.setString(2, owner);
+         pstmt.executeUpdate();
+      } 
+      catch (SQLException sqlEx) 
+      {
+         throw new SystemException(
+            "unexpected error releasing lock on " 
+            + lockable);
+      } 
+      finally 
+      {
+         closeDBResources(conn, pstmt);
+      }
+   }
+
+   hasLock() method performs a query to database to check if an owner already owns a lock.
+   Create Session for application.
+
+
+
+public class AppSession
+{
+   private String user;
+   private String id;
+   private IdentityMap imap;
+
+   public AppSession(String user, String id, IdentityMap imap) 
+   {
+      this.user = user;
+      this.imap = imap;
+      this.id = id;
+   }
+}
+   
+//We are using ThreadLocal static variables for creating session per thread
+public class AppSessionManager
+{
+   private static ThreadLocal current = new ThreadLocal();
+
+   public static AppSession getSession() 
+   {
+      return (AppSession) current.get();
+   }
+
+   public static void setSession(AppSession session) 
+   {
+      current.set(session);
+   }
+}
+
+   We're going to use a Front Controller to handle requests, so we'll need to define a command. 
+
+interface Command
+{
+    public void init(HttpServletRequest req, HttpServletResponse rsp);
+    public void process() throws Exception;
+}
+
+abstract class BusinessTransactionCommand : Command
+{
+    public void init(HttpServletRequest req, HttpServletResponse rsp) 
+    {
+        this.req = req;
+        this.rsp = rsp;
+    }
+
+    protected void startNewBusinessTransaction() 
+    {
+        HttpSession httpSession = getReq().getSession(true);
+        AppSession appSession = (AppSession)
+                                 httpSession
+                                 .getAttribute(APP_SESSION);
+
+        if (appSession != null) 
+        {
+            ExclusiveReadLockManager
+                          .INSTANCE
+                          .relaseAllLocks(appSession.getId());
+        }
+
+        
+
+
+         appSession = new AppSession(
+                          getReq().getRemoteUser(),
+                          httpSession.getId(), 
+                          new IdentityMap());
+
+         AppSessionManager.setSession(appSession);
+
+         httpSession.setAttribute(APP_SESSION, appSession);
+         httpSession.setAttribute(LOCK_REMOVER, new  LockRemover(
+                                                     appSession.getId()));
+   }
+
+
+   protected void continueBusinessTransaction() 
+   {
+         HttpSession httpSession = getReq().getSession();
+         AppSession appSession = (AppSession)httpSession
+                                            .getAttribute(APP_SESSION);
+         AppSessionManager.setSession(appSession);
+   }
+
+   protected HttpServletRequest getReq() 
+   {
+      return req;
+   }
+
+   protected HttpServletResponse getRsp() 
+   {
+      return rsp;
+   }
+}
+
+   Our commands contain both standard business logic and lock management, and each command must execute within the bounds of a single system transaction. To ensure this we can decorate [Gang of Four] it with a transactional command object.        
+
+public class TransactionalComamnd : Command
+{
+    public TransactionalCommand(Command impl) 
+    {
+        this.impl = impl;
+    }
+
+    public void process() throws Exception 
+    {
+        beginSystemTransaction();
+
+        try 
+        {
+           impl.process();
+           commitSystemTransaction();
+        } 
+        catch (Exception e) 
+        {
+           rollbackSystemTransaction();
+           throw e;
+        }
+    }
+}
+
+
+
+
+public class ControllerServlet : HttpServlet
+{
+   protected void doGet(HttpServletRequest req, HttpServletResponse rsp)
+                     throws ServletException, IOException 
+   {
+       try 
+       {
+           String cmdName = req.getParameter("command");
+           Command cmd = getCommand(cmdName);
+           cmd.init(req, rsp);
+           cmd.process();
+       } 
+       catch (Exception e) 
+       {
+           writeException(e, rsp.getWriter());
+       }
+   }
+
+   private Command getCommand(String name) 
+   {
+       try 
+       {
+           String className = (String)commands.get(name);
+           Command cmd = (Command)Class.forName(className).newInstance();
+           return new TransactionalCommand(cmd);
+       } 
+       catch (Exception e) 
+       {
+           e.printStackTrace();
+           throw new SystemException(
+              "unable to create command object for " + name);
+       }
+   }
+}
+Examples of business command
+public class EditCustomerCommand : Command
+{
+   public void process() throws Exception 
+   {
+      startNewBusinessTransaction();
+      Long customerId = new Long(getReq().getParameter("customer_id"));
+
+      //Acquire lock for the customer_id object
+      ExclusiveReadLockManager
+            .INSTANCE
+            .acquireLock(customerId, AppSessionManager.getSession()
+                                                      .getId());
+
+      Mapper customerMapper = MapperRegistry.INSTANCE
+                                            .getMapper(Customer.class);
+
+      Customer customer = (Customer)customerMapper.find(customerId);
+      getReq().getSession().setAttribute("customer", customer);
+      forward("/editCustomer.jsp");
+   }
+}
+
+public class SaveCustomerCommand : Command
+{
+
+   public void process() throws Exception 
+   {
+       continueBusinessTransaction();
+       Customer customer = (Customer)getReq().getSession()
+                                             .getAttribute("customer");
+
+       String name = getReq().getParameter("customerName");
+       customer.setName(name);
+
+       Mapper customerMapper = MapperRegistry.INSTANCE
+                                             .getMapper(Customer.class);
+       customerMapper.update(customer);
+
+       ExclusiveReadLockManager.INSTANCE.releaseLock(customer.getId(),
+       AppSessionManager.getSession()
+                        .getId());
+
+       forward("/customerSaved.jsp");
+   }
+}
+
+In .NET environment we can use ReaderWriterLockSlim
+
+
+
+1.3	Coarse-Grained Lock.
+
+Locks a set of related objects with a single lock. The most obvious reason to use a Coarse-Grained Lock is to satisfy business requirements. This is the case when locking an aggregate. 
+table version
+
+create table version
+(
+    id bigint primary key, 
+    value bigint,
+    modifiedBy varchar, 
+    modified datetime
+)
+
+class Version
+{
+   private Long id;
+   private long value;
+   private String modifiedBy;
+   private Timestamp modified;
+   private boolean locked;
+   private boolean isNew;
+
+   private static final String UPDATE_SQL =
+         "UPDATE version SET VALUE = ?, modifiedBy = ?, modified = ? " +
+         "WHERE id = ? and value = ?";
+
+   private static final String DELETE_SQL =
+         "DELETE FROM version WHERE id = ? and value = ?";
+
+   private static final String INSERT_SQL =
+         "INSERT INTO version VALUES (?, ?, ?, ?)";
+
+   private static final String LOAD_SQL =
+         "SELECT id, value, modifiedBy, modified FROM version WHERE id = ?";
+
+   public static Version find(Long id) {
+      Version version = AppSessionManager.getSession()
+                                         .getIdentityMap()
+                                         .getVersion(id);
+      if (version == null) 
+      {
+         version = load(id);
+      }
+      return version;
+   }
+
+   private static Version load(Long id) 
+   {
+      ResultSet rs = null;
+      Connection conn = null;
+      PreparedStatement pstmt = null;
+      Version version = null;
+
+      try 
+      {
+         conn = ConnectionManager.INSTANCE.getConnection();
+         pstmt = conn.prepareStatement(LOAD_SQL);
+         pstmt.setLong(1, id.longValue());
+         rs = pstmt.executeQuery();
+         if (rs.next()) 
+         {
+             long value = rs.getLong(2);
+             String modifiedBy = rs.getString(3);
+             Timestamp modified = rs.getTimestamp(4);
+             version = new Version(id, value, modifiedBy, modified);
+             AppSessionManager.getSession()
+                             .getIdentityMap()
+                             .putVersion(version);
+         } 
+         else 
+         {
+             throw new ConcurrencyException("version " + id + " not found.");
+         }
+      } 
+      catch (SQLException sqlEx) 
+      {
+         throw new SystemException(
+              "unexpected sql error loading version", sqlEx);
+      } 
+      finally 
+      {
+          cleanupDBResources(rs, conn, pstmt);
+      }
+
+      return version;
+   }
+
+   public static Version create() 
+   {
+      Version version = new Version(IdGenerator.INSTANCE.nextId(), 0,
+            AppSessionManager.getSession().getUser(), now());
+      version.isNew = true;
+      return version;
+   }
+
+   public void insert() 
+   {
+      if (isNew()) 
+      {
+          Connection conn = null;
+          PreparedStatement pstmt = null;
+          try 
+          {
+            conn = ConnectionManager.INSTANCE.getConnection();
+            pstmt = conn.prepareStatement(INSERT_SQL);
+            pstmt.setLong(1, this.getId().longValue());
+            pstmt.setLong(2, this.getValue());
+            pstmt.setString(3, this.getModifiedBy());
+            pstmt.setTimestamp(4, this.getModified());
+            pstmt.executeUpdate();
+            AppSessionManager.getSession().getIdentityMap().putVersion(this);
+            isNew = false;
+          } 
+          catch (SQLException sqlEx) {
+           throw new SystemException("unexpected sql error inserting version", sqlEx);
+         } finally {
+           cleanupDBResources(conn, pstmt);
+         }
+      }
+   }
+
+   public void increment() throws ConcurrencyException 
+   {
+      if (!isLocked()) 
+      {
+         Connection conn = null;
+         PreparedStatement pstmt = null;
+         try 
+         {
+            conn = ConnectionManager.INSTANCE.getConnection();
+            pstmt = conn.prepareStatement(UPDATE_SQL);
+            pstmt.setLong(1, value + 1);
+            pstmt.setString(2, getModifiedBy());
+            pstmt.setTimestamp(3, getModified());
+            pstmt.setLong(4, id.longValue());
+            pstmt.setLong(5, value);
+            int rowCount = pstmt.executeUpdate();
+            if (rowCount == 0) 
+            {
+               throwConcurrencyException();
+            }
+            value++;
+            locked = true;
+         } 
+         catch (SQLException sqlEx) 
+         {
+           throw new SystemException("unexpected sql error incrementing version", sqlEx);
+         } 
+         finally 
+          {
+           cleanupDBResources(conn, pstmt);
+         }
+      }
+   }
+   private void throwConcurrencyException() {
+      Version currentVersion = load(this.getId());
+      throw new ConcurrencyException(
+            "version modified by " + currentVersion.modifiedBy + " at " +
+            DateFormat.getDateTimeInstance().format(currentVersion.getModified()));
+   }
+
+
+
+class DomainObject
+{
+    private Long id;;
+    private Timestamp modified;
+    private String modifiedBy;
+    private Version version;
+    public void setSystemFields(Version version, 
+                                Timestamp modified, 
+                                String modifiedBy) 
+    {
+       this.version = version;
+       this.modified = modified;
+       this.modifiedBy = modifiedBy;
+    }
+}
+
+class AbstractMapper
+{
+    public void insert(DomainObject object) 
+    {
+       object.getVersion().insert();
+    }
+
+    public void update(DomainObject object) 
+    {
+       object.getVersion().increment();
+    }
+    
+    public void delete(DomainObject object) 
+    {
+       object.getVersion().increment();
+    }
+}
+
+class CustomerMapper extends AbstractMapper
+{
+    public void delete(DomainObject object) 
+    {
+        Customer cust = (Customer) object;
+        for (Iterator iterator = cust.getAddresses().iterator(); iterator.hasNext();) {
+         Address add = (Address) iterator.next();
+         MapperRegistry.getMapper(Address.class).delete(add);
+      }
+      super.delete(object);
+      cust.getVersion().delete();
+    }
+}
+
+Pessimistic Offline Lock
+
+
+class LoadCustomerCommand... 
+
+      try {
+         Customer customer = (Customer) MapperRegistry.getMapper(Customer.class).find(id);
+         ExclusiveReadLockManager.INSTANCE.acquireLock
+               (customer.getId(), AppSessionManager.getSession().getId());
+         customer.getVersion().increment();
+         TransactionManager.INSTANCE.commit();
+      } catch (Exception e) {
+         TransactionManager.INSTANCE.rollback();
+         throw e;
+      }
+
+ 
+1.4	Implicit Lock.
+
+Allows framework or layer supertype code to acquire offline locks. 
+
+
+interface Mapper
+{
+   public DomainObject find(Long id);
+   public void insert(DomainObject obj);
+   public void update(DomainObject obj);
+   public void delete(DomainObject obj);
+}
+
+public class LockingMapper : Mapper
+{
+   private Mapper impl;
+
+   public LockingMapper(Mapper impl) 
+   {
+      this.impl = impl;
+   }
+
+   public DomainObject find(Long id) 
+   {
+      ExclusiveReadLockManager.INSTANCE.acquireLock(
+         id, AppSessionManager.getSession().getId());
+      return impl.find(id);
+   }
+
+   public void insert(DomainObject obj) 
+   {
+      impl.insert(obj);
+   }
+
+   public void update(DomainObject obj) 
+   {
+      impl.update(obj);
+   }
+
+   public void delete(DomainObject obj) 
+   {
+      impl.delete(obj);
+   }
+}
+
+
+Session State Patterns.
+
+1.1	Client Session State.
+With an HTML interface, things get a bit more complicated. There are three common ways to do client session state: URL parameters, hidden fields, and cookies.
+
+1.2	Server Session State.
+
+   Keeps the session state on a server system in a serialized form.
+
+
+1.3	Database Session State.
+
+
+Base Patterns.
+
+1.1	Gateway.
+    An object that encapsulates access to an external system or resource.
+
+int send(String messageType, Object[] args);
+void sendConfirmation(String orderID, int amount, String symbol); 
+
+public class Order
+{
+   public void confirm() 
+   {
+      if (isValid()) 
+      {
+          Environment.getMessageGateway()
+                     .sendConfirmation(id, amount, symbol);
+      }
+   }
+}
+
+
+Public class MessageGateway
+{
+   protected static final String CONFIRM = "CNFRM";
+   private MessageSender sender;
+
+   public void sendConfirmation(String orderID, int amount, String symbol) 
+   {
+      Object[] args = new Object[]{orderID, new Integer(amount), symbol};
+      send(CONFIRM, args);
+   }
+
+   private void send(String msg, Object[] args) 
+   {
+      int returnCode = doSend(msg, args);
+      if (returnCode == MessageSender.NULL_PARAMETER)
+         throw new NullPointerException("Null Parameter bassed for msg type: " + msg);
+      if (returnCode != MessageSender.SUCCESS)
+         throw new IllegalStateException(
+               "Unexpected error from messaging system #:" + returnCode);
+   }
+
+   protected int doSend(String msg, Object[] args) 
+   {
+      Assert.notNull(sender);
+      return sender.send(msg, args);
+   }
+
+1.2	Registry
+     A well-known object that other objects can use to find common objects and services.
+
+public class Registry
+{
+   private static Registry soleInstance = new Registry();
+   protected PersonFinder personFinder = new PersonFinder(); 
+
+   private static Registry getInstance() 
+   {
+      return soleInstance;
+   }
+
+   public static PersonFinder personFinder() 
+   {
+      return getInstance().personFinder;
+   }
+
+   public static void initialize() 
+   {
+      soleInstance = new Registry();
+   }
+}
+
+Thread-Safe Registry
+
+public class ThreadLocalRegistry
+{
+   private static ThreadLocal instances = new ThreadLocal();
+
+   public static ThreadLocalRegistry getInstance() 
+   {
+      return (ThreadLocalRegistry)instances.get();
+   }
+
+   public static void begin() 
+   {
+      Assert.isTrue(instances.get() == null);
+      instances.set(new ThreadLocalRegistry());
+   }
+
+   public static void end() 
+   {
+      Assert.notNull(getInstance());
+      instances.set(null);
+   }
+
+   private PersonFinder personFinder = new PersonFinder();;
+
+   public static PersonFinder personFinder() 
+   {
+      return getInstance().personFinder;
+   }
+}
+
+
+And now how to use the registry
+
+try 
+{ 
+    ThreadLocalRegistry.begin();
+    PersonFinder f1 = ThreadLocalRegistry.personFinder();
+    Person martin = Registry.personFinder().find(1);
+    assertEquals("Fowler", martin.getLastName());
+} 
+finally 
+{
+    ThreadLocalRegistry.end();
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
  
 
 
 
+               
 
 
-						   
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+      
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+   
