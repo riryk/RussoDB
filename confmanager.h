@@ -1,5 +1,5 @@
 
-#include "confmanager.h"
+#include "iconfmanager.h"
 
 #ifndef CONFMANAGER_H
 #define CONFMANAGER_H

@@ -8,6 +8,7 @@
 #include "irelrowmanager.h"
 #include "irelfilemanager.h"
 #include "ipagemanager.h"
+#include "ibuffermanager.h"
 
 typedef struct SIRelationManager
 {   

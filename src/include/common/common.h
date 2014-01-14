@@ -42,7 +42,7 @@ typedef int            Bool;
 #define MAX_BLOCK_SIZE (1 << 15)
 #define MAX_PRINTED_CHARS 10
 
-Bool	IsPostmaster = False;
+extern Bool	IsPostmaster;
 
 typedef struct SBlockId
 {

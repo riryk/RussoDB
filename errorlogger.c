@@ -1,9 +1,12 @@
 
 #include <setjmp.h>
 #include "common.h"
+#include "error.h"
+#include "ierrorlogger.h"
 
-jmp_buf*  exceptionStack = NULL;
-int	      stackDepth     = -1;
+jmp_buf*    exceptionStack = NULL;
+int	        stackDepth     = -1;
+SErrorInfo  errorInfos[ERROR_STACK_SIZE];
 
 /* checks if errorLevel is logically more 
  * than min error level or not. 
@@ -49,8 +52,8 @@ Bool beginError(
     char*         domain)
 {
     IErrorLogger             _   = (IErrorLogger)self;
-    IConfManager             cm  = _->confManager;;
-    IErrorLoggerConfManager  em  = _->errLogConfgMan;    
+    IConfManager             cm  = _->confManager;
+    IErrorLoggerConfManager  em  = cm->errLogConfgMan;    
 
 	int                i;
 
@@ -58,15 +61,15 @@ Bool beginError(
 	Bool		       writeToClient  = False;
 
 	int                minLogLevel    = em->getMinLogLevel();
-    int                minClientLevel = em->getMinClientLogLevel()
+    int                minClientLevel = em->getMinClientLogLevel();
 
 	Bool               isPostmaster   = cm->getIsPostmaster();
     OutputDestination  outputDest     = cm->getOutputDest();
 
 	if (level >= LOG_ERROR)
 	{
-        if (CritSectionCount > 0)
-			level = LOG_PANIC;
+        /*if (CritSectionCount > 0)
+			level = LOG_PANIC;*/
 
 		if (level == LOG_ERROR && exceptionStack == NULL)
 			level = LOG_FATAL;
@@ -76,7 +79,7 @@ Bool beginError(
 		 * update our current error level.
 		 */
 		for (i = 0; i <= stackDepth; i++)
-			level = Max(elevel, errordata[i].elevel);
+			level = Max(level, errorInfos[i].level);
 	}
 
 	writeToServer = IsPostmaster ? 

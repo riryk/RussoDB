@@ -13,7 +13,6 @@ typedef struct SIBufferManager
 	IRelFileManager    relFileManager;
 	ILatchManager      latchManager;
 	IMemoryManager     memoryManager;
-	//void*              relationManager;
     ICommon            commonManager;
 
 	void (*ctorBufMan)(void* self);

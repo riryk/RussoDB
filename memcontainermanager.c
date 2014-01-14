@@ -53,7 +53,7 @@ void* allocSetAlloc(
 	 * we can't allocate a memory chunk.
 	 * In this case we allocate a new whole block.
 	 */
-	if (size > memset->chunkMaxSize)
+	if (size > set->chunkMaxSize)
 	{
         chunkSize = ALIGN_DEFAULT(size);
 		blockSize = chunkSize + MEM_BLOCK_SIZE + MEM_CHUNK_SIZE;
@@ -66,9 +66,9 @@ void* allocSetAlloc(
 		block->freeStart = (char*)block + blockSize;
 		block->freeEnd   = block->freeStart;
 
-		chunk         = (MemoryChunk)((char*)block + MEM_BLOCK_SIZE);
-		chunk->memset = set;
-		chunk->size   = chunkSize;
+		chunk                = (MemoryChunk)((char*)block + MEM_BLOCK_SIZE);
+		chunk->memsetorchunk = set;
+		chunk->size          = chunkSize;
 		chunk->sizeRequested = size;
         
 		chunkPtr = MemoryChunkGetPointer(chunk);
@@ -225,7 +225,7 @@ void* allocSetAlloc(
 			set->keeperBlock = block;
 
 		/* Insert the new block into the head of the freelist */
-		block->next    = set->blockList
+		block->next    = set->blockList;
 		set->blockList = block;
 	}
 
@@ -246,22 +246,39 @@ void* allocSetAlloc(
 	return chunkPtr;
 }
 
-
-void* allocateSpace(
-	MemoryContainer          container, 
-	size_t                   size)
+MemoryContainer memContCreate(
+    MemoryContainer      container,
+    MemContType          type, 
+	size_t               size,
+	MemoryContainer      parent,
+	char*                name)
 {
-	container->isReset = False;
+    MemoryContainer  newCont;
+	size_t           neededSize = size + strlen(name) + 1;
 
-	return (*context->methods->alloc) (context, size);
-}
+    newCont = (container != NULL) ?
+		(MemoryContainer)allocSetAlloc(container, neededSize) :
+	    (MemoryContainer)malloc(neededSize);
 
-MemoryContainer allocateNewMemCont(
-	    MemoryContainer     parent,
-		char*               name,
-		size_t              minContainerSize,
-	    size_t              initialBlockSize,
-		size_t              maxBlockSize)
-{
+    memset(newCont, 0, size);
     
+	newCont->type      = type;
+	newCont->parent    = NULL;
+	newCont->childHead = NULL;
+	newCont->next      = NULL;
+	newCont->isReset   = True;
+	newCont->name      = ((char*)type) + size;
+
+	strcpy(newCont->name, name);
+
+	if (parent != NULL)
+	{
+		newCont->parent   = parent;
+		newCont->next     = parent->childHead;
+		parent->childHead = newCont;
+	}
+
+	return newCont;
 }
+
+

@@ -1,4 +1,9 @@
+#include "common.h"
 
+#ifndef ERROR_H
+#define ERROR_H
+
+#define ERROR_STACK_SIZE  5
 
 typedef enum
 {
@@ -68,4 +73,6 @@ typedef struct SErrorInfo
 	int			internalPosition;	  /* cursor index into internal query */
 	char*       internalQuery;	      /* text of internally-generated query */
 	int			savedError;	          
-} SErrorInfo, *ErrorInfo
+} SErrorInfo, *ErrorInfo;
+
+#endif

@@ -61,6 +61,8 @@ typedef struct SMemoryContainer
 	Bool		                isReset;		
 } SMemoryContainer, *MemoryContainer;
 
+typedef struct SMemoryBlock* MemoryBlock;
+typedef struct SMemoryChunk* MemoryChunk;
 
 typedef struct SMemorySet
 {
@@ -100,7 +102,7 @@ typedef struct SMemoryBlock
 	MemoryBlock	  next;			  /* next block in the memory set's blocks list */
 	char*         freeStart;	  /* start of free space in this block */
 	char*         freeEnd;		  /* end of free space in this block */
-} SMemoryBlock, *MemoryBlock;
+} SMemoryBlock;
 
 
 typedef struct SMemoryChunk
@@ -121,7 +123,7 @@ typedef struct SMemoryChunk
 	 * requested by a user.
 	 */
 	size_t		  sizeRequested;
-} SMemoryChunk, *MemoryChunk;
+} SMemoryChunk;
 
 
 

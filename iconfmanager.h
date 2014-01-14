@@ -4,6 +4,7 @@
 #ifndef ICONFMANAGER_H
 #define ICONFMANAGER_H
 
+
 typedef struct SIErrorLoggerConfManager
 {
     int   (*getMinLogLevel)();
@@ -12,6 +13,7 @@ typedef struct SIErrorLoggerConfManager
     int   (*getMinClientLogLevel)();
     void  (*setMinClientLogLevel)(int level);
 } SIErrorLoggerConfManager, *IErrorLoggerConfManager;
+
 
 typedef struct SIConfManager
 {
@@ -23,5 +25,5 @@ typedef struct SIConfManager
     OutputDestination (*getOutputDest)();
 	void              (*setOutputDest)(OutputDestination dest);
 } SIConfManager, *IConfManager;
-
+ 
 #endif

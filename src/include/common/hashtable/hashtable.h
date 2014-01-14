@@ -82,7 +82,6 @@ typedef struct SHashtable
 	/* This is a current number of allocated segments */
 	uint                    nSegs;
 	uint                    hashListSize;
-    //struct HashtableHeader* header;
 	HashItem*               startSegm;		
 	uint                    partNum;
     hashFunc                hashFunc;	    /* hash function */
@@ -102,23 +101,6 @@ typedef struct SHashtable
 	Bool                    isWithoutExtention;
 } SHashtable, *Hashtable;
 
-/*
-struct HashtableHeader
-{
-	long             ItemsNumber;
-    long             MaxBucketId;
-    long             BucketSize;
-	unsigned int     SegmentsCount;
-	unsigned int     DirectorySize;
-	long             MaxDirectorySize;
-	unsigned int	 HighMask;		
-	unsigned int	 LowMask;		
-    long             Locker;
-	HashItem         FreeList;
-	int              DataItemSize;
-	int              ItemsNumToAllocAtOnce;
-};
-*/
 
 #define HASH_FUNC	            0x001
 #define HASH_CMP	            0x002
@@ -133,17 +115,5 @@ struct HashtableHeader
 #define GET_HASH_VALUE(key, keyLen)  ((char*)key + ALIGN_DEFAULT(keyLen))
 
 #define Max(x, y)		((x) > (y) ? (x) : (y))
-
-/*
-struct HashSequenceItem
-{
-	Hashtable              Table;
-	unsigned int	       CurrentBucket;
-	HashItem               CurrentItem;		
-};
-
-static struct Hashtable* SequenceScans[SEQUENCE_MAX_SCANS];
-static int SequenceScansCount = 0;
-*/
 
 #endif

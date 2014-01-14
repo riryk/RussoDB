@@ -1167,10 +1167,6 @@
 						>
 					</File>
 					<File
-						RelativePath="src\common\hashtable\hashtable.c"
-						>
-					</File>
-					<File
 						RelativePath="src\common\hashtable\hashtablehelper.c"
 						>
 					</File>
