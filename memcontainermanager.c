@@ -281,4 +281,32 @@ MemoryContainer memContCreate(
 	return newCont;
 }
 
+MemoryContainer allocMemContCreate(
+	MemoryContainer    container,
+    MemoryContainer    parent,
+    char*              name,
+	size_t             minContextSize,
+	size_t             initBlockSize,
+	size_t             maxBlockSize)
+{
+	MemorySet   set = (MemorySet)memContCreate(
+                                  container,
+                                  MCT_MemorySet, 
+	                              sizeof(SMemorySet),
+	                              parent,
+	                              name);
 
+	initBlockSize = ALIGN_DEFAULT(initBlockSize);
+	if (initBlockSize < 1024)
+		initBlockSize = 1024;
+
+	maxBlockSize = ALIGN_DEFAULT(maxBlockSize);
+	if (maxBlockSize < initBlockSize)
+		maxBlockSize = initBlockSize;
+
+	set->initBlockSize = initBlockSize;
+	set->maxBlockSize  = maxBlockSize;
+	set->nextBlockSize = initBlockSize;
+
+	
+}

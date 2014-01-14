@@ -13,7 +13,8 @@
 typedef enum MemContType
 {
    MCT_Invalid         = 0,
-   MCT_MemoryContainer = 10
+   MCT_MemoryContainer = 10,
+   MCT_MemorySet
 } MemContType;
 
 #define MEM_BLOCK_SIZE	   ALIGN_DEFAULT(sizeof(SMemoryBlock))
