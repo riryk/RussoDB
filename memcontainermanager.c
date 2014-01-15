@@ -285,11 +285,15 @@ MemoryContainer allocMemContCreate(
 	MemoryContainer    container,
     MemoryContainer    parent,
     char*              name,
-	size_t             minContextSize,
+	size_t             minContainerSize,
 	size_t             initBlockSize,
 	size_t             maxBlockSize)
 {
-	MemorySet   set = (MemorySet)memContCreate(
+	size_t       maxChunkSizeToBlock;
+    size_t       blockSize;
+	MemoryBlock  block;
+
+	MemorySet    set = (MemorySet)memContCreate(
                                   container,
                                   MCT_MemorySet, 
 	                              sizeof(SMemorySet),
@@ -308,5 +312,105 @@ MemoryContainer allocMemContCreate(
 	set->maxBlockSize  = maxBlockSize;
 	set->nextBlockSize = initBlockSize;
 
-	
+	set->chunkMaxSize  = MEMORY_CHUNK_MAX_SIZE;
+
+	/* Calculate the max chunk size in comparison 
+	 * to the max block size. 
+	 * The chunk size limit is at most 1/8 of the max block size
+	 * In the case when all chunks have the maximum size 
+	 * only 1/8 of the block space will be wasted.
+	 */
+	maxChunkSizeToBlock = (maxBlockSize - MEM_BLOCK_SIZE) / MEMORY_CHUNK_MAX_SIZE_TO_BLOCK;
+    
+	/* There can be a situation when memory chunk max size is more than 
+	 * the max chunk size to block. So we should syncronize this and
+	 * we divide it on 2 until chunk max size becomes less than maxChunkSizeToBlock.
+	 */
+	while (set->chunkMaxSize + MEM_CHUNK_SIZE > maxChunkSizeToBlock)
+		set->chunkMaxSize >>= 1;
+
+    if (minContextSize <= MEM_BLOCK_SIZE + MEM_CHUNK_SIZE)    
+		return (MemoryContainer)set;
+
+	/* Here minContextSize is more than the block size.
+	 * In this case we allocate the first block.
+	 */
+	blockSize = ALIGN_DEFAULT(minContextSize);
+    block     = (MemoryBlock)malloc(blockSize);
+
+	if (block == NULL)
+		; /* An error has happened. We should report it. */
+
+	block->memset    = set;
+	block->freeStart = ((char*)block) + MEM_BLOCK_SIZE;
+	block->freeEnd   = ((char*)block) + blockSize;
+
+	/* Insert this block into the head of the blocks list. */
+	block->next      = set->blockList;
+	set->blockList   = block;
+	set->keeperBlock = block;
+
+	return (MemoryContainer)set;
+}
+
+/* Free the whole memory which has been allocated inside
+ * a context and also inside its children.
+ */
+void resetMemContainer(MemoryContainer cont)
+{
+	MemoryContainer  child;
+
+	/* If the context has children we first of all
+	 * try to free memory from all children first.
+	 */
+	if (cont->childHead != NULL)   
+	{
+		/* Loop through the whole list of children and 
+		 * call resetMemContainer recursively.
+		 */
+		for (child = cont->childHead; child != NULL; child = child->next)
+		{
+			resetMemContainer(child);
+		}
+    }
+
+	if (!cont->isReset)
+	{
+        resetMemoryFromSet(cont);
+        cont->isReset = True;
+	}
+}
+
+void resetMemoryFromSet(MemorySet set)
+{
+	MemoryBlock  block;
+
+    /* clear the free list first. */
+	memset(set->freelist, 0, sizeof(set->freelist));
+	block = set->blockList;
+    
+	/* Set new block list to NULL or to the keeper one. */
+	set->blockList = set->keeperBlock;
+
+    while (block != NULL)
+	{
+		MemoryBlock  next = block->next;
+
+		if (block == set->keeperBlock)
+		{
+            char*  dataStart = ((char*)block) + MEM_BLOCK_SIZE;
+
+			block->freeStart = dataStart;
+			block->next      = NULL;
+
+			break;
+		}
+
+		free(block);
+
+		block = next;
+	}
+
+	/* Reset block size allocation sequence, too */
+	set->nextBlockSize = set->initBlockSize;
 }

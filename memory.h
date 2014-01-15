@@ -6,9 +6,11 @@
 #define MIN_CHUNK_POWER_OF_2	    3	
 #define MEMORY_SET_FREELISTS_NUM	11
 
-/* The maximum allowed memory chunk size
- */
+/* The maximum allowed memory chunk size */
 #define MEMORY_CHUNK_MAX_SIZE  (1 << (MEMORY_SET_FREELISTS_NUM-1+MIN_CHUNK_POWER_OF_2))
+
+/* We allow chunks to be at most 1/4 of maxBlockSize */
+#define MEMORY_CHUNK_MAX_SIZE_TO_BLOCK 4
 
 typedef enum MemContType
 {
@@ -59,6 +61,10 @@ typedef struct SMemoryContainer
 	 */
     struct SMemoryContainer*    next;
 	char*                       name;			/* container name  */
+
+	/* When isReset is true this means that 
+	 * no memory has been allocated since the last reset.
+	 */
 	Bool		                isReset;		
 } SMemoryContainer, *MemoryContainer;
 
