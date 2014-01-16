@@ -350,12 +350,130 @@ file that requires the CLR to execute.
 
 Extentions that have been made for .NET metadata.
 CLR sections:
-1. Metadata section. Exported types. 
-2. Intermediate Language (IL).  Common intermediate Language .NET CLR. 
+
+1. The standard Windows PE file header, which is similar to the Common Object File Format
+   (COFF) header. This header also indicates the type of file: GUI, CUI, or DLL, and
+   contains a time stamp indicating when the file was built. For modules that contain
+   native CPU code, this header contains information about the native CPU code.
+   
+2. CLR Header.
+   Contains the information 
+   (interpreted by the CLR and utilities) that makes this a managed
+   module. The header includes the version of the CLR required.
+   
+3. Metadata section. Exported types. 
+   Every managed module contains metadata tables. There are two main types of tables:
+   tables that describe the types and members defined in your source code and tables that
+   describe the types and members referenced by your source code.   
+   In addition, metadata also has tables indicating what the
+   managed module references, such as imported types and their members.
+   Metadata is a superset of older technologies such 
+   as COM’s Type Libraries and Interface Definition Language (IDL) files. 
+   The important thing to note is that CLR metadata is far more complete.
+   And, unlike Type Libraries and IDL, metadata is always associated with the file 
+   that contains the IL code. 
+   In fact, the metadata is always embedded in the same EXE/DLL as the code, 
+   making it impossible to separate the two
    
 
+4. Intermediate Language (IL).  Common intermediate Language .NET CLR. 
+   Code the compiler produced as it compiled the source code. 
+   At run time, the CLR compiles the IL into native CPU instructions.
+   
+
+15. What are benefits from Metadata?
+
+- Compilers can read metadata directly from managed modules.
+- Microsoft Visual Studio uses metadata to help you write code. 
+  Its IntelliSense feature parses metadata to tell you 
+  what methods, properties, events, and fields a type offers.
+- The CLR’s code verification process uses metadata to ensure 
+  that your code performs only “type-safe” operations.
+- Metadata allows an object’s fields to be serialized into a memory block.
+- Metadata allows the garbage collector to track the lifetime of objects. 
+  For any object, the garbage collector can determine the type of the object 
+  and, from the metadata, know which fields within that object refer to other objects.
+
+  
+16. How is IL code converted to CPU native code?
+
+To execute a method, its IL must first be converted to native CPU instructions. 
+This is the job of the CLR’s JIT (just-in-time) compiler.
+
+When Main makes its first call to WriteLine, the JITCompiler function is called. The JITCompiler
+function is responsible for compiling a method’s IL code into native CPU instructions.
+
+JITCompiler
+
+1. In the assembly that implements the type(Console), 
+   look up the method (WriteLine) being called in the metadata.
+2. From the metadata, get the IL for this method.
+3. Allocate a block of memory.
+4. Compile the IL into native CPU instructions;
+   the native code is saved in the memory allocated in step 3.
+5. Modify the method’s entry in the Type’s table so that 
+   it now points to the memory block allocated in step 3.
+6. Jump to the native code contained inside the memory block.
+
+Main now calls WriteLine a second time. This time, the code for WriteLine has already been
+verified and compiled. So the call goes directly to the block of memory, skipping the JITCompiler
+function entirely.
+
+A performance hit is incurred only the first time a method is called. All subsequent calls to the
+method execute at the full speed of the native code because verification and compilation to native
+code don’t need to be performed again.
+
+The JIT compiler stores the native CPU instructions in dynamic memory. This means that the compiled
+code is discarded when the application terminates. So if you run the application again in the
+future or if you run two instances of the application simultaneously (in two different operating system
+processes), the JIT compiler will have to compile the IL to native instructions again.
 
 
+17. When managed code compilation can overperform unmanaged code?
+
+- A JIT compiler can determine if the application is running on an Intel Pentium 4 CPU and produce
+  native code that takes advantage of any special instructions offered by the Pentium 4.
+  Usually, unmanaged applications are compiled for the lowest-common-denominator CPU and
+  avoid using special instructions that would give the application a performance boost.
+  
+- A JIT compiler can determine when a certain test is always false 
+  on the machine that it is running on.
+
+- The CLR could profile the code’s execution and recompile the IL into native code 
+  while the application runs.
+  
+ 
+18. What does NGen.exe do?
+
+This tool compiles all of an assembly’s IL code into native code and saves the
+resulting native code to a file on disk. At run time, when an assembly is loaded, the CLR automatically
+checks to see whether a precompiled version of the assembly also exists, and if it does, the CLR loads
+the precompiled code so that no compilation is required at run time.
+
+19. What does CLR verification do?
+
+- Verification examines the high-level IL code and
+  ensures that everything the code does is safe.
+  
+- Verification checks that every method is
+  called with the correct number of parameters,
+  
+- that each parameter passed to every method is of the correct type, 
+
+- that every method’s return value is used properly, 
+  that every method has a return statement, and so on.
+
+20. Benefits from CLR?
+
+Because Windows processes require a lot of operating system resources, having many of them
+can hurt performance and limit available resources. 
+Reducing the number of processes by running multiple applications in a single operating system process 
+can improve performance, require fewer resources, 
+and be just as robust as if each application had its own process. 
+This is another benefit of
+managed code as compared to unmanaged code.
+
+21. What is "The Common Type System".
 
 
 
