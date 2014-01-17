@@ -1,4 +1,5 @@
 #include "memcontainermanager.h"
+#include <stdio.h>
 
 /* Calculates the number of a free list
  * depending on size. The free list should 
@@ -413,4 +414,100 @@ void resetMemoryFromSet(MemorySet set)
 
 	/* Reset block size allocation sequence, too */
 	set->nextBlockSize = set->initBlockSize;
+}
+
+void printSetStatistic(
+    MemorySet       set, 
+	int             level)
+{
+    MemoryBlock   block;
+	MemoryChunk   chunk;
+	long          nblocks;
+	long          nchunks;
+	long          totalSpace;
+    long          freeSpace;
+    int           ind;
+	int           i;
+
+	for (block = set->blockList; block != NULL; block = block->next)
+	{
+        nblocks++;
+		totalSpace += block->freeEnd - ((char*)block);
+		freeSpace  += block->freeEnd - block->freeStart;
+	}
+
+	/* Loop through all memory free lists */
+    for (ind = 0; ind < MEMORY_SET_FREELISTS_NUM; ind++)
+	{
+		for (chunk = set->freelist[ind]; 
+			 chunk != NULL; 
+			 chunk = (MemoryChunk)chunk->memsetorchunk)       
+		{
+            nchunks++;
+			freeSpace += chunk->size + MEM_CHUNK_SIZE;
+		}
+	}
+
+    for (i = 0; i < level; i++)
+		fprintf(stderr, "  ");
+
+	fprintf(stderr, 
+        "%s: %lu total in %ld blocks; %lu free (%ld chunks); %lu used\n",
+		set->baseMemCont.name,
+        totalSpace,
+		nblocks,
+		freespace,
+		nchunks,
+		totalspace - freespace);
+}
+
+void freeChunk(void* mem)
+{
+    MemoryChunk  chunk;
+	MemorySet    set;
+	int          ind;
+
+	chunk  = (MemoryChunk)((char*)mem - MEM_CHUNK_SIZE);     
+	set    = chunk->memsetorchunk;
+
+	/* If the chunk's size is larger than chunk max size 
+	 * we have allocated an entire block. So that we have 
+	 * to find and free this block.
+	 */
+	if (chunk->size > set->chunkMaxSize)
+	{
+        /* Try to find the corresponding block first 
+		 */
+		MemoryBlock   block     = set->blockList;
+        MemoryBlock   prevblock = set->blockList;
+
+		while (block != null)
+		{
+            if (chunk == (MemoryChunk)((char*)block + MEM_BLOCK_SIZE))
+				break;
+			prevblock = block;
+			block     = block->next;
+		}
+
+		if (block == NULL)
+			; /* Could not find the block. We should report an error. */
+        
+		/* Remove the block from the block list */
+		if (prevblock == NULL)
+			set->blockList  = block->next;
+		else
+			prevblock->next = block->next;
+
+		free(block);
+		return;
+	}
+
+	/* Now we have a normal case and the chunk is small
+	 * So we should return it to the free list.
+	 */
+	ind = calculateFreeListIndex(chunk->size);
+
+	/* Insert into the head of the free list. */
+	chunk->memsetorchunk = (void*)set->freelist[ind];
+    set->freelist[ind]   = chunk;
 }
