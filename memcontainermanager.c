@@ -35,19 +35,32 @@ int calculateFreeListIndex(size_t   size)
     return Log2Table[large];
 }
 
-void* allocSetAlloc(
-    MemoryContainer          container, 
-	size_t                   size)
+void* allocateMemory(
+    void*                   self,
+    MemoryContainer         container, 
+	size_t                  size)
 {   
-    MemorySet	 set = (MemorySet)container;
-	MemoryBlock  block;
-	MemoryChunk	 chunk;
+	IMemContainerManager  _    = (IMemContainerManager)self;
+	IErrorLogger          elog = _->errorLogger;
+    
+	Bool                  isContValid = MemoryContainerIsValid(container);
+    Bool                  isSizeValid = MemAllocSizeIsValid(size);
 
-    void*        chunkPtr;
-    int			 freeListInd;
+	MemorySet	          set = (MemorySet)container;
+	MemoryBlock           block;
+	MemoryChunk	          chunk;
 
-	size_t		 chunkSize;
-	size_t		 blockSize;
+    void*                 chunkPtr;
+    int			          freeListInd;
+
+	size_t		          chunkSize;
+	size_t		          blockSize;
+
+	/* Assert if the container is valid. */
+    elog->assertArg(isContValid);	 
+
+	if (!isSizeValid)
+		elog->log(LOG_ERROR, "Allocate memory request size: %lu is invalid", size);
 
 	/* In this case the requested memory size 
 	 * is more than the max chunk size. So that
@@ -247,15 +260,17 @@ void* allocSetAlloc(
 	return chunkPtr;
 }
 
+/* Creates new memory container object. */
 MemoryContainer memContCreate(
+	void*                self,
     MemoryContainer      container,
+	MemoryContainer      parent,
     MemContType          type, 
 	size_t               size,
-	MemoryContainer      parent,
 	char*                name)
 {
-    MemoryContainer  newCont;
-	size_t           neededSize = size + strlen(name) + 1;
+    MemoryContainer    newCont;
+	size_t             neededSize = size + strlen(name) + 1;
 
     newCont = (container != NULL) ?
 		(MemoryContainer)allocSetAlloc(container, neededSize) :
@@ -282,7 +297,9 @@ MemoryContainer memContCreate(
 	return newCont;
 }
 
-MemoryContainer allocMemContCreate(
+/* Creates new memory set object. */
+MemorySet memSetCreate(
+    void*              self,
 	MemoryContainer    container,
     MemoryContainer    parent,
     char*              name,
@@ -290,11 +307,14 @@ MemoryContainer allocMemContCreate(
 	size_t             initBlockSize,
 	size_t             maxBlockSize)
 {
-	size_t       maxChunkSizeToBlock;
-    size_t       blockSize;
-	MemoryBlock  block;
+	size_t         maxChunkSizeToBlock;
+    size_t         blockSize;
+	MemoryBlock    block;
 
-	MemorySet    set = (MemorySet)memContCreate(
+	/* MemorySet is derived from MemoryContainer.
+	 * First we create a base object.
+	 */
+	MemorySet      set = (MemorySet)memContCreate(
                                   container,
                                   MCT_MemorySet, 
 	                              sizeof(SMemorySet),
@@ -330,13 +350,13 @@ MemoryContainer allocMemContCreate(
 	while (set->chunkMaxSize + MEM_CHUNK_SIZE > maxChunkSizeToBlock)
 		set->chunkMaxSize >>= 1;
 
-    if (minContextSize <= MEM_BLOCK_SIZE + MEM_CHUNK_SIZE)    
+    if (minContainerSize <= MEM_BLOCK_SIZE + MEM_CHUNK_SIZE)    
 		return (MemoryContainer)set;
 
 	/* Here minContextSize is more than the block size.
 	 * In this case we allocate the first block.
 	 */
-	blockSize = ALIGN_DEFAULT(minContextSize);
+	blockSize = ALIGN_DEFAULT(minContainerSize);
     block     = (MemoryBlock)malloc(blockSize);
 
 	if (block == NULL)
@@ -352,34 +372,6 @@ MemoryContainer allocMemContCreate(
 	set->keeperBlock = block;
 
 	return (MemoryContainer)set;
-}
-
-/* Free the whole memory which has been allocated inside
- * a context and also inside its children.
- */
-void resetMemContainer(MemoryContainer cont)
-{
-	MemoryContainer  child;
-
-	/* If the context has children we first of all
-	 * try to free memory from all children first.
-	 */
-	if (cont->childHead != NULL)   
-	{
-		/* Loop through the whole list of children and 
-		 * call resetMemContainer recursively.
-		 */
-		for (child = cont->childHead; child != NULL; child = child->next)
-		{
-			resetMemContainer(child);
-		}
-    }
-
-	if (!cont->isReset)
-	{
-        resetMemoryFromSet(cont);
-        cont->isReset = True;
-	}
 }
 
 void resetMemoryFromSet(MemorySet set)
@@ -414,6 +406,34 @@ void resetMemoryFromSet(MemorySet set)
 
 	/* Reset block size allocation sequence, too */
 	set->nextBlockSize = set->initBlockSize;
+}
+
+/* Free the whole memory which has been allocated inside
+ * a context and also inside its children.
+ */
+void resetMemContainer(MemoryContainer cont)
+{
+	MemoryContainer  child;
+
+	/* If the context has children we first of all
+	 * try to free memory from all children first.
+	 */
+	if (cont->childHead != NULL)   
+	{
+		/* Loop through the whole list of children and 
+		 * call resetMemContainer recursively.
+		 */
+		for (child = cont->childHead; child != NULL; child = child->next)
+		{
+			resetMemContainer(child);
+		}
+    }
+
+	if (!cont->isReset)
+	{
+        resetMemoryFromSet(cont);
+        cont->isReset = True;
+	}
 }
 
 void printSetStatistic(
@@ -456,9 +476,9 @@ void printSetStatistic(
 		set->baseMemCont.name,
         totalSpace,
 		nblocks,
-		freespace,
+		freeSpace,
 		nchunks,
-		totalspace - freespace);
+		totalSpace - freeSpace);
 }
 
 void freeChunk(void* mem)
@@ -481,7 +501,7 @@ void freeChunk(void* mem)
 		MemoryBlock   block     = set->blockList;
         MemoryBlock   prevblock = set->blockList;
 
-		while (block != null)
+		while (block != NULL)
 		{
             if (chunk == (MemoryChunk)((char*)block + MEM_BLOCK_SIZE))
 				break;

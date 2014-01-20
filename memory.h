@@ -12,6 +12,21 @@
 /* We allow chunks to be at most 1/4 of maxBlockSize */
 #define MEMORY_CHUNK_MAX_SIZE_TO_BLOCK 4
 
+/* 1Byte  = 8 bits      = 1000 = 2^3 bits
+ * 1KByte = 2^10 bytes  = 2^10 * 2^3  = 2^13 bits
+ * 1MByte = 2^10 kbytes = 2^10 * 2^13 = 2^23 bits
+ * 1GByte = 2^10 mbytes = 2^10 * 2^23 = 2^33 bits.
+ * f == 1111, 3 = 11.
+ * 16 + 12 + 3 = 2^31 = 2^33 / 4 = 
+ * The max size is 0.25 gigabyte - 1.
+ */
+#define MAX_ALLOC_SIZE ((size_t)0x3fffffff)
+
+/* memory allocate size should be less 
+ * than the maximum value. 
+ */
+#define MemAllocSizeIsValid(size) ((size_t)(size) <= MAX_ALLOC_SIZE)
+
 typedef enum MemContType
 {
    MCT_Invalid         = 0,
@@ -26,6 +41,16 @@ typedef enum MemContType
 
 #define MemoryChunkGetPointer(chunk)	\
       ((void*)(((char*)(chunk)) + MEM_CHUNK_SIZE))
+
+/* The base class for SMemoryContainer. 
+ * It consists of only one field type.
+ * We can convert each SMemoryContainer to
+ * SMemoryContainerBase.
+ */
+typedef struct SMemoryContainerBase
+{
+    MemContType		            type;			
+} SMemoryContainerBase, *MemoryContainerBase;
 
 /* Memory allocations are united into memory container.
  * Each container includes chunks of memory. And when we delete 
@@ -159,6 +184,16 @@ unsigned char Log2Table[256] =
 	SeqOf16CopiesOf(8), SeqOf16CopiesOf(8), SeqOf16CopiesOf(8), SeqOf16CopiesOf(8), 
 	SeqOf16CopiesOf(8), SeqOf16CopiesOf(8), SeqOf16CopiesOf(8), SeqOf16CopiesOf(8)
 };
+
+
+/* This macros checks if container is not null and if  
+ * it is SMemorySet. type == MCT_MemorySet.
+ */
+#define MemoryContainerIsValid(container) \
+   ((container) != NULL && \
+      ((MemoryContainerBase)(container))->type == MCT_MemorySet)
+
+
 
 
 

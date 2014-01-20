@@ -6,11 +6,12 @@
 
 typedef struct SIMemContainerManager
 {
+	IErrorLogger  errorLogger;
+
     void* (*alloc)(uint size);	
 	void* (*realloc)(void* newMem, uint size);
 	void (*free)(void* mem);
 	void (*freeAll)();
-    
 } SIMemContainerManager, *IMemContainerManager;
 
 #endif

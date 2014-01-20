@@ -608,6 +608,183 @@ We should loop through them and change addresses to correct ones.
 4. Resume all suspended threads.
 
 
+28. What do generations mean?
+
+Generational garbage collection makes the following assumptions:
+- The newer an object is, the shorter its lifetime will be.
+- The older an object is, the longer its lifetime will be.
+- Collecting a portion of the heap is faster than collecting the whole heap.
+
+Generation 0:
+
+When initialized, the managed heap contains no objects. Objects added to the heap are said to be
+in generation 0. Stated simply, objects in generation 0 are newly constructed objects that the garbage
+collector has never examined.
+
+ -------------------------------------------------
+| A | B | C | D | E |                             |
+ -------------------------------------------------
+|-------------------> 
+  Generation 0
+  
+When the CLR initializes, it selects a budget size (in kilobytes) for generation 0. So if allocating a
+new object causes generation 0 to surpass its budget, a garbage collection must start. Let’s say that
+objects A through E fill all of generation 0. When object F is allocated, a garbage collection must start.
+
+Start garbage collection and scan all objects in memory.
+And if turns out that A,B,D are still referenced and 
+objects C,E are not already referenced and we can delete them.
+Garbage collector deletes them and shifts existed objects to 
+make them adjacent.
+
+ -------------------------------------------------
+| A | B | D |                         |           |
+ -------------------------------------------------
+|----------> ------------------------>
+Generation 1     Generation 0
+  
+The objects that survived one garbage collection 
+are marked as generation 1.
+
+Than we allocate new objects to generation 1:
+
+
+ -------------------------------------------------
+| A | B | D |  F  | G | H | I | J | K |           |
+ -------------------------------------------------
+|----------> ------------------------>
+Generation 1     Generation 0
+
+B,H,J  became unreachable and need to be reclaimed
+
+If generation 0 exceeds its budget we need to run a garbage 
+collection and we take only objects from generation 0.
+We skip generation 1.
+
+The first assumption is that newly created objects have a short lifetime.
+So generation 0 is likely to have a lot of garbage in it, 
+and collecting generation 0 will therefore reclaim a lot of memory.
+
+If a root or an object refers to an object in an old generation, the garbage
+collector can ignore any of the older objects’ inner references, decreasing the amount of time
+required to build the graph of reachable objects.
+
+29. What does finalization mean?
+
+Finalization allows an object to execute some code after 
+the object has been determined to be garbage but before
+the object’s memory is reclaimed from the managed heap.
+ 
+System.Object, the base class of everything, defines a protected 
+and virtual method called Finalize.
+When the garbage collector determines that an object is garbage, 
+it calls the object’s Finalize method (if it is overridden).
+
+Furthermore, be aware of the fact that you have 
+no control over when the Finalize method will execute.
+Finalize methods run when a garbage collection occurs, 
+which may happen when your application requests more memory.
+
+30. What is GC.SuppressFinalize()?
+
+SuppresFinalize should only be called by a class that has a finalizer. 
+It's informing the GC that this object was cleaned up fully.
+The recommended IDisposable pattern when you have a finalizer is....
+
+public class MyClass : IDisposable
+{
+    private bool disposed = false;
+
+    protected virtual void Dispose(bool disposing)
+    {
+        if (!disposed)
+        {
+            if (disposing)
+            {
+                // called via myClass.Dispose(). 
+                // OK to use any private object references
+            }
+
+            disposed = true;
+        }
+    }
+
+    public void Dispose() // Implement IDisposable
+    {
+        Dispose(true);
+        GC.SuppressFinalize(this);
+    }
+
+    ~MyClass() // the finalizer
+    {
+        Dispose(false);
+    }
+}
+
+31. How does IDisposable work?
+
+// Create the temporary file.
+using (FileStream fs = new FileStream("Temp.dat", FileMode.Create)) 
+{
+   // Write the bytes to the temporary file.
+   fs.Write(bytesToWrite, 0, bytesToWrite.Length);
+}
+
+Then you access the variable via code contained inside using’s braces. 
+When you compile this code, the compiler automatically emits the try and finally blocks. 
+Inside the finally block, the compiler emits code to cast the object 
+to an IDisposable and calls the Dispose method.
+
+// Create the temporary file.
+FileStream fs = new FileStream("Temp.dat", FileMode.Create);
+try 
+{
+   // Write the bytes to the temporary file.
+   fs.Write(bytesToWrite, 0, bytesToWrite.Length);
+}
+finally 
+{
+   // Explicitly close the file when finished writing to it.
+   if (fs != null) fs.Dispose();
+}
+
+FileStream   fs = new FileStream("DataFile.dat", FileMode.Create);
+StreamWriter sw = new StreamWriter(fs);
+sw.Write("Hi there");
+// The following call to Dispose is what you should do.
+sw.Dispose();
+// NOTE: StreamWriter.Dispose closes the FileStream;
+// the FileStream doesn't have to be explicitly closed.
+
+What do you think would happen if there were no code to explicitly call Dispose? 
+
+Well, at some point, the garbage collector would correctly detect 
+that the objects were garbage and finalize them. 
+But the garbage collector doesn’t guarantee the order 
+in which objects are finalized. 
+So if the FileStream object were finalized first, it would close the file. 
+Then when the StreamWriter object was finalized, 
+it would attempt to write data to the closed file, throwing an exception. 
+If, on the other hand, the StreamWriter object were finalized first, 
+the data would be safely written to the file.
+
+
+32. How does finalization work?
+
+- Application creates a new object.
+  The new operator allocates the memory from the heap.
+  If the object’s type defines a Finalize method, 
+  a pointer to the object is placed on the finalization list  
+  
+- Scan. When the garbage collector finds an object and 
+  finds it in the finalization list it adds it to 
+  F-reachable queue.
+
+
+
+  543
+
+
 
 
 
