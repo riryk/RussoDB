@@ -35,6 +35,189 @@ int calculateFreeListIndex(size_t   size)
     return Log2Table[large];
 }
 
+/* This is an auxiliary function for allocateMemory method.
+ * It allocates a whole new block, inserts it into 
+ * the head of the set's block list 
+ * and takes the whole memory from the entire block 
+ * for a chunk.
+ */
+void* allocateChunkBlock(
+	size_t            chunkSize,
+    MemoryContainer   container)
+{
+	size_t        blockSize = chunkSize + MEM_BLOCK_SIZE + MEM_CHUNK_SIZE;
+
+	MemorySet	  set       = (MemorySet)container;
+    MemoryBlock   block     = (MemorySet)malloc(blockSize);
+	MemoryChunk	  chunk;
+
+    void*         chunkPtr;
+
+    chunkSize = ALIGN_DEFAULT(chunkSize);
+
+	if (block == NULL)
+		elog->log(LOG_ERROR, 
+		          ERROR_CODE_OUT_OF_MEMORY, 
+				  "Out of memory. Failed request size: %lu", 
+				  size);
+
+	block->memset        = set;
+	block->freeStart     = (char*)block + blockSize;
+	block->freeEnd       = block->freeStart;
+
+	chunk                = (MemoryChunk)((char*)block + MEM_BLOCK_SIZE);
+	chunk->memsetorchunk = set;
+	chunk->size          = chunkSize;
+	chunk->sizeRequested = size;
+    
+	chunkPtr = MemoryChunkGetPointer(chunk);
+
+	/* Insert the block into the head of 
+	 * the set's block list.
+	 */ 
+	if (set->blockList != NULL)
+	{
+		block->next          = set->blockList->next;
+		set->blockList->next = block;
+
+		return chunkPtr;
+	}
+	
+    block->next    = NULL;
+	set->blockList = block;
+
+	return chunkPtr;
+}
+
+/* This is also an auxiliary function for allocateMemory method.
+ * It allocates a new block and the whole memory is free.
+ * The difference between allocateBlock and allocateChunkBlock
+ * is that allocateChunkBlock gives the whole memory to a chunk
+ * and its free list is always empty. allocateBlock creates 
+ * a new block and reclaims whole memory to its free list.
+ */
+void* allocateBlock(
+	size_t            chunkSize,
+	MemoryContainer   container)
+{
+	MemorySet	set       = (MemorySet)container;
+    size_t		requiredSize; 
+	size_t      blockSize;
+
+	/* Set blockSize. We keep track of all block sizes
+	 * And we allocate blocks in increase order of their size.
+	 * We start from initBlockSize and always double the blockSize
+	 * until we reach maxBlockSize.
+	 */
+	blockSize = set->nextBlockSize;
+    set->nextBlockSize << 1;
+	if (set->nextBlockSize > set->maxBlockSize)
+        set->nextBlockSize = set->maxBlockSize;
+
+    /* We have a restriction for chunkSize:
+	 * chunkSize < maxChunkSize
+	 * We start blockSize from initialBlockSize
+	 * Sometimes initialBlockSize can be less than maxChunkSize
+	 * and so initialBlockSize < maxChunkSize.
+	 * We double bloclSize until we reach the requiredSize.
+	 */
+	requiredSize = chunkSize + MEM_BLOCK_SIZE + MEM_CHUNK_SIZE;
+	while (blockSize < requiredSize)
+		blockSize <<= 1;
+
+	/* Allocate a new block */
+	block = (MemoryBlock)malloc(blockSize);
+    
+	if (block == NULL)
+	    ; /* Out of memory. We should report an error. */
+
+	block->memset    = set;
+	block->freeStart = ((char*)block) + MEM_BLOCK_SIZE;
+	block->freeEnd   = ((char*)block) + blockSize; 
+
+	if (set->keeperBlock == NULL && blockSize == set->initBlockSize)
+		set->keeperBlock = block;
+
+	/* Insert the new block into the head of the freelist */
+	block->next    = set->blockList;
+	set->blockList = block;
+}
+
+/* This is an auxiliary function for allocateMemory method. 
+ * It checks if a block has enough free space 
+ * to fit in a chunk. Also if it does not the function
+ * splits up the free space on power of 2 chunks ands
+ * them into freelist chunks array.
+ */
+Bool checkFreeBlockSpace(
+	MemoryBlock           block,
+	size_t		          chunkSize)
+{ 
+	/* First of all calculate free space 
+	 * which is available in the block.
+	 * block:  .....|.............|..........
+	 *              ^             ^
+	 *             /             /
+	 *       freeStart       freeEnd
+	 */
+    size_t   availSpace = block->freeEnd - block->freeStart;
+	size_t   minPosChunkSize; 
+    
+	/* If available space is more than chunk size
+	 * the block is valid and we return true.
+	 */
+	if (availSpace > chunkSize + MEM_CHUNK_SIZE)
+		return True;
+
+	/* Minimum chunk size including the chunk header. */
+	minPosChunkSize = (1 << MIN_CHUNK_POWER_OF_2) + MEM_CHUNK_SIZE;
+
+	/* The availiable space does not fit to this chunk. 
+	 * But we can use this space in the future
+	 * Now we carve up this space into chunks 
+	 * and add it to the free list.
+	 * Here availiable space is less than chunkSize and so
+	 * less than MEMORY_CHUNK_MAX_SIZE.
+	 */
+    while (availSpace >= minPosChunkSize)
+	{
+        size_t   availChunkSize = availSpace - MEM_CHUNK_SIZE;
+		int		 availFreeInd   = calculateFreeListIndex(availChunkSize);
+        size_t   actualSpace    = (size_t)(1 << (availFreeInd + MIN_CHUNK_POWER_OF_2));
+
+		/* availChunkSize should always be a power of 2. */
+		if (availChunkSize != actualSpace)
+		{
+			availFreeInd--;
+			availChunkSize = actualSpace;
+		}
+
+		/* Take a chunk from the block's free space. */
+		chunk = (MemoryChunk)(block->freeStart);
+        
+		/* Shorten the block's free space and move freeStart 
+		 * pointer further to skip already allocated space 
+		 */
+		block->freeStart += (availChunkSize + MEM_CHUNK_SIZE);
+
+		/* reduce available space for the chunk size. */
+        availSpace       -= (availChunkSize + MEM_CHUNK_SIZE); 
+
+		chunk->size          = availChunkSize;
+		chunk->sizeRequested = 0;		
+
+		/* Insert the chunk into free list. */
+		chunk->memsetorchunk        = (void*)set->freelist[availFreeInd];
+		set->freelist[availFreeInd] = chunk;
+	}
+    
+	/* Here we have carved the free space up 
+	 * into small power of 2 parts. But the block does not contain
+	 * enough free space and we return false. 
+	 */
+    return False;
+}
+
 void* allocateMemory(
     void*                   self,
     MemoryContainer         container, 
@@ -60,7 +243,7 @@ void* allocateMemory(
     elog->assertArg(isContValid);	 
 
 	if (!isSizeValid)
-		elog->log(LOG_ERROR, "Allocate memory request size: %lu is invalid", size);
+		elog->log(LOG_ERROR, -1, "Allocate memory request size: %lu is invalid", size);
 
 	/* In this case the requested memory size 
 	 * is more than the max chunk size. So that
@@ -68,47 +251,7 @@ void* allocateMemory(
 	 * In this case we allocate a new whole block.
 	 */
 	if (size > set->chunkMaxSize)
-	{
-        chunkSize = ALIGN_DEFAULT(size);
-		blockSize = chunkSize + MEM_BLOCK_SIZE + MEM_CHUNK_SIZE;
-		block     = (MemorySet)malloc(blockSize);
-
-		if (block == NULL)
-		   ; /* Should report the error. Now it is not implemented. */
-        
-		block->memset    = set;
-		block->freeStart = (char*)block + blockSize;
-		block->freeEnd   = block->freeStart;
-
-		chunk                = (MemoryChunk)((char*)block + MEM_BLOCK_SIZE);
-		chunk->memsetorchunk = set;
-		chunk->size          = chunkSize;
-		chunk->sizeRequested = size;
-        
-		chunkPtr = MemoryChunkGetPointer(chunk);
-
-		/* If actual allocated size of memory is larger than
-		 * the requested size we mark the "unused space".
-		 */
-		if (size < chunkSize)
-            ((char*)chunkPtr)[size] = UNUSED_SPACE_MARK;
-
-		/* Insert the block into the head of 
-		 * the set's block list.
-		 */ 
-		if (set->blockList != NULL)
-		{
-			block->next = set->blockList->next;
-			set->blockList->next = block;
-		}
-		else
-		{
-			block->next = NULL;
-			set->blockList = block;
-		}
-
-		return chunkPtr;
-	}
+        return allocateBlock(size, container);
 
 	/* The size of the chunk is too small to be an entire block.
 	 * In this case we should treat it as a chunk.
@@ -129,10 +272,6 @@ void* allocateMemory(
         chunk->sizeRequested = size;		
 
         chunkPtr = MemoryChunkGetPointer(chunk);
-
-        if (size < chunkSize)
-            ((char*)chunkPtr)[size] = UNUSED_SPACE_MARK;
-
 		return chunkPtr;
 	}
 
@@ -150,57 +289,10 @@ void* allocateMemory(
 	/* Take the first block in the blocks list */
 	block = set->blockList;
 
-	/* If block is not null we try to find out 
-	 * if there is a free space on it which
-	 * has size chunkSize.
-	 */
-	if (block != NULL)
-	{
-		size_t  availSpace = block->freeEnd - block->freeStart;
-
-		if (availSpace < (chunkSize + MEM_CHUNK_SIZE))
-		{
-			size_t  minPosChunkSize = (1 << MIN_CHUNK_POWER_OF_2) + MEM_CHUNK_SIZE;
-
-			/* The availiable space does not come up 
-			 * for this chunk. But we can use this space in the future
-			 * Now we carve up this space into chunks and add it 
-			 * to the free list.
-			 * Here availiable space is less than chunkSize and so
-			 * less than MEMORY_CHUNK_MAX_SIZE.
-			 */
-            while (availSpace >= minPosChunkSize)
-			{
-                size_t   availChunkSize = availSpace - MEM_CHUNK_SIZE;
-				int		 availFreeInd   = calculateFreeListIndex(availChunkSize);
-                size_t   actualSpace    = (size_t)(1 << (availFreeInd + MIN_CHUNK_POWER_OF_2));
-
-				if (availChunkSize != actualSpace)
-				{
-					availFreeInd--;
-					availChunkSize = actualSpace;
-				}
-
-				chunk = (MemoryChunk)(block->freeStart);
-                
-				block->freeStart += (availChunkSize + MEM_CHUNK_SIZE);
-                availSpace       -= (availChunkSize + MEM_CHUNK_SIZE); 
- 
-				chunk->size          = availChunkSize;
-				chunk->sizeRequested = 0;		
-
-				chunk->memsetorchunk        = (void*)set->freelist[availFreeInd];
-				set->freelist[availFreeInd] = chunk;
-			}
-
-			block == NULL;
-		}
-	}
-
 	/* If the actual active block does not contain enough
 	 * free space for the chunk we should create a new block.
 	 */
-	if (block == NULL)
+	if (block == NULL || checkFreeBlockSpace(block, chunkSize))
 	{
         size_t		requiredSize;    
 

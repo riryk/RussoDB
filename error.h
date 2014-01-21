@@ -42,6 +42,8 @@ typedef enum
 #define LOG_PANIC		            22		/* take down the other backends with me */
 
 
+#define ERROR_CODE_OUT_OF_MEMORY    1000
+
 /* The structure contains complete information 
  * about an error
  */

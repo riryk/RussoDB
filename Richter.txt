@@ -779,18 +779,183 @@ the data would be safely written to the file.
 - Scan. When the garbage collector finds an object and 
   finds it in the finalization list it adds it to 
   F-reachable queue.
+  
+- A special high-priority CLR thread is dedicated to calling Finalize methods. 
+  A dedicated thread is used to avoid potential thread synchronization situations 
+  that could arise if one of the application’s normal-priority threads were used instead.
+  When the freachable queue is empty (the usual case), this
+  thread sleeps. But when entries appear, this thread wakes, removes each entry from the queue, and
+  then calls each object’s Finalize method.
+  When the freachable queue is empty (the usual case), this thread sleeps. 
+  But when entries appear, this thread wakes, removes each entry from the queue, 
+  and then calls each object’s Finalize method.
+  
+  The garbage collector compacts the reclaimable memory, 
+  which promotes the resurrected object to an older generation (not ideal). 
+  And now, the special finalization thread empties the freachable queue, 
+  executing each object’s Finalize method.
 
+  The important point to get from all of this is 
+  that two garbage collections are required to reclaim memory 
+  used by objects that require finalization.
+  
+33. How does weak references work?
 
+  When a root points to an object, the object cannot be collected 
+  because the application's code can reach the object. 
+  When a root points to an object, it's called a strong reference to the object. 
+  However, the garbage collector also supports weak references. 
+  Weak references allow the garbage collector to collect the object, 
+  but they also allow the application to access the object.
+  
+  Void Method() 
+  {
+      // Creates a strong reference to the
+      // object.
+      Object o = new Object();    
 
-  543
+      // Create a strong reference to a short WeakReference object.
+      // The WeakReference object tracks the Object.
+      WeakReference wr = new WeakReference(o);
 
+      o = null;    // Remove the strong reference to the object
 
+      o = wr.Target;
+      if (o == null) 
+	  {
+          // A GC occurred and Object was reclaimed.
+      } 
+	  else 
+	  {
+          // a GC did not occur and we can successfully access the Object 
+          // using o
+      }
+  }
 
+  When the user switches away from the first part of the application, 
+  you can create a weak reference to the tree and destroy all strong references. 
+  If the memory load is low for the other part of the application, 
+  then the garbage collector will not reclaim the tree's objects. 
+  
+  When the user switches back to the first part of the application, 
+  the application attempts to obtain a strong reference for the tree. 
+  If successful, the application doesn't have to traverse the user's hard drive again.
+  
+  WeakReference(Object target, Boolean trackResurrection); 
+  
+  The trackResurrection parameter indicates whether the WeakReference object 
+  should track the object after it has had its Finalize method called.
+  
+  How to use weak references?
+  For example if we have read a very large object into memory, object 
+  that contains information about all drives, folders and files.
+  We obtain a strong reference:
+  
+  Object obj = new Object(); 
+  
+  Then we use it for some small period of time and switch over
+  to another window. And we do not want to waste memory.
+  So that we transform our strong reference to weak reference:
+  
+  WeakReference wr = new WeakReference(obj);
+  
+  It means that this object is available for garbage collection
+  and if garbage collection occurs it will reclaim this memory.
+  But if the application uses memory seldom so that garbage collection
+  occurs rarely as well and this memory won't be deleted with large possibility.
+  But if switch back to the original window, 
+  we should return a reference to the tree.
+  
+  obj = wr.Targtet;
+  
+  if wr.Target is null, it means that garbage collection has already occured.
+  
+  if (wr.Target == null)
+     we should load the object from the file system.
+   
+  The managed heap contains two internal data structures 
+  whose sole purpose is to manage weak references: 
+  the short weak reference table and the long weak reference table. 
+  These two tables simply contain pointers to objects allocated within the managed heap. 
+  
+  Weak references inside:
+  
+  We switch over to another window and suppose we have run out whole memory.
+  Garbage collection is started:
+  1. It builds a graph of reachable objects.
+  2. It scans short weak reference table and finds one object.
+     If this object is not part of the graph it is considered unreachable
+	 and will be freed and then sets the weak reference to null.
+  
+ 
+34. Examples of memory leak in .NET?
 
+- Memory leak with delegates:
 
+private delegate void MessageWriter(string text);
 
+public class ConsoleWriter
+{
+   public void WriteToConsole(string text)
+   {
+      Console.Write(text);
+   }
+}
 
+// Client code...
+ConsoleWriter writerObj = new ConsoleWriter();
+MessageWriter writerDel = new MessageWriter(writerObj.WriteToConsole);
 
+writerDel("Hello, World!");
+                                        ------------
+ ------------     ------------------>  | writerObj  |
+| writerDel  |   | strong reference     ------------
+|------------|   | 
+| target     |---                      -------------
+| method     |----------------------> | writerDel   |
+ ------------                          -------------
+ 
+ For example if we have have a and do the event subscription here.
+ 
+ public class EventListener
+ {
+     StateObject  _obj;
+ 
+     public EventListener(StateObject obj)
+	 {
+	     _obj = obj;
+         _obj.SomeEvent += new EventHandler();		 
+	 }
+	 
+	 public void SomeMethod(object sender, EventArgs args)
+	 {
+	     // Do some work here 
+	 }
+ }
+ 
+ public class StateObject
+ {
+     public event SomeEvent;
+ }
+ 
+ 
+ public class Program
+ {
+     public void Main()
+	 {
+	     var state1 = new StateObject();
+	     var event1 = new EventListener();
+		 event1 = null;
+		 
+		 // Call garbage collection here.
+		 // It should be deleted. But 
+		 GC.Collect();
+		 
+		 // But after memory collection event1 should be deleted.
+		 // But ii won't be deleted. state1 contains reference to it.
+	 }
+ }
+                  
 
 
 

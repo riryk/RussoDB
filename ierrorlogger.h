@@ -8,7 +8,7 @@ typedef struct SIErrorLogger
 	IConfManager  confManager;
 
 	void (*assertArg)(Bool condition);	
-	void (*log)(int level, char* message,...); 
+	void (*log)(int level, int code, char* message,...); 
 } SIErrorLogger, *IErrorLogger;
 
 #endif
