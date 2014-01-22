@@ -42,24 +42,27 @@ int calculateFreeListIndex(size_t   size)
  * for a chunk.
  */
 void* allocateChunkBlock(
+    void*             self,
 	size_t            chunkSize,
     MemoryContainer   container)
 {
-	size_t        blockSize = chunkSize + MEM_BLOCK_SIZE + MEM_CHUNK_SIZE;
+	IMemContainerManager _         = (IMemContainerManager)self;
+	IErrorLogger         elog      = _->errorLogger;
+	size_t               blockSize = chunkSize + MEM_BLOCK_SIZE + MEM_CHUNK_SIZE;
 
 	MemorySet	  set       = (MemorySet)container;
     MemoryBlock   block     = (MemorySet)malloc(blockSize);
 	MemoryChunk	  chunk;
 
     void*         chunkPtr;
+    size_t        size      = ALIGN_DEFAULT(chunkSize);
 
-    chunkSize = ALIGN_DEFAULT(chunkSize);
-
+	/* Report malloc error */
 	if (block == NULL)
 		elog->log(LOG_ERROR, 
 		          ERROR_CODE_OUT_OF_MEMORY, 
 				  "Out of memory. Failed request size: %lu", 
-				  size);
+				  chunkSize);
 
 	block->memset        = set;
 	block->freeStart     = (char*)block + blockSize;
@@ -67,8 +70,8 @@ void* allocateChunkBlock(
 
 	chunk                = (MemoryChunk)((char*)block + MEM_BLOCK_SIZE);
 	chunk->memsetorchunk = set;
-	chunk->size          = chunkSize;
-	chunk->sizeRequested = size;
+	chunk->size          = size;
+	chunk->sizeRequested = chunkSize;
     
 	chunkPtr = MemoryChunkGetPointer(chunk);
 
@@ -97,12 +100,18 @@ void* allocateChunkBlock(
  * a new block and reclaims whole memory to its free list.
  */
 void* allocateBlock(
+    void*             self,
 	size_t            chunkSize,
 	MemoryContainer   container)
 {
-	MemorySet	set       = (MemorySet)container;
-    size_t		requiredSize; 
-	size_t      blockSize;
+	IMemContainerManager  _     = (IMemContainerManager)self;
+	IErrorLogger          elog  = _->errorLogger;
+
+	MemorySet	          set   = (MemorySet)container;
+	MemoryBlock           block;
+
+    size_t		  requiredSize; 
+	size_t        blockSize;
 
 	/* Set blockSize. We keep track of all block sizes
 	 * And we allocate blocks in increase order of their size.
@@ -114,33 +123,36 @@ void* allocateBlock(
 	if (set->nextBlockSize > set->maxBlockSize)
         set->nextBlockSize = set->maxBlockSize;
 
-    /* We have a restriction for chunkSize:
-	 * chunkSize < maxChunkSize
-	 * We start blockSize from initialBlockSize
-	 * Sometimes initialBlockSize can be less than maxChunkSize
-	 * and so initialBlockSize < maxChunkSize.
-	 * We double bloclSize until we reach the requiredSize.
-	 */
+    /* Block size should at least cover the chunk */
 	requiredSize = chunkSize + MEM_BLOCK_SIZE + MEM_CHUNK_SIZE;
 	while (blockSize < requiredSize)
 		blockSize <<= 1;
 
 	/* Allocate a new block */
 	block = (MemoryBlock)malloc(blockSize);
-    
+
+	/* Report malloc error */
 	if (block == NULL)
-	    ; /* Out of memory. We should report an error. */
+		elog->log(LOG_ERROR, 
+		          ERROR_CODE_OUT_OF_MEMORY, 
+				  "Out of memory. Failed request size: %lu", 
+				  chunkSize);
 
 	block->memset    = set;
 	block->freeStart = ((char*)block) + MEM_BLOCK_SIZE;
 	block->freeEnd   = ((char*)block) + blockSize; 
 
+	/* If the block size is an initial block size,
+	 * we adjust a keeper block.
+	 */
 	if (set->keeperBlock == NULL && blockSize == set->initBlockSize)
 		set->keeperBlock = block;
 
 	/* Insert the new block into the head of the freelist */
 	block->next    = set->blockList;
 	set->blockList = block;
+
+	return block;
 }
 
 /* This is an auxiliary function for allocateMemory method. 
@@ -150,9 +162,11 @@ void* allocateBlock(
  * them into freelist chunks array.
  */
 Bool checkFreeBlockSpace(
+	MemoryContainer       container, 
 	MemoryBlock           block,
 	size_t		          chunkSize)
 { 
+	MemorySet set = (MemorySet)container;
 	/* First of all calculate free space 
 	 * which is available in the block.
 	 * block:  .....|.............|..........
@@ -160,8 +174,8 @@ Bool checkFreeBlockSpace(
 	 *             /             /
 	 *       freeStart       freeEnd
 	 */
-    size_t   availSpace = block->freeEnd - block->freeStart;
-	size_t   minPosChunkSize; 
+    size_t    availSpace = block->freeEnd - block->freeStart;
+	size_t    minPosChunkSize; 
     
 	/* If available space is more than chunk size
 	 * the block is valid and we return true.
@@ -181,9 +195,10 @@ Bool checkFreeBlockSpace(
 	 */
     while (availSpace >= minPosChunkSize)
 	{
-        size_t   availChunkSize = availSpace - MEM_CHUNK_SIZE;
-		int		 availFreeInd   = calculateFreeListIndex(availChunkSize);
-        size_t   actualSpace    = (size_t)(1 << (availFreeInd + MIN_CHUNK_POWER_OF_2));
+		MemoryChunk  chunk;
+        size_t       availChunkSize = availSpace - MEM_CHUNK_SIZE;
+		int		     availFreeInd   = calculateFreeListIndex(availChunkSize);
+        size_t       actualSpace    = (size_t)(1 << (availFreeInd + MIN_CHUNK_POWER_OF_2));
 
 		/* availChunkSize should always be a power of 2. */
 		if (availChunkSize != actualSpace)
@@ -251,7 +266,7 @@ void* allocateMemory(
 	 * In this case we allocate a new whole block.
 	 */
 	if (size > set->chunkMaxSize)
-        return allocateBlock(size, container);
+        return allocateBlock(_, size, container);
 
 	/* The size of the chunk is too small to be an entire block.
 	 * In this case we should treat it as a chunk.
@@ -292,67 +307,32 @@ void* allocateMemory(
 	/* If the actual active block does not contain enough
 	 * free space for the chunk we should create a new block.
 	 */
-	if (block == NULL || checkFreeBlockSpace(block, chunkSize))
-	{
-        size_t		requiredSize;    
-
-		/* Set blockSize. We keep track of all block sizes
-		 * And we allocate blocks in increase order of their size.
-		 * We start from initBlockSize and always double the blockSize
-		 * until we reach maxBlockSize.
-		 */
-		blockSize = set->nextBlockSize;
-        set->nextBlockSize << 1;
-		if (set->nextBlockSize > set->maxBlockSize)
-            set->nextBlockSize = set->maxBlockSize;
-
-        /* We have a restriction for chunkSize:
-		 * chunkSize < maxChunkSize
-		 * We start blockSize from initialBlockSize
-		 * Sometimes initialBlockSize can be less than maxChunkSize
-		 * and so initialBlockSize < maxChunkSize.
-		 * We double bloclSize until we reach the requiredSize.
-		 */
-		requiredSize = chunkSize + MEM_BLOCK_SIZE + MEM_CHUNK_SIZE;
-		while (blockSize < requiredSize)
-			blockSize <<= 1;
-
-		/* Allocate a new block */
-		block = (MemoryBlock)malloc(blockSize);
-        
-		if (block == NULL)
-		    ; /* Out of memory. We should report an error. */
-
-		block->memset    = set;
-		block->freeStart = ((char*)block) + MEM_BLOCK_SIZE;
-		block->freeEnd   = ((char*)block) + blockSize; 
-
-		if (set->keeperBlock == NULL && blockSize == set->initBlockSize)
-			set->keeperBlock = block;
-
-		/* Insert the new block into the head of the freelist */
-		block->next    = set->blockList;
-		set->blockList = block;
-	}
+	if (block == NULL || checkFreeBlockSpace(set, block, chunkSize))
+        block = allocateBlock(_, chunkSize, container);
 
     /* do the allocation */
 	chunk = (MemoryChunk)block->freeStart;
 
+	/* Move the block's free start pointer */
 	block->freeStart += (chunkSize + MEM_CHUNK_SIZE);
 
 	chunk->memsetorchunk = (void*)set;
-	chunk->size = chunkSize;
+	chunk->size          = chunkSize;
 	chunk->sizeRequested = size;		
 
     chunkPtr = MemoryChunkGetPointer(chunk);
-
-    if (size < chunkSize)
-       ((char*)chunkPtr)[size] = UNUSED_SPACE_MARK;
-
 	return chunkPtr;
 }
 
-/* Creates new memory container object. */
+/* Creates new memory container object. 
+ * container - a memory container where to allocate
+ *             memory from.
+ * parent    - If it is null the memory container 
+ *             will be the root node.
+ * type      - memory type
+ * If container is null, we allocate memory from malloc
+ * It can happen when we want to create the top memory context
+ */
 MemoryContainer memContCreate(
 	void*                self,
     MemoryContainer      container,
@@ -361,12 +341,21 @@ MemoryContainer memContCreate(
 	size_t               size,
 	char*                name)
 {
+	IMemContainerManager  _    = (IMemContainerManager)self;
+	IErrorLogger          elog = _->errorLogger;
+
     MemoryContainer    newCont;
 	size_t             neededSize = size + strlen(name) + 1;
 
-    newCont = (container != NULL) ?
-		(MemoryContainer)allocSetAlloc(container, neededSize) :
-	    (MemoryContainer)malloc(neededSize);
+	if (container != NULL)
+	{
+        newCont = (MemoryContainer)allocateMemory(self, container, neededSize);
+	}
+	else
+	{
+        newCont = (MemoryContainer)malloc(neededSize); 
+        elog->assert(newCont != NULL);
+	}
 
     memset(newCont, 0, size);
     
@@ -407,10 +396,11 @@ MemorySet memSetCreate(
 	 * First we create a base object.
 	 */
 	MemorySet      set = (MemorySet)memContCreate(
+		                          self,
                                   container,
+								  parent,
                                   MCT_MemorySet, 
 	                              sizeof(SMemorySet),
-	                              parent,
 	                              name);
 
 	initBlockSize = ALIGN_DEFAULT(initBlockSize);

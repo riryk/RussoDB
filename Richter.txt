@@ -955,7 +955,134 @@ writerDel("Hello, World!");
 		 // But ii won't be deleted. state1 contains reference to it.
 	 }
  }
+ 
+ We can solve it by applying weak references.
                   
+- Memory leak with static events.
+				  
+static event EventHandler Evil;
+
+for(int i = 0 ; i < 1000000 ; i++)
+    Evil += delegate {};
+
+	
+35. When do we need to create a new thread?
+
+You need the thread to run with a non-normal thread priority. 
+All thread pool threads run at normal priority. 
+Although you can change this, it is not recommended, 
+and the priority change does not persist across thread pool operations.
+
+You want to start a thread and possibly abort 
+it prematurely by calling Thread’s Abort method.
+
+At this point, the thread is executing code 
+and manipulating data in its process’s address space.
+After another time-slice, Windows performs another context switch. 
+Windows performs context switches from the moment the system 
+is booted and continues until the system is shut down.
+
+For example, if a priority 5 thread is running and the system determines 
+that a higher-priority thread is ready to run, 
+the system immediately suspends the lower-priority thread
+(even if it’s in the middle of its time-slice) 
+and assigns the CPU to the higher-priority thread, 
+which gets a full time-slice.
+
+36. What is CLR thread pool?
+
+To improve
+this situation, the CLR contains code to manage its own thread pool. You can think of a thread
+pool as being a set of threads that are available for your application’s own use. There is one thread
+pool per CLR; this thread pool is shared by all AppDomains controlled by that CLR.
+
+When your application wants to perform an asynchronous operation,
+you call some method that appends an entry into the thread pool’s queue.
+
+The thread pool’s code will
+extract entries from this queue and dispatch the entry to a thread pool thread.
+
+However, when a thread pool thread has completed its task, the thread is
+not destroyed; instead, the thread is returned to the thread pool, 
+where it sits idle waiting to respond to another request.
+
+If your application makes many requests of the thread pool, 
+the thread pool will try to service all of the requests by using just this one thread. 
+However, if your application is queuing up several requests faster 
+than the thread pool thread can handle them, additional threads will be created.
+
+//The method that queues a request to CLR's thread pool 
+static Boolean QueueUserWorkItem(WaitCallback callBack);
+static Boolean QueueUserWorkItem(WaitCallback callBack, Object state);
+
+delegate void WaitCallback(Object state);
+
+Example how to queue a request to the thread pool.
+
+
+using System;
+using System.Threading;
+
+public static class Program 
+{
+    public static void Main() 
+	{
+        Console.WriteLine("Main thread: queuing an asynchronous operation");
+		
+        ThreadPool.QueueUserWorkItem(ComputeBoundOp, 5);
+		
+        Console.WriteLine("Main thread: Doing other work here...");
+        Thread.Sleep(10000); // Simulating other work (10 seconds)
+		
+        Console.WriteLine("Hit <Enter> to end this program...");
+        Console.ReadLine();
+    }
+	
+    // This method's signature must match the WaitCallback delegate
+    private static void ComputeBoundOp(Object state) 
+	{
+        // This method is executed by a thread pool thread
+		
+	    Console.WriteLine("In ComputeBoundOp: state={0}", state);
+        Thread.Sleep(1000); // Simulates other work (1 second)
+		
+        // When this method returns, the thread goes back
+        // to the pool and waits for another task
+	}
+}
+
+37. What is execution context?
+
+Some information which is passed to a child thread by a parent thread.
+We should suppress this information to gain perfomance.
+
+public static void Main() 
+{
+    // Put some data into the Main thread's logical call context
+    CallContext.LogicalSetData("Name", "Jeffrey");
+	
+    // Initiate some work to be done by a thread pool thread
+    // The thread pool thread can access the logical call context data
+    ThreadPool.QueueUserWorkItem(state => Console.WriteLine("Name={0}", CallContext.LogicalGetData("Name")));
+	
+    // Now, suppress the flowing of the Main thread's execution context
+    ExecutionContext.SuppressFlow();
+	
+	// Initiate some work to be done by a thread pool thread
+    // The thread pool thread CANNOT access the logical call context data
+    ThreadPool.QueueUserWorkItem(state => Console.WriteLine("Name={0}", CallContext.LogicalGetData("Name")));
+	
+    // Restore the flowing of the Main thread's execution context in case
+    // it employs more thread pool threads in the future
+    ExecutionContext.RestoreFlow();
+	
+    //...
+    Console.ReadLine();
+}
+
+
+
+696
 
 
 
