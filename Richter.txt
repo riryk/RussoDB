@@ -1081,8 +1081,271 @@ public static void Main()
 }
 
 
+38. What is cooperative cancellation?
 
-696
+internal static class CancellationDemo 
+{
+    public static void Main() 
+	{
+        CancellationTokenSource cts = new CancellationTokenSource();
+		
+        // Pass the CancellationToken and the number-to-count-to into the operation
+        ThreadPool.QueueUserWorkItem(o => Count(cts.Token, 1000));
+		
+        Console.WriteLine("Press <Enter> to cancel the operation.");
+        Console.ReadLine();
+		
+		// If Count returned already, Cancel has no effect on it
+        cts.Cancel();
+		
+        // Cancel returns immediately, and the method continues running here...
+        Console.ReadLine();
+	}
+	
+	private static void Count(
+	    CancellationToken        token, 
+		Int32                    countTo) 
+    {
+        for (Int32 count = 0; count <countTo; count++) 
+		{
+            if (token.IsCancellationRequested) 
+			{
+                Console.WriteLine("Count is cancelled");
+                break; // Exit the loop to stop the operation
+            }
+			
+            Console.WriteLine(count);
+            Thread.Sleep(200);    // For demo, waste some time
+        }
+		
+        Console.WriteLine("Count is done");
+    }
+}
+
+
+39. How does task work?
+
+ThreadPool.QueueUserWorkItem(ComputeBoundOp, 5); // Calling QueueUserWorkItem
+new Task(ComputeBoundOp, 5).Start();             // Equivalent of preceding using Task
+Task.Run(() => ComputeBoundOp(5));               // Another equivalent
+
+
+
+40. How to wait for a task to finish execution?
+
+private static Int32 Sum(Int32 n) 
+{
+   Int32 sum = 0;
+   for (; n > 0; n--)
+      checked { sum += n; } // if n is large, this will throw System.OverflowException
+   return sum;
+}
+
+// Create a Task (it does not start running now)
+Task<Int32> t = new Task<Int32>(n => Sum((Int32)n), 1000000000);
+
+// You can start the task sometime later
+t.Start();
+
+// Optionally, you can explicitly wait for the task to complete
+t.Wait(); // FYI: Overloads exist accepting timeout/CancellationToken
+
+// You can get the result (the Result property internally calls Wait)
+Console.WriteLine("The Sum is: " + t.Result); // An Int32 value
+
+When a thread calls the Wait method, the system checks 
+if the Task that the thread is waiting for has started executing. 
+
+If it has, then the thread calling Wait will block
+until the Task has completed running. 
+
+But if the Task has not started executing yet, then
+the system may (depending on the TaskScheduler) execute the Task by using the thread
+that called Wait. 
+
+If this happens, then the thread calling Wait does not block; it executes
+the Task and returns immediately. This is good in that no thread has blocked, thereby
+reducing resource usage (by not creating a thread to replace the blocked thread) while
+improving performance (no time is spent to create a thread and there is no context switching).
+But it can also be bad if, for example, the thread has taken a thread synchronization
+lock before calling Wait and then the Task tries to take the same lock, resulting in a deadlocked
+thread!
+
+
+41. What happens if an exception has been thrown?
+
+If the compute-bound task throws an unhandled exception, the exception will be swallowed,
+stored in a collection, and the thread pool thread is allowed to return to the thread pool.
+When the Wait method or the Result property is invoked, 
+these members will throw a System.AggregateException object.
+
+Wait for all threads to complete.
+
+In addition to waiting for a single task, 
+the Task class also offers two static methods that allow a
+thread to wait on an array of Task objects. 
+Task’s static WaitAny method blocks the calling thread
+until any of the Task objects in the array have completed.
+
+Similarly, the Task class has a static WaitAll method 
+that blocks the calling thread until all the Task objects in the array have completed. 
+The WaitAll method returns true if all the Task objects complete and false if a timeout occurs;
+
+42. How to start a new task automatically when another completes?
+
+Calling  task.Result causes the thread to wait until the task completes.
+It can hurt perfomance. So to know when task completes we can use ContinueWith
+
+// Create and start a Task, continue with another task
+Task<Int32> t = Task.Run(() => Sum(CancellationToken.None, 10000));
+
+// ContinueWith returns a Task but you usually don't care
+Task cwt = t.ContinueWith(task => Console.WriteLine("The sum is: " + task.Result));
+
+When an exception has occured in task we should process it:
+- We can do it by applying ContinueWith method:
+
+var task = Task.Factory.StartNew(() =>
+{
+    // Throws an exception 
+    // (possibly from within another task spawned from within this task)
+});
+
+var failureTask = task.ContinueWith((t) =>
+{
+    // Flatten and loop (since there could have been multiple tasks)
+    foreach (var ex in t.Exception.Flatten().InnerExceptions)
+        Console.WriteLine(ex.Message);
+}, TaskContinuationOptions.OnlyOnFaulted);
+
+- We can specify ContinueWith and check for an exception there.
+
+var task = Task.Factory.StartNew(() =>
+{
+    // Throws an exception 
+    // (possibly from within another task spawned from within this task)
+});
+
+task.ContinueWith(task =>
+{
+    if (task.IsFaulted)
+    {	
+	    // handle errors
+	}
+	else 
+	{
+	    Console.WriteLine(task.Result.Headers);
+    }
+});
+
+43. How to use child tasks?
+
+Create a parent task that contains 3 child tasks
+
+Task<Int32[]> parent = new Task<Int32[]>(() => 
+{
+    // Create an array for the results
+    var results = new Int32[3]; 
+	
+    // This tasks creates and starts 3 child tasks
+	var task1 = new Task(() => results[0] = Sum(10000), TaskCreationOptions.AttachedToParent);
+	task1.Start();
+    
+	var task2 = new Task(() => results[1] = Sum(20000), TaskCreationOptions.AttachedToParent);
+    task2.Start();
+	
+	var task3 = new Task(() => results[2] = Sum(30000), TaskCreationOptions.AttachedToParent);
+	task3.Start();
+	
+    // Returns a reference to the array (even though the elements may not be initialized yet)
+    return results;
+});
+
+Create a task that will be executed after the parent and all its child tasks.
+
+// When the parent and its children have run to completion, display the results
+var cwt = parent.ContinueWith(parentTask => Array.ForEach(parentTask.Result, Console.WriteLine));
+
+// Start the parent Task so it can start its children
+parent.Start();
+
+
+44. What is TaskSchedulers?
+
+A task scheduler makes sure that the work of a task is eventually executed. 
+The default task scheduler is based on the .NET Framework 4 ThreadPool, 
+which provides work-stealing for load-balancing, 
+thread injection/retirement for maximum throughput, 
+and overall good performance.
+
+
+// Provides a task scheduler that ensures a maximum concurrency level while  
+// running on top of the thread pool. 
+public class LimitedConcurrencyLevelTaskScheduler : TaskScheduler
+{
+   // The list of tasks to be executed  
+   private readonly LinkedList<Task> _tasks = new LinkedList<Task>(); // protected by lock(_tasks) 
+   
+   protected sealed override void QueueTask(Task task)
+   {
+       lock (_tasks)
+       {
+           _tasks.AddLast(task);
+		   //notify thread pool to process thease threads
+       }		   
+   }
+   
+   protected sealed override bool TryExecuteTaskInline(Task task, bool taskWasPreviouslyQueued)
+   {
+       
+   }
+}
+
+IOTaskScheduler This task scheduler queues tasks to the thread pool’s I/O threads instead
+of its worker threads.
+
+LimitedConcurrencyLevelTaskScheduler This task scheduler allows no more than n (a
+constructor parameter) tasks to execute simultaneously.
+
+OrderedTaskScheduler This task scheduler allows only one task to execute at a time. This
+class is derived from LimitedConcurrencyLevelTaskScheduler and just passes 1 for n.
+
+
+45. How to parallel foreach cycle?
+
+- Paralleling of cycle 'for':
+
+  // One thread performs all this work sequentially
+  for (Int32 i = 0; i < 1000; i++) DoWork(i);
+  
+  can be paralleled as:
+  
+  // The thread pool’s threads process the work in parallel
+  Parallel.For(0, 1000, i => DoWork(i));
+  
+- Parallelizing of cycle 'foreach':
+
+  // One thread performs all this work sequentially
+  foreach (var item in collection) DoWork(item);
+
+  // The thread pool's threads process the work in parallel
+  Parallel.ForEach(collection, item => DoWork(item));
+
+- Methods:
+
+  // One thread executes all the methods sequentially
+  Method1();
+  Method2();
+  Method3();
+  
+  // The thread pool’s threads execute the methods in parallel
+  Parallel.Invoke(
+    () => Method1(),
+    () => Method2(),
+    () => Method3());
+	
+	
+720	
 
 
 
