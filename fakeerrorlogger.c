@@ -1,4 +1,5 @@
 #include "ierrorlogger.h"
+#include "fakeerrorlogger.h"
 
 void assertArg(Bool condition);	
 void assert(Bool condition);

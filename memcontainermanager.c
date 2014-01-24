@@ -1,6 +1,19 @@
 #include "memcontainermanager.h"
 #include <stdio.h>
 
+/* This table matches n to log2(n) + 1 
+ * It has been created to avoid calculating it
+ * all time.
+ */
+unsigned char Log2Table[256] =
+{
+	0, 1, 2, 2, 3, 3, 3, 3, 4, 4, 4, 4, 4, 4, 4, 4,
+	SeqOf16CopiesOf(5), SeqOf16CopiesOf(6), SeqOf16CopiesOf(6), SeqOf16CopiesOf(7), 
+	SeqOf16CopiesOf(7), SeqOf16CopiesOf(7), SeqOf16CopiesOf(7),
+	SeqOf16CopiesOf(8), SeqOf16CopiesOf(8), SeqOf16CopiesOf(8), SeqOf16CopiesOf(8), 
+	SeqOf16CopiesOf(8), SeqOf16CopiesOf(8), SeqOf16CopiesOf(8), SeqOf16CopiesOf(8)
+};
+
 /* Calculates the number of a free list
  * depending on size. The free list should 
  * contain a memory chunk of length of a power of two.
@@ -339,7 +352,8 @@ MemoryContainer memContCreate(
 	MemoryContainer      parent,
     MemContType          type, 
 	size_t               size,
-	char*                name)
+	char*                name,
+	void*                (*malloc)(size_t size))
 {
 	IMemContainerManager  _    = (IMemContainerManager)self;
 	IErrorLogger          elog = _->errorLogger;
@@ -354,7 +368,7 @@ MemoryContainer memContCreate(
 	else
 	{
         newCont = (MemoryContainer)malloc(neededSize); 
-        elog->assert(newCont != NULL);
+		ASSERT(elog, newCont != NULL, NULL); 
 	}
 
     memset(newCont, 0, size);
@@ -364,7 +378,7 @@ MemoryContainer memContCreate(
 	newCont->childHead = NULL;
 	newCont->next      = NULL;
 	newCont->isReset   = True;
-	newCont->name      = ((char*)type) + size;
+	newCont->name      = ((char*)newCont) + size;
 
 	strcpy(newCont->name, name);
 
@@ -401,7 +415,8 @@ MemorySet memSetCreate(
 								  parent,
                                   MCT_MemorySet, 
 	                              sizeof(SMemorySet),
-	                              name);
+	                              name,
+								  malloc);
 
 	initBlockSize = ALIGN_DEFAULT(initBlockSize);
 	if (initBlockSize < 1024)

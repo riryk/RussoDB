@@ -1,4 +1,6 @@
 
+#ifndef MEMORY_H
+#define MEMORY_H
 
 /* The smallest chunk of memory is 8 bytes.
  * 8 = 2^3. So that the smallest power of 2 is 3.
@@ -172,20 +174,6 @@ typedef struct SMemoryChunk
  */
 #define SeqOf16CopiesOf(n) n, n, n, n, n, n, n, n, n, n, n, n, n, n, n, n
 
-/* This table matches n to log2(n) + 1 
- * It has been created to avoid calculating it
- * all time.
- */
-unsigned char Log2Table[256] =
-{
-	0, 1, 2, 2, 3, 3, 3, 3, 4, 4, 4, 4, 4, 4, 4, 4,
-	SeqOf16CopiesOf(5), SeqOf16CopiesOf(6), SeqOf16CopiesOf(6), SeqOf16CopiesOf(7), 
-	SeqOf16CopiesOf(7), SeqOf16CopiesOf(7), SeqOf16CopiesOf(7),
-	SeqOf16CopiesOf(8), SeqOf16CopiesOf(8), SeqOf16CopiesOf(8), SeqOf16CopiesOf(8), 
-	SeqOf16CopiesOf(8), SeqOf16CopiesOf(8), SeqOf16CopiesOf(8), SeqOf16CopiesOf(8)
-};
-
-
 /* This macros checks if container is not null and if  
  * it is SMemorySet. type == MCT_MemorySet.
  */
@@ -193,7 +181,7 @@ unsigned char Log2Table[256] =
    ((container) != NULL && \
       ((MemoryContainerBase)(container))->type == MCT_MemorySet)
 
-
+#endif
 
 
 

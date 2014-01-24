@@ -517,6 +517,14 @@
 								</File>
 							</Filter>
 						</Filter>
+						<Filter
+							Name="error"
+							>
+							<File
+								RelativePath=".\fakeerrorlogger.h"
+								>
+							</File>
+						</Filter>
 					</Filter>
 				</Filter>
 			</Filter>
@@ -874,6 +882,10 @@
 								<Filter
 									Name="positive"
 									>
+									<File
+										RelativePath=".\when_create_memory_container.c"
+										>
+									</File>
 								</Filter>
 							</Filter>
 						</Filter>
@@ -985,22 +997,6 @@
 								</Filter>
 							</Filter>
 							<Filter
-								Name="estimate_file_count"
-								>
-								<Filter
-									Name="negative"
-									>
-								</Filter>
-								<Filter
-									Name="positive"
-									>
-									<File
-										RelativePath="src\tests\unit\file\file_manager\estimate_file_count\positive\when_estimate_file_count.c"
-										>
-									</File>
-								</Filter>
-							</Filter>
-							<Filter
 								Name="close_recent_file"
 								>
 								<Filter
@@ -1014,6 +1010,22 @@
 								<Filter
 									Name="negative"
 									>
+								</Filter>
+								<Filter
+									Name="estimate_file_count"
+									>
+									<Filter
+										Name="negative"
+										>
+									</Filter>
+									<Filter
+										Name="positive"
+										>
+										<File
+											RelativePath="src\tests\unit\file\file_manager\estimate_file_count\positive\when_estimate_file_count.c"
+											>
+										</File>
+									</Filter>
 								</Filter>
 							</Filter>
 							<Filter

@@ -15,7 +15,8 @@ typedef struct SIMemContainerManager
 	     MemoryContainer      parent,
          MemContType          type, 
 	     size_t               size,
-	     char*                name);
+	     char*                name,
+		 void*                (*malloc)(size_t size));
 
 } SIMemContainerManager, *IMemContainerManager;
 
