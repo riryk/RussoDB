@@ -1343,9 +1343,100 @@ class is derived from LimitedConcurrencyLevelTaskScheduler and just passes 1 for
     () => Method1(),
     () => Method2(),
     () => Method3());
+
 	
-	
-720	
+46. How does the thread pool manager manage its threads?
+
+
+The ThreadPool.QueueUserWorkItem method 
+and the Timer class always queue work items to the global queue. 
+Worker threads pull items from this queue 
+using a first-in-first-out (FIFO) algorithm and process them.
+
+Because multiple worker threads can be removing items from the global
+queue simultaneously, all worker threads contend on a thread synchronization lock to ensure that
+two or more threads don’t take the same work item.
+
+The CLR Thread pool consists of GlobalQueue and Worker Threads 
+And each worker thread has its own local queue.
+
+Non-Worker Thread posts a task into Global Queue.
+TaskScheduler schedules a task and task is added to the global queue.
+But, each worker thread has its own local queue, and when a
+worker thread schedules a Task, the Task is added to calling the thread’s local queue.
+
+When a worker thread is ready to process an item, 
+it always checks its local queue for a Task first.
+If a Task exists, the worker thread removes 
+the Task from its local queue and processes the item.
+
+Because a worker thread is the only thread allowed 
+to access the head of its own local queue, 
+no thread synchronization lock is required and adding 
+and removing Tasks from the queue is very fast.
+
+Thread Pool consists of two pools:
+
+1) The Worker ThreadPool.
+Designed to provide services at the level of CPU parallelism, 
+the worker ThreadPool takes advantage of multi-core architectures. 
+For the former, the ThreadPool implementation makes use of strategies 
+such as lock-free queues to avoid contention and work-stealing for load balancing
+
+2) I/O ThreadPool.
+This part of the ThreadPool implementation, 
+related to I/O parallelism, handles blocking workloads 
+(that is, I/O requests that take a relatively long time to service) or asynchronous I/O. 
+In asynchronous calls, threads aren’t blocked 
+and can continue to do other work while the request is serviced. 
+
+
+
+47. What is work-stealing tecniques?
+
+The library has a task manager that, by default, uses one worker thread per processor. 
+This ensures minimal thread switching by the OS.
+Each worker thread has its own local task queue of work to be done. 
+Each worker usually just pushes new tasks onto its own queue 
+and pops work whenever a task is done. 
+When its local queue is empty, a worker looks for work itself 
+and tries to "steal" work from the queues of other workers. 
+
+
+48. How does I/O ThreadPool work?
+
+ReadFile then calls into the Windows kernel 
+by having your thread transition from native/usermode
+code to native/kernel-mode code, 
+passing the IRP data structure to the kernel.
+Windows delivers the IRP to the appropriate device driver’s IRP queue.
+Each device driver maintains its own IRP queue 
+that contains I/O requests from all processes running on the machine.
+
+But here is the important part: 
+While the hardware device is performing the I/O operation, 
+your thread that issued the I/O request has nothing to do, 
+so Windows puts your thread to sleep so that it is not wasting CPU time (#6). 
+
+This is great, but although your thread is not wasting time, 
+it is wasting space (memory), as its user-mode stack, 
+kernel-mode stack, thread environment block (TEB), 
+and other data structures are sitting in memory but are not being accessed at all. 
+In addition, for GUI applications, 
+the UI can’t respond to user input while the thread is blocked. 
+All of this is bad.
+
+
+49. How does Thread Pool perform a syncronous IO operation?
+
+Client makes a query to CLR thread pool. Then the query goes to
+CLR global queue. Then someone from worker threads picks it up
+from the global queue and puts it into its own 
+
+
+
+
+
 
 
 
