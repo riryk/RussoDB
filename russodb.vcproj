@@ -875,7 +875,7 @@
 									Name="negative"
 									>
 									<File
-										RelativePath=".\when_create_cont_with_too_large_size.c"
+										RelativePath=".\when_create_cont_with_to_large_size.c"
 										>
 									</File>
 								</Filter>
@@ -884,6 +884,26 @@
 									>
 									<File
 										RelativePath=".\when_create_memory_container.c"
+										>
+									</File>
+								</Filter>
+							</Filter>
+							<Filter
+								Name="allocate_memory"
+								>
+								<Filter
+									Name="negative"
+									>
+								</Filter>
+								<Filter
+									Name="positive"
+									>
+									<File
+										RelativePath=".\when_allocate_large_chunk.c"
+										>
+									</File>
+									<File
+										RelativePath=".\when_allocate_many_large_chunks.c"
 										>
 									</File>
 								</Filter>

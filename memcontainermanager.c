@@ -64,7 +64,7 @@ void* allocateChunkBlock(
 	size_t               blockSize = chunkSize + MEM_BLOCK_SIZE + MEM_CHUNK_SIZE;
 
 	MemorySet	  set       = (MemorySet)container;
-    MemoryBlock   block     = (MemorySet)malloc(blockSize);
+    MemoryBlock   block     = (MemoryBlock)malloc(blockSize);
 	MemoryChunk	  chunk;
 
     void*         chunkPtr;
@@ -268,7 +268,7 @@ void* allocateMemory(
 	size_t		          blockSize;
 
 	/* Assert if the container is valid. */
-    elog->assertArg(isContValid);	 
+    ASSERT_ARG(elog, isContValid, NULL); 
 
 	if (!isSizeValid)
 		elog->log(LOG_ERROR, -1, "Allocate memory request size: %lu is invalid", size);
@@ -279,7 +279,7 @@ void* allocateMemory(
 	 * In this case we allocate a new whole block.
 	 */
 	if (size > set->chunkMaxSize)
-        return allocateBlock(_, size, container);
+        return allocateChunkBlock(_, size, container);
 
 	/* The size of the chunk is too small to be an entire block.
 	 * In this case we should treat it as a chunk.
