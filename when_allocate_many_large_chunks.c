@@ -9,6 +9,9 @@ TEST_GROUP(allocate_many_large_chunks);
 IMemContainerManager  mm_amlc;
 MemoryContainer       mc_amlc;
 size_t                size_amlc;
+void*                 mem_amlc1;
+void*                 mem_amlc2;
+void*                 mem_amlc3;
 
 SETUP_DEPENDENCIES(allocate_many_large_chunks) 
 {
@@ -19,7 +22,7 @@ SETUP_DEPENDENCIES(allocate_many_large_chunks)
 	mm_amlc->resetMemoryFromSet = resetMemoryFromSet;
 }
 
-GIVEN(allocate_large_chunk) 
+GIVEN(allocate_many_large_chunks) 
 {
     size_amlc = 100;
 
@@ -33,41 +36,53 @@ GIVEN(allocate_large_chunk)
 		 malloc);
 }
 
-WHEN(allocate_large_chunk)
+WHEN(allocate_many_large_chunks)
 {
-	mem_alc = mm_alc->allocateMemory(
-		 mm_alc,
-		 mc_alc,
-         size_alc);
+	mem_amlc1 = mm_amlc->allocateMemory(
+		 mm_amlc,
+		 mc_amlc,
+         size_amlc);
+
+    mem_amlc2 = mm_amlc->allocateMemory(
+		 mm_amlc,
+		 mc_amlc,
+         size_amlc);
+
+	mem_amlc3 = mm_amlc->allocateMemory(
+		 mm_amlc,
+		 mc_amlc,
+         size_amlc);
 }
 
-TEST_TEAR_DOWN(allocate_large_chunk)
+TEST_TEAR_DOWN(allocate_many_large_chunks)
 {
-	MemorySet set = (MemorySet)mc_alc;
-	mm_alc->resetMemoryFromSet(set);
-	free(mc_alc);
-	free(mm_alc);
+	MemorySet set = (MemorySet)mc_amlc;
+	mm_amlc->resetMemoryFromSet(set);
+	free(mc_amlc);
+	free(mm_amlc);
 }
 
-TEST(allocate_large_chunk, then_chunk_block_must_be_created)
-{    
-    int chunk_size_requested = size_alc;
-    int chunk_size           = ALIGN_DEFAULT(chunk_size_requested);
+TEST(allocate_many_large_chunks, then_chunk_blocks_must_be_created)
+{   
+    MemorySet   set      = (MemorySet)mc_amlc;
+	MemoryBlock block    = set->blockList;
+    int         blockNum = 0;
 
-	void*           chunkMem = mem_alc;
-	MemoryChunk     chunk    = (MemoryChunk)((char*)chunkMem - MEM_CHUNK_SIZE); 
+	while (block != NULL)
+	{
+		block = block->next;
+        blockNum++;  
+	}
 
-	TEST_ASSERT_NOT_NULL(chunkMem);
-    TEST_ASSERT_NOT_NULL(chunk);
-
-	TEST_ASSERT_EQUAL(chunk->memsetorchunk, mc_alc);
-	TEST_ASSERT_EQUAL_INT32(chunk->size, chunk_size);
-	TEST_ASSERT_EQUAL_INT32(chunk->sizeRequested, chunk_size_requested);
+	TEST_ASSERT_NOT_NULL(mem_amlc1);
+    TEST_ASSERT_NOT_NULL(mem_amlc2);
+    TEST_ASSERT_NOT_NULL(mem_amlc3);
+	TEST_ASSERT_EQUAL_UINT32(blockNum, 3);
 }
 
-TEST_GROUP_RUNNER(allocate_large_chunk)
+TEST_GROUP_RUNNER(allocate_many_large_chunks)
 {
-    RUN_TEST_CASE(allocate_large_chunk, then_chunk_block_must_be_created);
+    RUN_TEST_CASE(allocate_many_large_chunks, then_chunk_blocks_must_be_created);
 }
 
 

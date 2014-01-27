@@ -45,7 +45,7 @@ int calculateFreeListIndex(size_t   size)
 	if (large > 0)
         return Log2Table[large] + 8;
 
-    return Log2Table[large];
+    return Log2Table[chunksCount];
 }
 
 /* This is an auxiliary function for allocateMemory method.
@@ -125,6 +125,9 @@ void* allocateBlock(
 
     size_t		  requiredSize; 
 	size_t        blockSize;
+    
+	ASSERT(elog, set->nextBlockSize > 0, NULL);
+    ASSERT(elog, set->maxBlockSize > 0, NULL);
 
 	/* Set blockSize. We keep track of all block sizes
 	 * And we allocate blocks in increase order of their size.
@@ -132,7 +135,7 @@ void* allocateBlock(
 	 * until we reach maxBlockSize.
 	 */
 	blockSize = set->nextBlockSize;
-    set->nextBlockSize << 1;
+    set->nextBlockSize <<= 1;
 	if (set->nextBlockSize > set->maxBlockSize)
         set->nextBlockSize = set->maxBlockSize;
 
@@ -269,6 +272,7 @@ void* allocateMemory(
 
 	/* Assert if the container is valid. */
     ASSERT_ARG(elog, isContValid, NULL); 
+	ASSERT(elog, set->chunkMaxSize > 0, NULL);
 
 	if (!isSizeValid)
 		elog->log(LOG_ERROR, -1, "Allocate memory request size: %lu is invalid", size);
