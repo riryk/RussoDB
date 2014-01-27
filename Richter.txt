@@ -1696,6 +1696,9 @@ private struct StateMachine : IAsyncStateMachine
 
 51. How can thread synchronization hurt perfomance?
 
+When many threads simultaneously try to acquire a lock 
+only one of them  can get it. Others will block until it processes
+a request. So the thread pool will create more threads to keep itself saturated.
 
 
 

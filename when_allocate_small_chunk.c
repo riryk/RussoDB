@@ -57,25 +57,28 @@ TEST_TEAR_DOWN(allocate_small_chunk)
 	free(mm_asc);
 }
 
-TEST(allocate_small_chunk, then_test)
+TEST(allocate_small_chunk, then_new_block_must_be_allocated)
 {   
-    MemorySet   set      = (MemorySet)mc_asc;
-	MemoryBlock block    = set->blockList;
-    int         blockNum = 0;
+    MemorySet   set             = (MemorySet)mc_asc;
+	MemoryBlock block           = set->blockList;
+    MemoryChunk chunk           = (MemoryChunk)((char*)mem_asc - MEM_CHUNK_SIZE);
 
-	while (block != NULL)
-	{
-		block = block->next;
-        blockNum++;  
-	}
+	int         freeMemSize     = (int)block->freeEnd - (int)block->freeStart;
+	int         expectedMemSize = 256 
+		                          - MEM_BLOCK_SIZE
+								  - chunk->size
+								  - MEM_CHUNK_SIZE; 
+
+	TEST_ASSERT_NULL(block->next);
+
+	TEST_ASSERT_EQUAL_UINT32(block->memset, set);
 
 	TEST_ASSERT_NOT_NULL(mem_asc);
-	TEST_ASSERT_EQUAL_UINT32(blockNum, 3);
 }
 
 TEST_GROUP_RUNNER(allocate_small_chunk)
 {
-    RUN_TEST_CASE(allocate_small_chunk, then_test);
+    RUN_TEST_CASE(allocate_small_chunk, then_new_block_must_be_allocated);
 }
 
 
