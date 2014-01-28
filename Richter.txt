@@ -1700,6 +1700,372 @@ When many threads simultaneously try to acquire a lock
 only one of them  can get it. Others will block until it processes
 a request. So the thread pool will create more threads to keep itself saturated.
 
+52. Are static methods thread safe?  Yes.
+
+53. Examples of a thread-safe static method.
+
+public static Int32 Max(Int32 val1, Int32 val2) 
+{
+    return (val1 < val2) ? val2 : val1;
+}
+
+This function is thread-safe because we work with Value types 
+and each thread gets a copy.
+
+54. Kernel-mode syncronysation primitives.
+
+This brings us to the primitive kernel-mode constructs. 
+The kernel-mode constructs are provided by the Windows operating system itself. 
+As such, they require that your application’s threads 
+call functions implemented in the operating system kernel. 
+
+Having threads transition from user mode to kernel mode and back incurs a big performance hit, 
+which is why kernel-mode constructs should be avoided.
+
+However, they do have a positive feature—
+when a thread uses a kernel-mode construct to
+acquire a resource that another thread has, 
+Windows blocks the thread so that it is no longer wasting CPU time. 
+Then, when the resource becomes available, 
+Windows resumes the thread, allowing it to access the resource.
+
+If the construct is a user-mode construct, 
+the thread is running on a CPU forever, and we call this a livelock. 
+If the construct is a kernel-mode construct, 
+the thread is blocked forever, and we call this a deadlock.
+
+In an ideal world, we’d like to have constructs that take the best of both worlds. 
+That is, we’d like a construct that is fast and non-blocking 
+(like the user-mode constructs) 
+when there is no contention.
+But when there is contention for the construct, we’d like it to be blocked by the operating system
+kernel. Constructs that work like this do exist; I call them hybrid constructs
+
+
+55. User-mode constructs.
+
+Volatile Constructs.
+
+internal static class StrangeBehavior 
+{
+    // As you'll see later, mark this field as volatile to fix the problem
+    private static Boolean s_stopWorker = false;
+	
+    public static void Main() 
+	{
+        Console.WriteLine("Main: letting worker run for 5 seconds");
+        Thread t = new Thread(Worker);
+        t.Start();
+		
+        Thread.Sleep(5000);
+        s_stopWorker = true;
+		
+        Console.WriteLine("Main: waiting for worker to stop");
+        t.Join();
+    }
+	
+	private static void Worker(Object o) 
+	{
+        Int32 x = 0;
+        while (!s_stopWorker) 
+		    x++;
+			
+        Console.WriteLine("Worker: stopped when x={0}", x);
+    }
+}
+
+Well, the program has a potential problem due to all the optimizations that could happen to it. 
+You see, when the Worker method is compiled, 
+the compiler sees that s_stopWorker is either true or false, 
+and it also sees that this value never changes inside the Worker method itself. 
+
+So the compiler could produce code that checks s_stopWorker first. 
+If s_stopWorker is true, then Worker: stopped when x=0 will be displayed. 
+
+If s_stopWorker is false, then the compiler produces code 
+that enters an infinite loop that increments x forever. 
+You see, the optimizations cause the loop to run very fast 
+because checking s_stopWorker only occurs once before the loop; 
+it does not get checked with each iteration of the loop.
+
+
+Another example:
+
+internal sealed class ThreadsSharingData 
+{
+    private Int32 m_flag = 0;
+    private Int32 m_value = 0;
+	
+    // This method is executed by one thread
+    public void Thread1() 
+	{
+        // Note: These could execute in reverse order
+        m_value = 5;
+        m_flag = 1;
+    }
+	
+    // This method is executed by another thread
+    public void Thread2() 
+	{
+        // Note: m_value could be read before m_flag
+        if (m_flag == 1)
+            Console.WriteLine(m_value);	
+	}
+}
+
+Volatile.Write 
+
+The Volatile.Write method forces the value in location 
+to be written to at the point of the call. 
+In addition, any earlier program-order loads 
+and stores must occur before the call to Volatile.Write.
+
+
+The Volatile.Read method forces the value in location to be read from at the point of
+the call. In addition, any later program-order loads and stores must occur after the call to
+Volatile.Read.
+
+internal sealed class ThreadsSharingData 
+{
+    private Int32 m_flag = 0;
+    private Int32 m_value = 0;
+	
+    // This method is executed by one thread
+    public void Thread1() 
+	{
+        // Note: 5 must be written to m_value before 1 is written to m_flag
+        m_value = 5;
+        Volatile.Write(ref m_flag, 1);
+    }
+	
+    // This method is executed by another thread
+    public void Thread2() 
+	{
+        // Note: m_value must be read after m_flag is read
+        if (Volatile.Read(ref m_flag) == 1)
+            Console.WriteLine(m_value);
+    }
+}
+
+
+Interlocked Constructs.
+
+
+Each of the methods in the Interlocked class performs an atomic read and write operation. 
+In addition, all the Interlocked methods are full memory fences. 
+That is, any variable writes before the call to an Interlocked method 
+execute before the Interlocked method, and any variable reads
+after the call execute after the call.
+
+The Interlocked family of functions perform atomic operations on memory. 
+How do they do it?
+
+It depends on the underlying CPU architecture. 
+For some CPUs, it's easy: 
+The x86, for example, has direct support for many interlocked operations 
+by means of the LOCK prefix 
+(with the bonus feature that LOCK is implied for the XCHG opcode.) 
+The ia64 and x64 also have direct support for atomic load-modify-store operations.
+
+Most other architectures break the operation 
+into two parts, known as Load-link/store-conditional. 
+The first part (load-link) reads a value from memory 
+and instructions the processor to monitor the memory address to see 
+if any other processors modify that same memory. 
+
+The second part (store-conditional) stores a value to memory 
+provided that no other processors have written to the memory in the meantime. 
+An atomic load-modify-store operation is therefore performed 
+by reading the value via load-link, 
+performing the desired computation, then attempting a store-conditional. 
+If the store-conditional fails, then start all over again.
+
+
+LONG InterlockedIncrement(LONG volatile *value)
+{
+  LONG lOriginal, lNewValue;
+  do {
+    // Read the current value via load-link so we will know if
+    // somebody has modified it while we weren't looking.
+    lOriginal = load_link(value);
+
+    // Calculate the new value
+    lNewValue = lOriginal + 1;
+
+    // Store the value conditionally. This will fail if somebody
+    // has updated the value in the meantime.
+  } while (!store_conditional(value, lNewValue));
+  return lNewValue;
+}
+
+
+56. What is Spin Lock?
+
+internal struct SimpleSpinLock 
+{
+    private Int32 m_ResourceInUse;     // 0=false (default), 1=true
+	
+    public void Enter() 
+	{
+        while (true) 
+		{
+            // Always set resource to in-use
+            // When this thread changes it from not in-use, return
+			
+            if (Interlocked.Exchange(ref m_ResourceInUse, 1) == 0) 
+			    return;
+				
+            // Black magic goes here...
+        }
+    }
+	
+    public void Leave() 
+	{
+        // Set resource to not in-use
+        Volatile.Write(ref m_ResourceInUse, 0);
+    }
+}
+
+57. How can we implement another interlocked functions?
+    For example Interlocked.Maximum?
+
+public static Int32 Maximum(ref Int32 target, Int32 value) 
+{
+    Int32 currentVal = target, 
+	      startVal, 
+		  desiredVal;
+		  
+    // Don't access target in the loop except in an attempt
+    // to change it because another thread may be touching it
+    do 
+	{
+        // Record this iteration's starting value
+        startVal = currentVal;
+		
+        // Calculate the desired value in terms of startVal and value
+        desiredVal = Math.Max(startVal, value);
+		
+        // NOTE: the thread could be preempted here!
+        // if (target == startVal) target = desiredVal
+        // Value prior to potential change is returned
+        currentVal = Interlocked.CompareExchange(ref target, desiredVal, startVal);
+		
+        // If the starting value changed during this iteration, repeat
+    } 
+	while (startVal != currentVal);
+	
+    // Return the maximum value when this thread tried to set it
+    return desiredVal;
+}
+
+
+public static int CompareExchange(
+	ref int location1,
+	int value,
+	int comparand
+)
+
+if (location1 == comparand)
+{
+    location1 = value;
+    return location1;	
+}    
+else
+    return location1;
+
+	
+How does it work?
+
+1. 
+   currentVal = target;
+
+cycle:
+
+   startVal   = currentVal;
+   desiredVal = max(startVal, value);
+   
+   if (target == startVal)
+   {
+       currentVal = targer;
+       target     = desiredVal;
+   }
+   else
+   {
+       currentVal = targer; 
+	   continue;
+   }
+   
+   
+58. What are kernel-mode constructs?
+
+Also, each method call on a kernel object causes the
+calling thread to transition from managed code to native user-mode code to native kernel-mode
+code and then return all the way back.
+ 
+Benefits from kernel-mode constructs:
+
+- When a kernel-mode construct detects contention on a resource, 
+  Windows blocks the losing thread so that it is not spinning on a CPU, 
+  wasting processor resources.
+
+- Kernel-mode constructs can synchronize native and managed threads with each other.
+
+- Kernel-mode constructs can synchronize threads running 
+  in different processes on the same machine.
+
+  
+59. Single instance application example?
+
+public static class Program 
+{
+   public static void Main() 
+   {
+       Boolean createdNew;
+	  
+       // Try to create a kernel object with the specified name
+       using (new Semaphore(0, 1, "SomeUniqueStringIdentifyingMyApp", out createdNew)) 
+	   {
+           if (createdNew) 
+		   {
+               // This thread created the kernel object so no other instance of this
+               // application must be running. Run the rest of the application here...
+           } 
+		   else 
+		   {
+               // This thread opened an existing kernel object with the same string name;
+               // another instance of this application must be running now.
+               // There is nothing to do in here, let's just return from Main to terminate
+               // this second instance of the application.
+           }
+       }
+   }
+}
+
+
+782
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

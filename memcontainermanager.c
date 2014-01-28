@@ -178,10 +178,14 @@ void* allocateBlock(
  * them into freelist chunks array.
  */
 Bool checkFreeBlockSpace(
+    void*                 self,
 	MemoryContainer       container, 
 	MemoryBlock           block,
 	size_t		          chunkSize)
 { 
+    IMemContainerManager  _    = (IMemContainerManager)self;
+	IErrorLogger          elog = _->errorLogger;
+
 	MemorySet set = (MemorySet)container;
 	/* First of all calculate free space 
 	 * which is available in the block.
@@ -220,7 +224,8 @@ Bool checkFreeBlockSpace(
 		if (availChunkSize != actualSpace)
 		{
 			availFreeInd--;
-			availChunkSize = actualSpace;
+            ASSERT(elog, availFreeInd > 0, NULL); 
+			availChunkSize = (size_t)(1 << (availFreeInd + MIN_CHUNK_POWER_OF_2));
 		}
 
 		/* Take a chunk from the block's free space. */
@@ -296,6 +301,8 @@ void* allocateMemory(
 
 	if (chunk != NULL)
 	{
+		ASSERT(elog, chunk->size > size, NULL);
+
 		/* We remove the chunk from the head of the free list. */
 		set->freelist[freeListInd] = (MemoryChunk)chunk->memsetorchunk;
 
@@ -317,6 +324,7 @@ void* allocateMemory(
 	 * And then we should multiple on 2 ^ MIN_CHUNK_POWER_OF_2
 	 */
 	chunkSize = (1 << MIN_CHUNK_POWER_OF_2) << freeListInd;
+    ASSERT(elog, chunkSize > size, NULL); 
 
 	/* Take the first block in the blocks list */
 	block = set->blockList;
@@ -324,7 +332,7 @@ void* allocateMemory(
 	/* If the actual active block does not contain enough
 	 * free space for the chunk we should create a new block.
 	 */
-	if (block == NULL || checkFreeBlockSpace(set, block, chunkSize))
+	if (block == NULL || checkFreeBlockSpace(_, set, block, chunkSize))
         block = allocateBlock(_, chunkSize, container);
 
     /* do the allocation */
@@ -347,6 +355,10 @@ void* allocateMemory(
  * parent    - If it is null the memory container 
  *             will be the root node.
  * type      - memory type
+ * size      - the size of MemoryContainer. In our case it is equal to
+ *             sizeof(MemokrySet). But if we in the future create a new 
+ *             implementation class that derives from MemoryContainer, 
+ *             we will have an opportunity to support it.
  * If container is null, we allocate memory from malloc
  * It can happen when we want to create the top memory context
  */

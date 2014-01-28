@@ -907,6 +907,10 @@
 										>
 									</File>
 									<File
+										RelativePath=".\when_allocate_many_small_chunks_with_carving_up.c"
+										>
+									</File>
+									<File
 										RelativePath=".\when_allocate_small_chunk.c"
 										>
 									</File>

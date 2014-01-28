@@ -70,15 +70,23 @@ TEST(allocate_small_chunk, then_new_block_must_be_allocated)
 								  - MEM_CHUNK_SIZE; 
 
 	TEST_ASSERT_NULL(block->next);
-
 	TEST_ASSERT_EQUAL_UINT32(block->memset, set);
+}
 
-	TEST_ASSERT_NOT_NULL(mem_asc);
+TEST(allocate_small_chunk, then_new_chunk_must_be_allocated)
+{
+	MemoryChunk chunk           = (MemoryChunk)((char*)mem_asc - MEM_CHUNK_SIZE);
+
+    TEST_ASSERT_NOT_NULL(mem_asc);
+	TEST_ASSERT_EQUAL_UINT32(chunk->memsetorchunk, mc_asc);
+	TEST_ASSERT_EQUAL_UINT32(chunk->size, 128);
+	TEST_ASSERT_EQUAL_UINT32(chunk->sizeRequested, 100);
 }
 
 TEST_GROUP_RUNNER(allocate_small_chunk)
 {
     RUN_TEST_CASE(allocate_small_chunk, then_new_block_must_be_allocated);
+	RUN_TEST_CASE(allocate_small_chunk, then_new_chunk_must_be_allocated);
 }
 
 
