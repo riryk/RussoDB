@@ -243,8 +243,11 @@ Bool checkFreeBlockSpace(
 		chunk->sizeRequested = 0;		
 
 		/* Insert the chunk into free list. */
-		chunk->memsetorchunk        = (void*)set->freelist[availFreeInd];
-		set->freelist[availFreeInd] = chunk;
+        chunk->memsetorchunk = (set->freelist[availFreeInd] != NULL) ?
+			(void*)set->freelist[availFreeInd] :
+		    chunk;
+
+        set->freelist[availFreeInd] = chunk;
 	}
     
 	/* Here we have carved the free space up 
@@ -332,7 +335,7 @@ void* allocateMemory(
 	/* If the actual active block does not contain enough
 	 * free space for the chunk we should create a new block.
 	 */
-	if (block == NULL || checkFreeBlockSpace(_, set, block, chunkSize))
+	if (block == NULL || !checkFreeBlockSpace(_, set, block, chunkSize))
         block = allocateBlock(_, chunkSize, container);
 
     /* do the allocation */
