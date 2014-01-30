@@ -2387,6 +2387,667 @@ internal sealed class AnotherHybridLock : IDisposable
 
 ManualResetEventSlim, SemaphoreSlim, 
 
+When the CLR initializes, it allocates an array of sync blocks in native heap.
+whenever an object is created in the heap, it gets two additional overhead fields associated
+with it. The first overhead field, the type object pointer, contains the memory address of the type’s
+type object. The second overhead field, the sync block index, contains an integer index into the array
+of sync blocks. 
+
+When an object is constructed, the object’s sync block index is initialized to -1, which indicates
+that it doesn’t refer to any sync block. Then, when Monitor.Enter is called, the CLR finds a free sync
+block in the array and sets the object’s sync block index to refer to the sync block that was found.
+
+Problems with locks:
+
+- When you call Monitor’s methods, passing a reference to a proxy object, 
+  you are locking the proxy object, not the actual object that the proxy refers to.
+  
+- If a thread calls Monitor.Enter, passing it a reference to a type object 
+  that has been loaded domain neutral (discussed in Chapter 22), 
+  the thread is taking a lock on that type across all AppDomains in the process.
+
+- When passing a string across an AppDomain boundary, the CLR does not make a copy of
+  the string; instead, it simply passes a reference to the string into the other AppDomain. This
+  improves performance, and in theory, it should be OK because String objects are immutable.
+  However, like all objects, String objects have a sync block index associated with them, which
+  is mutable, and this allows threads in different AppDomains to synchronize with each other
+  unknowingly.
+  
+- Because Monitor’s methods take an Object, passing a value type causes the value type to
+  get boxed, resulting in the thread taking a lock on the boxed object. Each time Monitor.Enter
+  is called, a lock is taken on a completely different object 
+  and you get no thread synchronization at all.
+
+- Applying the [MethodImpl(MethodImplOptions.Synchronized)] attribute to a method
+  causes the JIT compiler to surround the method’s native code 
+  with calls to Monitor.Enter and Monitor.Exit. 
+  If the method is an instance method, then this is passed to these methods,
+  locking the implicitly public lock. 
+  If the method is static, then a reference to the type’s type object is passed to these methods, 
+  potentially locking a domain-neutral type. The recommendation is to never use this attribute.
+  
+- When calling a type’s type constructor (discussed in Chapter 8, “Methods”), 
+  the CLR takes a lock on the type’s type object to ensure 
+  that only one thread initializes the type object and its static fields. 
+  Again, this type could be loaded domain neutral, causing a problem. 
+  For example, if the type constructor’s code enters an infinite loop, 
+  then the type is unusable by all App-Domains in the process. 
+  The recommendation here is to avoid type constructors 
+  as much as possible or least keep them short and simple.
+  
+
+private void SomeMethod() 
+{
+   lock (this) 
+   {
+       // This code has exclusive access to the data...
+   }
+}
+
+It is equivalent to having written the method like this.
+private void SomeMethod() 
+{
+    Boolean lockTaken = false;
+	
+    try 
+	{
+       // An exception (such as ThreadAbortException) could occur here...
+       Monitor.Enter(this, ref lockTaken);
+	   
+       // This code has exclusive access to the data...
+    }
+    finally 
+	{
+       if (lockTaken) 
+	       Monitor.Exit(this);
+    }
+}
+
+
+However, this is not a good thing. 
+If an exception occurs inside the try block while changing state, 
+then the state is now corrupted. 
+When the lock is exited in the finally block, 
+another thread will now start manipulating the corrupted state. 
+It is better to have your application hang 
+than it is to continue running with a corrupted state and potential security holes.
+
+
+63. What is ReadWrite lock and benefits of using?
+
+However, if all the threads want to access the data
+in a read-only fashion, then there is no need to block them at all; 
+they should all be able to access the data concurrently. 
+On the other hand, if a thread wants to modify the data, 
+then this thread needs exclusive access to the data. 
+The ReaderWriterLockSlim construct encapsulates the logic to solve this problem. 
+Specifically, the construct controls threads like this:
+
+- When one thread is writing to the data, 
+  all other threads requesting access are blocked.
+
+- When one thread is reading from the data, other threads requesting read access 
+  are allowed to continue executing, 
+  but threads requesting write access are blocked.
+  
+- When a thread writing to the data has completed, 
+  either a single writer thread is unblocked
+  so it can access the data or all the reader threads are unblocked 
+  so that all of them can access the data concurrently. 
+  If no threads are blocked, then the lock is free and available 
+  for the next reader or writer thread that wants it.
+
+- When all threads reading from the data have completed, 
+  a single writer thread is unblocked so it can access the data. 
+  If no threads are blocked, then the lock is free 
+  and available for the next reader or writer thread that wants it.
+  
+Reader-Writer lock in use:
+
+internal sealed class Transaction : IDisposable 
+{
+   private readonly ReaderWriterLockSlim m_lock = 
+                new ReaderWriterLockSlim(LockRecursionPolicy.NoRecursion);
+				
+   private DateTime m_timeOfLastTrans;
+   
+   public void PerformTransaction() 
+   {
+      m_lock.EnterWriteLock();
+      // This code has exclusive access to the data...
+      m_timeOfLastTrans = DateTime.Now;
+      m_lock.ExitWriteLock();
+   }
+   
+   public DateTime LastTransaction 
+   {
+      get 
+	  {
+          m_lock.EnterReadLock();
+		  
+          // This code has shared access to the data...
+          DateTime temp = m_timeOfLastTrans;
+          m_lock.ExitReadLock();
+		  
+          return temp;
+      }
+   }
+   
+   public void Dispose() { m_lock.Dispose(); }
+
+}
+
+Now I’d like to give you a sense of how it works. 
+Internally, the class has an Int32 field for the state of the lock, 
+a Semaphore object that reader threads block on, 
+and an AutoResetEvent object that writer threads block on. 
+The Int64 state field is divided into five subfields as follows:
+
+Four bits represent the state of the lock itself. 
+The possibilities are 
+
+0=Free, 
+1=OwnedByWriter,
+2=OwnedByReaders, 
+3=OwnedByReadersAndWriterPending, 
+4=ReservedForWriter
+
+The other values are not used.
+
+Twenty bits (a number from 0 to 1,048,575) represent 
+the number of reader threads reading (RR) 
+that the lock has currently allowed in.
+
+Twenty bits represent the number of reader threads 
+waiting (RW) to get into the lock. 
+These threads block on the auto-reset event object.
+
+Twenty bits represent the number of reader threads 
+waiting (RW) to get into the lock. 
+These threads block on the auto-reset event object.
+
+Twenty bits represent the number of writer threads 
+waiting (WW) to get into the lock. 
+These threads block on the other semaphore object.
+
+- Thread entrers a lock for shared access:
+1. If the lock is Free: Set state to OwnedByReaders, RR=1, Return.
+2. If the lock is OwnedByReaders: RR++, Return.
+3. If the lock is OwnedByWriters: RW++. Block reader thread. 
+   When the thread wakes, loop around and try again.
+
+- Thread that has shared access leaves the lock:
+1. RR--.
+2. If RR > 0: Return
+3. If WW > 0: 
+    Set state to ReservedForWriter, WW--, 
+	Release 1 blocked writer thread, Return
+4. If RW == 0 && WW == 0: Set state to Free, Return
+
+- Thread enters the lock for exclusive access:
+1. If the lock is Free: Set state to OwnedByWriter, Return.
+2. If the lock is ReservedForWriter: Set state to OwnedByWriter, Return.
+3. If the lock is OwnedByWriter: WW++, Block writer thread. 
+   When thread wakes, loop around and try again.
+4. Set state to OwnedByReadersAndWriterPending, WW++, Block writer thread. 
+   When thread wakes, loop around and try again.
+   
+- Thread that has exclusive access leaves the lock:
+1. If WW == 0 && RW == 0: Set state to Free, Return
+2. If WW > 0: Set state to ReservedForWriter, WW--, 
+   Release 1 blocked writer thread, Return.
+3. If WW == 0 && RW > 0: Set state to Free , 
+   RW=0, Wake all blocked reader threads, Return
+
+
+64. Double-Check Locking Technique?
+
+internal sealed class Singleton 
+{
+   // s_lock is required for thread safety and having this object assumes that creating
+   // the singleton object is more expensive than creating a System.Object object and that
+   // creating the singleton object may not be necessary at all. Otherwise, it is more
+   // efficient and easier to just create the singleton object in a class constructor
+   private static readonly Object s_lock = new Object();
+   
+   // This field will refer to the one Singleton object
+   private static Singleton s_value = null;
+   
+   // Private constructor prevents any code outside this class from creating an instance
+   private Singleton() 
+   {
+      // Code to initialize the one Singleton object goes here...
+   }
+   
+   // Public, static method that returns the Singleton object (creating it if necessary)
+   public static Singleton GetSingleton() 
+   {
+      // If the Singleton was already created, just return it (this is fast)
+      if (s_value != null) 
+	      return s_value;
+		  
+      Monitor.Enter(s_lock); // Not created, let 1 thread create it
+	  
+      if (s_value == null) 
+	  {
+          // Still not created, create it
+          Singleton temp = new Singleton();
+		  
+          // Save the reference in s_value (see discussion for details)
+          Volatile.Write(ref s_value, temp);
+      }
+	  
+      Monitor.Exit(s_lock);
+
+      return s_value;    
+   }
+}
+
+In the CLR, calling any lock method is a full memory fence, 
+and any variable writes you have before the fence 
+must complete before the fence and any variable reads after the fence must start after it.
+
+What is memory fence?
+Instruction to a processor to refresh its cache lines.
+If a processor does reads and writes:
+
+
+a1 =  var1 == 4;
+a1 =  var1 == 10;
+
+var2 = 10;
+var2 = 15;
+
+memory fence:
+
+a2 = var2 == 15;
+var1 = 7;
+
+We have one read before memory fence.
+repeated reads of variable var1 before 
+the memory fence take var1 from register
+
+Reads before memory fence look like:
+
+
+load var1 from memory to register1
+register1 = 3.
+compare register1 with 4
+compare register2 witn 10.
+
+after mem fence
+
+load var1 from memory to register1
+compare register1 with 7
+
+Without memory fence we do not do reloading of a var1
+from memory to a register.
+
+Writes before the memory fence look like:
+
+load2 var2 from memory to register2
+set register2 to 10
+set register2 to 15
+
+write from register2 to memory var2.
+memory barrier
+
+
+For the GetSingleton method, this means that the s_value field 
+must be reread after the call to Monitor.Enter; 
+it cannot be cached in a register across this method call.
+
+The problems with this double-checking lock:
+
+1. s_value is cached in a processor's register
+   
+ if (s_value != null) 
+	 return s_value;
+	 
+ Monitor.Enter(s_lock); 
+	 
+ if (s_value == null) 
+ {  }
+ 
+ read s_value and it is null 
+ then pause
+ check if it is null again.
+ if it is chached, it will always be null
+ 
+ Monitor.Enter puts a full memory fence. 
+ And this fixes the problem.
+ 
+2. Compile optimization.
+
+
+      Monitor.Enter(s_lock); // Not created, let 1 thread create it
+	  
+      if (s_value == null) 
+	  {
+	      s_value = new Singleton();
+      }
+	  
+      Monitor.Exit(s_lock);
+
+ The compiler can generate the following code:
+ 
+ allocate new memory.
+ set s_value to point to this memory.
+ call constructor and initialize memory internals.
+ 
+ But this is not the desired behaviour because 
+ when s_value becomes not null another thread takes this as singleton object
+ and this object becomes invalid.
+ 
+ the desired behaviour is:
+ 
+ allocate new memory.
+ call constructor and initialize memory internals.
+ set s_value to point to this memory.
+ 
+ 
+  // Still not created, create it
+  Singleton temp = new Singleton();
+		  
+  // Save the reference in s_value (see discussion for details)
+  Volatile.Write(ref s_value, temp);
+ 
+ 
+ Volatile Write prevents code rearrangements
+ by C# .NET code optimization
+ It generates full memory barrier before and all
+ writes will be done into memory before volatile write.
+ 
+ internal sealed class Singleton 
+ { 
+     private static Singleton s_value = new Singleton();
+	 
+     // Private constructor prevents any code outside this class from creating an instance
+     private Singleton() 
+	 {
+        // Code to initialize the one Singleton object goes here...
+     }
+	 
+     // Public, static method that returns the Singleton object (creating it if necessary)
+     public static Singleton GetSingleton() { return s_value; }
+}
+
+
+Because the CLR automatically calls a type’s class constructor 
+the first time code attempts to access a member of the class, 
+the first time a thread queries Singleton’s GetSingleton method, 
+the CLR will automatically call the class constructor, 
+which creates an instance of the object. 
+Furthermore, the CLR already ensures that calls 
+to a class constructor are thread safe. 
+
+internal sealed class Singleton 
+{
+    private static Singleton s_value = null;
+	
+    // Private constructor prevents any code outside this class from creating an instance
+    private Singleton() 
+	{
+       // Code to initialize the one Singleton object goes here...
+    }
+	
+    // Public, static method that returns the Singleton object (creating it if necessary)
+    public static Singleton GetSingleton() 
+	{
+       if (s_value != null) return s_value;
+	   
+	   // Create a new Singleton and root it 
+	   // if another thread didn't do it first
+       Singleton temp = new Singleton();
+	   
+       Interlocked.CompareExchange(ref s_value, temp, null);
+	   
+	   // If this thread lost, then the second Singleton object gets GC'd
+       return s_value; // Return reference to the single object
+	}
+}
+
+
+65. Condition variable pattern.
+
+internal sealed class ConditionVariablePattern 
+{
+    private readonly Object m_lock = new Object();
+    private Boolean m_condition = false;
+	
+    public void Thread1() 
+	{ 
+        Monitor.Enter(m_lock); // Acquire a mutual-exclusive lock
+		
+        // While under the lock, test the complex condition "atomically"
+        while (!m_condition) 
+		{
+            // If condition is not met, wait for another thread to change the condition
+            Monitor.Wait(m_lock); // Temporarily release lock so other threads can get it
+        }
+		
+        // The condition was met, process the data...
+        Monitor.Exit(m_lock); // Permanently release lock
+    }
+	
+    public void Thread2() 
+	{
+        Monitor.Enter(m_lock);      // Acquire a mutual-exclusive lock
+		
+        // Process data and modify the condition...
+        m_condition = true;
+		
+        // Monitor.Pulse(m_lock);   // Wakes one waiter AFTER lock is released
+        Monitor.PulseAll(m_lock);   // Wakes all waiters AFTER lock is released
+		
+        Monitor.Exit(m_lock); // Release lock
+}
+}
+
+If the condition is false, then you want the thread to spin on the condition, 
+but spinning wastes CPU time, so instead, the thread calls Wait. 
+Wait releases the lock so that another thread can get it and blocks the calling thread.
+
+The Thread2 method shows code that the second thread executes. 
+It calls Enter to take ownership of the lock, processes some data, 
+which results in changing the state of the condition, 
+and then calls Pulse or PulseAll, which will unblock a thread from its Wait call. 
+Pulse unblocks the longest waiting thread (if any), 
+whereas PulseAll unblocks all waiting threads (if any).
+
+
+internal sealed class SynchronizedQueue<T> 
+{
+    private readonly Object   m_lock = new Object();
+    private readonly Queue<T> m_queue = new Queue<T>();
+	
+    public void Enqueue(T item) 
+	{
+        Monitor.Enter(m_lock);
+		
+        // After enqueuing an item, wake up any/all waiters
+        m_queue.Enqueue(item);
+        Monitor.PulseAll(m_lock);
+		
+        Monitor.Exit(m_lock);
+    }
+	
+    public T Dequeue() 
+	{
+        Monitor.Enter(m_lock);
+		
+        // Loop while the queue is empty (the condition)
+        while (m_queue.Count == 0)
+            Monitor.Wait(m_lock);
+			
+        // Dequeue an item from the queue and return it for processing
+        T item = m_queue.Dequeue();
+		
+        Monitor.Exit(m_lock);
+        return item;
+    }
+}
+
+
+66. Asyncronous blocking constructions.
+
+Locks are popular but, when held for a long time, 
+they introduce significant scalability issues. 
+What would really be useful is if we had asynchronous synchronization constructs 
+where your code indicates that it wants a lock.
+If the thread can’t have it, it can just return and perform some other work,
+rather than blocking indefinitely.
+Then, when the lock becomes available, 
+your code somehow gets resumed, 
+so it can access the resource that the lock protects.
+
+public Task<Boolean> WaitAsync(Int32 millisecondsTimeout, CancellationToken cancellationToken);
+
+With this, you can synchronize access to a resource asynchronously 
+(without blocking any thread).
+
+private static async Task AccessResourceViaAsyncSynchronization(SemaphoreSlim asyncLock) 
+{
+    // TODO: Execute whatever code you want here...
+    await asyncLock.WaitAsync(); // Request exclusive access to a resource via its lock
+   
+    // When we get here, we know that no other thread is accessing the resource
+    // TODO: Access the resource (exclusively)...
+    // When done accessing resource, relinquish lock so other code can access the resource
+    asyncLock.Release();
+	
+    // TODO: Execute whatever code you want here...
+}
+
+private static void ConcurrentExclusiveSchedulerDemo() 
+{
+    var cesp = new ConcurrentExclusiveSchedulerPair();
+    var tfExclusive = new TaskFactory(cesp.ExclusiveScheduler);
+    var tfConcurrent = new TaskFactory(cesp.ConcurrentScheduler);
+    
+    for (Int32 operation = 0; operation < 5; operation++) 
+	{
+        var exclusive = operation < 2; // For demo, I make 2 exclusive & 3 concurrent
+		
+       (exclusive ? tfExclusive : tfConcurrent).StartNew(() => 
+	   {
+           Console.WriteLine("{0} access", exclusive ? "exclusive" : "concurrent");
+           // TODO: Do exclusive write or concurrent read computation here...
+       });
+    }	
+}
+
+private static async Task AccessResourceViaAsyncSynchronization(AsyncOneManyLock asyncLock) 
+{
+    // TODO: Execute whatever code you want here...
+    // Pass OneManyMode.Exclusive or OneManyMode.Shared for wanted concurrent access
+    await asyncLock.AcquireAsync(OneManyMode.Shared); // Request shared access
+	
+    // When we get here, no threads are writing to the resource; other threads may be reading
+    // TODO: Read from the resource...
+    // When done accessing resource, relinquish lock so other code can access the resource
+    asyncLock.Release();
+	
+    // TODO: Execute whatever code you want here...
+}
+
+
+public sealed class AsyncOneManyLock 
+{
+   #region Lock code
+   
+   private SpinLock m_lock = new SpinLock(true);     // Don't use readonly with a SpinLock
+   
+   private void Lock() 
+   { 
+       Boolean taken = false; 
+	   m_lock.Enter(ref taken); 
+   }
+   
+   private void Unlock() 
+   { 
+       m_lock.Exit(); 
+   }
+   
+   #endregion
+   
+   #region Lock state and helper methods
+   
+   private Int32   m_state = 0;
+   private Boolean IsFree                { get { return m_state == 0; } }
+   private Boolean IsOwnedByWriter       { get { return m_state == -1; } }
+   private Boolean IsOwnedByReaders      { get { return m_state > 0; } }
+   private Int32 AddReaders(Int32 count) { return m_state += count; }
+   
+   private Int32 SubtractReader() { return --m_state; }
+   private void MakeWriter()      { m_state = -1; }
+   private void MakeFree()        { m_state = 0; }
+   
+   #endregion
+   
+   // For the no-contention case to improve performance and reduce memory consumption
+   private readonly Task m_noContentionAccessGranter;
+   
+   // Each waiting writers wakes up via their own TaskCompletionSource queued here
+
+   private readonly Queue<TaskCompletionSource<Object>> m_qWaitingWriters =
+                   new Queue<TaskCompletionSource<Object>>();
+				   
+   // All waiting readers wake up by signaling a single TaskCompletionSource
+   private TaskCompletionSource<Object> m_waitingReadersSignal =
+                          new TaskCompletionSource<Object>();
+						  
+   private Int32 m_numWaitingReaders = 0;
+   
+   public AsyncOneManyLock() 
+   {
+      m_noContentionAccessGranter = Task.FromResult<Object>(null);
+   }    
+   
+   public Task WaitAsync(OneManyMode mode) 
+   {
+      Task accressGranter = m_noContentionAccessGranter; // Assume no contention
+      Lock();
+	  
+      switch (mode) 
+	  {
+          case OneManyMode.Exclusive:
+              if (IsFree) 
+		      {
+                  MakeWriter(); // No contention
+              }    
+		      else 
+		      {
+                  // Contention: Queue new writer task & return it so writer waits
+			  
+                  var tcs = new TaskCompletionSource<Object>();
+                  m_qWaitingWriters.Enqueue(tcs);
+                  accressGranter = tcs.Task;
+              }
+              break;
+			  
+          case OneManyMode.Shared:
+if (IsFree || (IsOwnedByReaders && m_qWaitingWriters.Count == 0)) {
+AddReaders(1); // No contention
+} else { // Contention
+// Contention: Increment waiting readers & return reader task so reader waits
+m_numWaitingReaders++;
+accressGranter = m_waitingReadersSignal.Task.ContinueWith(t => t.Result);
+}
+break;
+}
+Unlock();
+return accressGranter;
+}
+   
+ 
+}
+
+
+
+
+
+
 
 
 

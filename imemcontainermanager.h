@@ -18,6 +18,16 @@ typedef struct SIMemContainerManager
 	     char*                name,
 		 void*                (*malloc)(size_t size));
 
+	MemorySet (*memSetCreate)(
+         void*                self,
+	     MemoryContainer      container,
+         MemoryContainer      parent,
+         char*                name,
+	     size_t               minContainerSize,
+	     size_t               initBlockSize,
+	     size_t               maxBlockSize,
+	     void*                (*malloc)(size_t size));
+
 	void* (*allocateMemory)(
          void*                self,
          MemoryContainer      container, 

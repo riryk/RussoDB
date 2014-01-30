@@ -9,6 +9,13 @@ extern unsigned char Log2Table[256];
 	   return (retval); \
     }
 
+#define ASSERT_ARG(logger, condition) \
+	if (!(condition)) \
+    { \
+	   (logger)->assertArg((condition)); \
+	   return; \
+    }
+
 #define ASSERT_ARG(logger, condition, retval) \
 	if (!(condition)) \
     { \
@@ -23,6 +30,16 @@ MemoryContainer memContCreate(
     MemContType          type, 
 	size_t               size,
 	char*                name,
+	void*                (*malloc)(size_t size));
+
+MemorySet memSetCreate(
+    void*                self,
+    MemoryContainer      container,
+    MemoryContainer      parent,
+    char*                name,
+	size_t               minContainerSize,
+	size_t               initBlockSize,
+	size_t               maxBlockSize,
 	void*                (*malloc)(size_t size));
 
 void* allocateMemory(

@@ -419,9 +419,13 @@ MemorySet memSetCreate(
     char*              name,
 	size_t             minContainerSize,
 	size_t             initBlockSize,
-	size_t             maxBlockSize)
+	size_t             maxBlockSize,
+	void*              (*malloc)(size_t size))
 {
-	size_t         maxChunkSizeToBlock;
+	IMemContainerManager  _    = (IMemContainerManager)self;
+	IErrorLogger          elog = _->errorLogger;
+
+	size_t         blockMaxChunkSize;
     size_t         blockSize;
 	MemoryBlock    block;
 
@@ -438,10 +442,16 @@ MemorySet memSetCreate(
 								  malloc);
 
 	initBlockSize = ALIGN_DEFAULT(initBlockSize);
-	if (initBlockSize < 1024)
-		initBlockSize = 1024;
+
+	/* Check if initBlockSize is less than 
+	 * the minimum allowed value. 
+	 */
+	if (initBlockSize < MEM_BLOCK_INIT_MIN_SIZE)
+		initBlockSize = MEM_BLOCK_INIT_MIN_SIZE;
 
 	maxBlockSize = ALIGN_DEFAULT(maxBlockSize);
+
+	/* maxBlock should be bigger than initBlockSize. */
 	if (maxBlockSize < initBlockSize)
 		maxBlockSize = initBlockSize;
 
@@ -449,6 +459,9 @@ MemorySet memSetCreate(
 	set->maxBlockSize  = maxBlockSize;
 	set->nextBlockSize = initBlockSize;
 
+	/* chunkMaxSize can't be more than chunk_max_size 
+	 * because the number of free lists is restricted.
+	 */
 	set->chunkMaxSize  = MEMORY_CHUNK_MAX_SIZE;
 
 	/* Calculate the max chunk size in comparison 
@@ -457,13 +470,13 @@ MemorySet memSetCreate(
 	 * In the case when all chunks have the maximum size 
 	 * only 1/8 of the block space will be wasted.
 	 */
-	maxChunkSizeToBlock = (maxBlockSize - MEM_BLOCK_SIZE) / MEMORY_CHUNK_MAX_SIZE_TO_BLOCK;
+	blockMaxChunkSize = (maxBlockSize - MEM_BLOCK_SIZE) / MAX_BLOCK_CHUNKS_NUM;
     
 	/* There can be a situation when memory chunk max size is more than 
 	 * the max chunk size to block. So we should syncronize this and
 	 * we divide it on 2 until chunk max size becomes less than maxChunkSizeToBlock.
 	 */
-	while (set->chunkMaxSize + MEM_CHUNK_SIZE > maxChunkSizeToBlock)
+	while (set->chunkMaxSize + MEM_CHUNK_SIZE > blockMaxChunkSize)
 		set->chunkMaxSize >>= 1;
 
     if (minContainerSize <= MEM_BLOCK_SIZE + MEM_CHUNK_SIZE)    
@@ -475,8 +488,18 @@ MemorySet memSetCreate(
 	blockSize = ALIGN_DEFAULT(minContainerSize);
     block     = (MemoryBlock)malloc(blockSize);
 
+	/* An error has happened. We should report it. */
 	if (block == NULL)
-		; /* An error has happened. We should report it. */
+	{
+        showMemStatBase(_, set, 0);
+
+	    elog->log(LOG_ERROR, 
+		          ERROR_CODE_OUT_OF_MEMORY, 
+				  "Out of memory. Failed request size: %lu", 
+				  blockSize);
+
+		return NULL;
+	}
 
 	block->memset    = set;
 	block->freeStart = ((char*)block) + MEM_BLOCK_SIZE;
@@ -550,6 +573,25 @@ void resetMemContainer(MemoryContainer cont)
         resetMemoryFromSet(cont);
         cont->isReset = True;
 	}
+}
+
+void showMemStatBase(
+	void*             self,
+    MemoryContainer   container,
+	int               level)
+{
+    IMemContainerManager  _    = (IMemContainerManager)self;
+	IErrorLogger          elog = _->errorLogger;
+	MemoryContainer       child;
+
+    Bool isContValid = MemoryContainerIsValid(container);
+
+	ASSERT_ARG(elog, isContValid);
+
+    printSetStatistic(container, level);
+    
+	for (child = container->childHead; child != NULL; child = child->next)
+        showMemStat(_, container, level + 1);    
 }
 
 void printSetStatistic(

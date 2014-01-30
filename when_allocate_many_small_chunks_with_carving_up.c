@@ -122,10 +122,34 @@ TEST(allocate_many_small_chunks_with_carving_up,
     TEST_ASSERT_EQUAL(current->sizeRequested, 0);
 }
 
+TEST(allocate_many_small_chunks_with_carving_up, then_new_block_must_be_allocated)
+{   
+    MemorySet   set             = (MemorySet)mc_amsc;
+	MemoryBlock block           = set->blockList;
+    MemoryChunk chunk           = (MemoryChunk)((char*)mem_amsc2 - MEM_CHUNK_SIZE);
+
+	int         freeMemSize     = (int)block->freeEnd - (int)block->freeStart;
+	int         expectedMemSize = 512 
+		                          - MEM_BLOCK_SIZE
+								  - chunk->size
+								  - MEM_CHUNK_SIZE; 
+
+	TEST_ASSERT_EQUAL_UINT32(block->memset, set);
+	TEST_ASSERT_EQUAL_UINT32(freeMemSize, expectedMemSize);
+    
+	TEST_ASSERT_NOT_NULL(chunk);
+	TEST_ASSERT_EQUAL_UINT32(chunk->size, 256);
+    TEST_ASSERT_EQUAL_UINT32(chunk->sizeRequested, 205);
+	TEST_ASSERT_EQUAL_UINT32(chunk->memsetorchunk, set);
+}
+
 TEST_GROUP_RUNNER(allocate_many_small_chunks_with_carving_up)
 {
     RUN_TEST_CASE(allocate_many_small_chunks_with_carving_up, 
 		          then_the_first_block_space_must_be_carved_up);
+
+    RUN_TEST_CASE(allocate_many_small_chunks_with_carving_up, 
+		          then_new_block_must_be_allocated);
 }
 
 

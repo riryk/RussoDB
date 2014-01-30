@@ -916,6 +916,26 @@
 									</File>
 								</Filter>
 							</Filter>
+							<Filter
+								Name="memsetcreate"
+								>
+								<Filter
+									Name="negative"
+									>
+								</Filter>
+								<Filter
+									Name="positive"
+									>
+									<File
+										RelativePath=".\when_create_memory_set.c"
+										>
+									</File>
+									<File
+										RelativePath=".\when_create_memory_set_with_large_min_size.c"
+										>
+									</File>
+								</Filter>
+							</Filter>
 						</Filter>
 					</Filter>
 					<Filter
