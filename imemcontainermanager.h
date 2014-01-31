@@ -9,6 +9,8 @@ typedef struct SIMemContainerManager
 {
 	IErrorLogger  errorLogger;
 
+	void (*ctorMemContMan)(void* self);
+
 	MemoryContainer (*memContCreate)(
 	     void*                self,
          MemoryContainer      container,

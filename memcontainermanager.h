@@ -2,6 +2,8 @@
 
 extern unsigned char Log2Table[256];
 
+extern MemoryContainer topMemCont;
+
 #define ASSERT(logger, condition, retval) \
 	if (!(condition)) \
     { \
@@ -9,7 +11,14 @@ extern unsigned char Log2Table[256];
 	   return (retval); \
     }
 
-#define ASSERT_ARG(logger, condition) \
+#define ASSERT_VOID(logger, condition) \
+	if (!(condition)) \
+    { \
+	   (logger)->assert((condition)); \
+	   return; \
+    }
+
+#define ASSERT_ARG_VOID(logger, condition) \
 	if (!(condition)) \
     { \
 	   (logger)->assertArg((condition)); \
@@ -22,6 +31,8 @@ extern unsigned char Log2Table[256];
 	   (logger)->assertArg((condition)); \
 	   return (retval); \
     }
+
+void ctorMemContMan(void* self);
 
 MemoryContainer memContCreate(
 	void*                self,
@@ -46,5 +57,14 @@ void* allocateMemory(
     void*                self,
     MemoryContainer      container, 
 	size_t               size);
+
+void showMemStat(
+	void*                self,
+    MemoryContainer      container,
+	int                  level);
+
+void printSetStatistic(
+    MemorySet       set, 
+	int             level);
 
 void resetMemoryFromSet(MemorySet set);

@@ -922,6 +922,14 @@
 								<Filter
 									Name="negative"
 									>
+									<File
+										RelativePath=".\when_create_memory_set_with_malloc_error.c"
+										>
+									</File>
+									<File
+										RelativePath=".\when_create_memory_set_with_malloc_error_and_null_top_context.c"
+										>
+									</File>
 								</Filter>
 								<Filter
 									Name="positive"

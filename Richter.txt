@@ -2888,6 +2888,81 @@ internal sealed class SynchronizedQueue<T>
     }
 }
 
+66. What is TaskCompletionSource?
+
+Earlier I showed the code for a client application 
+that makes a request over a named pipe. 
+Let me show the server side of this code now.
+
+
+private static async void StartServer() 
+{
+    while (true) 
+	{
+        var pipe = new NamedPipeServerStream(
+		                 c_pipeName, 
+						 PipeDirection.InOut, 
+						 -1,
+                         PipeTransmissionMode.Message, 
+						 PipeOptions.Asynchronous | PipeOptions.WriteThrough);
+						 
+        // Asynchronously accept a client connection
+        // NOTE: NamedPipServerStream uses the old Asynchronous Programming Model (APM)
+        // I convert the old APM to the new Task model via TaskFactory's FromAsync method
+		
+        await Task.Factory.FromAsync(
+		                 pipe.BeginWaitForConnection, 
+						 pipe.EndWaitForConnection, 
+						 null);
+		
+        // Start servicing the client, which returns immediately because it is asynchronous
+        ServiceClientRequestAsync(pipe);
+    }
+}
+
+
+For the old event-based programming model, the FCL 
+does not include any helper methods to adapt this model into the new Task-based model. 
+So you have to hand-code it. 
+Here is code demonstrating how to wrap a WebClient 
+(which uses the event-based programming model) 
+with a TaskCompletionSource so it can be awaited on in an async function.
+
+
+private static async Task<String> AwaitWebClient(Uri uri) 
+{
+    // The System.Net.WebClient class supports the Event-based Asynchronous Pattern
+    var wc = new System.Net.WebClient();
+	
+    // Create the TaskCompletionSource and its underlying Task object
+    var tcs = new TaskCompletionSource<String>();
+	
+    // When a string completes downloading, the WebClient object raises the
+    // DownloadStringCompleted event, which completes the TaskCompletionSource
+	
+    wc.DownloadStringCompleted += (s, e) => 
+	{
+        if (e.Cancelled) 
+	        tcs.SetCanceled();
+	    else if (e.Error != null) 
+		    tcs.SetException(e.Error);
+        else 
+		    tcs.SetResult(e.Result);
+    };
+	
+    // Start the asynchronous operation
+    wc.DownloadStringAsync(uri);
+	
+    // Now, we can the TaskCompletionSource’s Task 
+	// and process the result as usual
+    String result = await tcs.Task;
+	
+    // Process the resulting string (if desired)...
+    return result;
+}
+
+
+
 
 66. Asyncronous blocking constructions.
 
@@ -2989,7 +3064,6 @@ public sealed class AsyncOneManyLock
    private readonly Task m_noContentionAccessGranter;
    
    // Each waiting writers wakes up via their own TaskCompletionSource queued here
-
    private readonly Queue<TaskCompletionSource<Object>> m_qWaitingWriters =
                    new Queue<TaskCompletionSource<Object>>();
 				   
@@ -3027,21 +3101,354 @@ public sealed class AsyncOneManyLock
               break;
 			  
           case OneManyMode.Shared:
-if (IsFree || (IsOwnedByReaders && m_qWaitingWriters.Count == 0)) {
-AddReaders(1); // No contention
-} else { // Contention
-// Contention: Increment waiting readers & return reader task so reader waits
-m_numWaitingReaders++;
-accressGranter = m_waitingReadersSignal.Task.ContinueWith(t => t.Result);
-}
-break;
-}
-Unlock();
-return accressGranter;
-}
+              if (IsFree || (IsOwnedByReaders && m_qWaitingWriters.Count == 0)) 
+			  {
+                  AddReaders(1); // No contention
+              } 
+			  else 
+			  { 
+			      // Contention
+                  // Contention: Increment waiting readers & return reader task so reader waits
+                  m_numWaitingReaders++;
+                  accressGranter = m_waitingReadersSignal.Task.ContinueWith(t => t.Result);
+              }
+              break;
+      }
+	   
+      Unlock();
+	  
+      return accressGranter;
+   }
    
- 
+   public void Release() 
+   {
+       TaskCompletionSource<Object> accessGranter = null; // Assume no code is released
+	   
+       Lock();
+	   
+       if (IsOwnedByWriter) 
+	       MakeFree(); // The writer left
+       else 
+	       SubtractReader(); // A reader left
+		   
+       if (IsFree) 
+	   {
+           // If free, wake 1 waiting writer or all waiting readers
+           if (m_qWaitingWriters.Count > 0) 
+		   {
+               MakeWriter();
+               accessGranter = m_qWaitingWriters.Dequeue();
+           } 
+		   else if (m_numWaitingReaders > 0) 
+		   {
+               AddReaders(m_numWaitingReaders);
+               m_numWaitingReaders   = 0;
+               accessGranter         = m_waitingReadersSignal;
+			   
+               // Create a new TCS for future readers that need to wait
+               m_waitingReadersSignal = new TaskCompletionSource<Object>();
+           }
+       }
+	   
+	   Unlock();
+	   
+	   // Wake the writer/reader outside the lock to reduce
+       // chance of contention improving performance
+       if (accessGranter != null) 
+	       accessGranter.SetResult(null);
+   }
 }
+
+
+67. Concurrent collection classes.
+
+ConcurrentQueue<T>, 
+ConcurrentStack<T>,
+ConcurrentBag<T>,
+ConcurrentDictionary<TKey, TValue>,
+
+All these collection classes are non-blocking. 
+That is, if a thread tries to extract an element 
+when no such element exists, the thread returns immediately; 
+
+the thread does not block waiting for an element to appear. 
+This is why methods like TryDequeue, TryPop, TryTake, and TryGetValue 
+all return true if an item was obtained and returns false, if not.
+
+
+68. is, as?
+
+The is operator checks whether an
+object is compatible with a given type, and the result of the evaluation is a Boolean: true or false.
+The is operator will never throw an exception.
+
+
+69. How Things Relate at Run Time?
+
+Thread stack:
+
+void M1()
+{
+   // some other local variables
+   var1
+   var2
+   var3
+   String name = "Joe";
+   M2(name);
+   doit();
+   ...
+   return;
+}
+
+void M2(string s)
+{
+   int length = s.Length;
+   int tally;
+   ...
+   return;
+}
+
+--before calling M2:
+
+Stack
+var1
+var2
+var3
+name
+
+--going into method M2:
+
+Stack
+var1
+var2
+var3
+name
+s     //exact copy of name
+return address [doIt method]
+
+--inside method:
+
+Stack
+var1
+var2   // M1 locals
+var3
+name
+s      // exact copy of name
+return address [doIt method]
+length
+tally  // M2 locals.
+
+--when return from M2:
+return to doIt method.
+and delete all M2 stack variables:
+
+var1
+var2   // M1 locals
+var3
+name
+
+internal class Employee 
+{
+   public Int32 GetYearsEmployed() 
+   { 
+     ... 
+   }
+   
+   public virtual String GetProgressReport() 
+   { 
+     ... 
+   }
+   
+   public static Employee Lookup(String name) 
+   { 
+     ... 
+   }
+}
+
+internal sealed class Manager : Employee 
+{
+   public override String GetProgressReport() 
+   { 
+     ... 
+   }
+}
+
+void M3() 
+{
+   Employee e;
+   Int32 year;
+   
+   e = new Manager();
+   e = Employee.Lookup("Joe");
+   
+   year = e.GetYearsEmployed();
+   e.GetProgressReport();
+}
+
+It notices all of the types that are referred to inside M3: 
+Employee, Int32, Manager, and String (because of "Joe"). 
+
+Then, using the assembly’s metadata, 
+the CLR extracts information about these types 
+and creates some data structures to represent the types themselves.
+
+When M3’s prologue code executes, memory for 
+the local variables must be allocated from the thread’s stack,
+
+stack:
+e = null
+year = 0
+
+e = new Manager();
+allocates memory in a heap 
+and set e to this address.
+
+e = Employee.Lookup("Joe");
+it creates new Manager object and sets it
+to e variable. So the previous manager is no
+longer being referenced and can be garbage collected.
+
+
+When calling a virtual instance method, 
+the JIT compiler produces some additional code in the method,
+which will be executed each time the method is invoked. 
+
+This code will first look in the variable being used 
+to make the call and then follow the address to the calling object. 
+In this case, the variable e points to the Manager object representing “Joe.”
+
+
+69. Overflow?
+
+
+UInt32 invalid = unchecked((UInt32) (-1)); // OK
+
+And here is an example that uses the checked operator.
+
+Byte b = 100;
+b      = checked((Byte) (b + 200)); // OverflowException is thrown
+
+checked 
+{ 
+   // Start of checked block
+   Byte b = 100;
+   b = (Byte) (b + 200); // This expression is checked for overflow.
+} 
+// End of checked block
+
+
+70. Reference Types and Value Types?
+
+Reference Types drawbacks:
+- The memory must be allocated from the managed heap.
+- Each object allocated on the heap has some additional overhead members associated with it
+that must be initialized.
+- The other bytes in the object (for the fields) are always set to zero.
+- Allocating an object from the managed heap could force a garbage collection to occur.
+
+Even though you can’t choose a base type when defining your own value type, a value type
+can implement one or more interfaces if you choose. In addition, all value types are sealed, which
+prevents a value type from being used as a base type for any other reference type or value type. So,
+for example, it’s not possible to define any new types using Boolean, Char, Int32, UInt64, Single,
+Double, Decimal, and so on as base types.
+
+// Reference type (because of 'class')
+class SomeRef { public Int32 x; }
+
+// Value type (because of 'struct')
+struct SomeVal { public Int32 x; }
+
+static void ValueTypeDemo() 
+{
+    SomeRef r1 = new SomeRef(); // Allocated in heap
+    SomeVal v1 = new SomeVal(); // Allocated on stack
+
+	r1.x = 5;   // Pointer dereference
+    v1.x = 5;   // Changed on stack
+	
+	SomeRef r2 = r1; // Copies reference (pointer) only
+    SomeVal v2 = v1; // Allocate on stack & copies members
+	
+	r1.x = 8;   // Changes r1.x and r2.x
+    v1.x = 9;   // Changes v1.x, not v2.x
+}
+
+SomeVal  v1 = new SomeVal(); // Allocated on stack
+
+The preceding line could have been written like this instead.
+SomeVal  v1;    // Allocated on stack
+
+// These two lines compile because C# thinks that
+// v1's fields have been initialized to 0.
+SomeVal v1 = new SomeVal();
+Int32   a = v1.x;
+
+// These two lines don't compile because C# doesn't think that
+// v1's fields have been initialized to 0.
+SomeVal v1;
+Int32   a = v1.x; // error CS0170: Use of possibly unassigned field 'x'
+
+
+In particular, you should declare a type as a value type 
+if all the following statements are true:
+
+- The type acts as a primitive type. 
+  Specifically, this means that it is a fairly simple type 
+  that has no members that modify any of its instance fields. 
+  When a type offers no members that alter its fields, 
+  we say that the type is immutable.
+  
+- The type doesn’t need to inherit from any other type.
+
+- The type won’t have any other types derived from it.
+
+- Instances of the type are small (approximately 16 bytes or less).
+
+- Instances of the type are large (greater than 16 bytes) 
+  and are not passed as method parameters or returned from methods.
+
+- Because you can’t define a new value type or a new reference type 
+  by using a value type as a base class, 
+  you shouldn’t introduce any new virtual methods into a value type. 
+  No methods can be abstract, and all methods are implicitly sealed 
+  (can’t be overridden).
+  
+Because a value type variable isn’t a pointer, 
+it’s not possible to generate a NullReferenceException
+when accessing a value type. The CLR does offer a special feature that
+adds the notion of nullability to a value type.
+
+When you assign a value type variable to another value type variable, 
+a field-by-field copy is made. 
+When you assign a reference type variable to another reference type variable, 
+only the memory address is copied.
+
+
+71. How the CLR Controls the Layout of a Type’s Fields?
+
+To improve performance, the CLR is capable of arranging the fields of a type any way it chooses.
+For example, the CLR might reorder fields in memory so that object references are grouped
+together and data fields are properly aligned and packed. However, when you define a type,
+you can tell the CLR whether it must keep the type’s fields in the same order as the developer
+specified them or whether it can reorder them as it sees fit.
+
+To this attribute’s constructor, 
+you can pass:
+ 
+LayoutKind.Auto         to have the CLR arrange the fields, 
+LayoutKind.Sequential   to have the CLR preserve your field layout, or LayoutKind.
+LayoutKind.Explicit     to explicitly arrange the fields in memory by using offsets.
+
+You should be aware that Microsoft’s C# compiler 
+selects LayoutKind.Auto for reference types (classes) 
+and LayoutKind.Sequential for value types (structures).
+
+
+
+
+
+
+
 
 
 

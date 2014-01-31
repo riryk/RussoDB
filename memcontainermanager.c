@@ -14,6 +14,27 @@ unsigned char Log2Table[256] =
 	SeqOf16CopiesOf(8), SeqOf16CopiesOf(8), SeqOf16CopiesOf(8), SeqOf16CopiesOf(8)
 };
 
+MemoryContainer  topMemCont = NULL;
+
+void ctorMemContMan(
+    void*            self, 
+	void*          (*malloc)(size_t size))
+{
+	IMemContainerManager _         = (IMemContainerManager)self;
+	IErrorLogger         elog      = _->errorLogger;
+ 
+	ASSERT_ARG_VOID(elog, topMemCont == NULL);
+
+    topMemCont = memSetCreate(_,
+	                          NULL,
+                              NULL,
+                              "TopMemoryContainer",
+	                          0,
+	                          8 * 1024,
+	                          8 * 1024,
+	                          malloc);
+}
+
 /* Calculates the number of a free list
  * depending on size. The free list should 
  * contain a memory chunk of length of a power of two.
@@ -441,6 +462,8 @@ MemorySet memSetCreate(
 	                              name,
 								  malloc);
 
+	ASSERT(elog, set != NULL, NULL);
+
 	initBlockSize = ALIGN_DEFAULT(initBlockSize);
 
 	/* Check if initBlockSize is less than 
@@ -491,7 +514,7 @@ MemorySet memSetCreate(
 	/* An error has happened. We should report it. */
 	if (block == NULL)
 	{
-        showMemStatBase(_, set, 0);
+        showMemStat(_, topMemCont, 0);
 
 	    elog->log(LOG_ERROR, 
 		          ERROR_CODE_OUT_OF_MEMORY, 
@@ -575,7 +598,7 @@ void resetMemContainer(MemoryContainer cont)
 	}
 }
 
-void showMemStatBase(
+void showMemStat(
 	void*             self,
     MemoryContainer   container,
 	int               level)
@@ -586,12 +609,17 @@ void showMemStatBase(
 
     Bool isContValid = MemoryContainerIsValid(container);
 
-	ASSERT_ARG(elog, isContValid);
+	ASSERT_ARG_VOID(elog, isContValid);
 
     printSetStatistic(container, level);
     
 	for (child = container->childHead; child != NULL; child = child->next)
-        showMemStat(_, container, level + 1);    
+	{
+		/* We should prevent an infinite loop. */
+        ASSERT_VOID(elog, child != container);
+
+        showMemStat(_, child, level + 1);    
+	}
 }
 
 void printSetStatistic(
@@ -600,10 +628,10 @@ void printSetStatistic(
 {
     MemoryBlock   block;
 	MemoryChunk   chunk;
-	long          nblocks;
-	long          nchunks;
-	long          totalSpace;
-    long          freeSpace;
+	long          nblocks    = 0;
+	long          nchunks    = 0;
+	long          totalSpace = 0;
+    long          freeSpace  = 0;
     int           ind;
 	int           i;
 

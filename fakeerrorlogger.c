@@ -15,6 +15,8 @@ const SIErrorLogger sFakeErrorLogger =
 
 uint assertArgFails = 0;
 uint assertFails    = 0;
+uint logMessages    = 0;
+uint errorMessages  = 0;
 
 void assertArg(Bool condition)
 {
@@ -30,5 +32,9 @@ void assert(Bool condition)
 
 void log(int level, int code, char* message,...)
 {
+	if (level == LOG_ERROR)
+        errorMessages++;
 
+	if (level == LOG_LOG)
+        logMessages++;
 }
