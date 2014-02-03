@@ -3444,6 +3444,378 @@ selects LayoutKind.Auto for reference types (classes)
 and LayoutKind.Sequential for value types (structures).
 
 
+72. Boxing and unboxing?
+
+// Declare a value type.
+struct Point 
+{
+    public Int32 x, y;
+}
+
+public static void Main() 
+{
+    ArrayList a = new ArrayList();
+    Point p;                      // Allocate a Point (not in the heap).
+	
+    for (Int32 i = 0; i < 10; i++) 
+	{
+        p.x = p.y = i; // Initialize the members in the value type.
+        a.Add(p);      // Box the value type and add the
+        // reference to the Arraylist.
+    }
+    ...
+}
+
+For this code to work, the Point value type
+must be converted into a true heap-managed object, 
+and a reference to this object must be obtained.
+
+It’s possible to convert a value type to a reference type 
+by using a mechanism called boxing. 
+Internally, here’s what happens 
+when an instance of a value type is boxed:
+
+  1. Memory is allocated from the managed heap. 
+     The amount of memory allocated is the size
+     required by the value type’s fields plus 
+	 the two additional overhead members 
+	 (the type object pointer and the sync block index) 
+	 required by all objects on the managed heap.
+	 
+  2. The value type’s fields are copied to the newly allocated heap memory.
+  
+  3. The address of the object is returned. 
+     This address is now a reference to an object; 
+	 the value type is now a reference type.
+	 
+But one of the biggest improvements
+is that the generic collection classes 
+allow you to work with collections of value types
+without requiring that items in the collection be boxed/unboxed.
+
+Now that you know how boxing works, let’s talk about unboxing. 
+Let’s say that you want to grab the first element 
+out of the ArrayList by using the following code.
+
+Point p = (Point) a[0];
+
+For this to work, all of the fields contained in the boxed
+Point object must be copied into the value type variable, 
+p, which is on the thread’s stack.
+
+The CLR accomplishes this copying in two steps. 
+First, the address of the Point fields 
+in the boxed Point object is obtained. 
+This process is called unboxing. 
+Then, the values of these fields are copied 
+from the heap to the stack-based value type instance.
+
+public static void Main() 
+{
+    Int32  v = 5;    // Create an unboxed value type variable.
+    Object o = v;    // o refers to a boxed Int32 containing 5.
+    v = 123;         // Changes the unboxed value to 123
+    Console.WriteLine(v + ", " + (Int32) o); // Displays "123, 5"
+}
+
+// Box v and leave the pointer on the stack for Concat.
+IL_000c: ldloc.0
+IL_000d: box [mscorlib]System.Int32
+
+// Unbox o: Get the pointer to the In32's field on the stack.
+IL_0017: ldloc.1
+IL_0018: unbox.any [mscorlib]System.Int32
+
+// Box the Int32 and leave the pointer on the stack for Concat.
+IL_001d: box [mscorlib]System.Int32
+
+WriteLine wants a String object passed to it, 
+but there is no string object. 
+Instead, these three items are available: 
+  an unboxed Int32 value type instance (v), 
+  a String (which is a reference type), 
+  and a reference to a boxed Int32 value type instance (o) 
+  that is being cast to an unboxed Int32.
+
+public static String Concat(Object arg0, Object arg1, Object arg2);
+
+For the first parameter, arg0, v is passed. 
+But v is an unboxed value parameter 
+and arg0 is an Object, so v must be boxed 
+and the address to the boxed v is passed for arg0.
+
+Finally, for the arg2 parameter,
+o (a reference to an Object) is cast to an Int32. 
+This requires an unboxing operation (but no copy operation), 
+which retrieves the address of the unboxed Int32 
+contained inside the boxed Int32.
+This unboxed Int32 instance must be boxed again 
+and the new boxed instance’s memory address passed for Concat’s arg2 parameter.
+
+However, if your override of the virtual method calls 
+into the base type's implementation of the method, 
+then the value type instance does get boxed 
+when calling the base type's implementation 
+so that a reference to a heap object gets passed 
+to the this pointer into the base method.
+
+However, calling a nonvirtual inherited method 
+(such as GetType or MemberwiseClone) 
+always requires the value type to be boxed 
+because these methods are defined by System.Object, 
+so the methods expect the this argument to be 
+a pointer that refers to an object on the heap.
+
+In addition, casting an unboxed instance of a value type 
+to one of the type’s interfaces requires 
+the instance to be boxed, because interface variables 
+must always contain a reference to an object on the heap.
+
+internal struct Point : IComparable 
+{
+    private readonly Int32 m_x, m_y;
+	
+    // Constructor to easily initialize the fields
+    public Point(Int32 x, Int32 y) 
+	{
+        m_x = x;
+        m_y = y;
+    }
+	
+    // Override ToString method inherited from System.ValueType
+    public override String ToString() 
+	{
+       // Return the point as a string. Note: calling ToString prevents boxing
+       return String.Format("({0}, {1})", m_x.ToString(), m_y.ToString());
+    }
+	
+    // Implementation of type-safe CompareTo method
+    public Int32 CompareTo(Point other) 
+	{
+       // Use the Pythagorean Theorem to calculate
+       // which point is farther from the origin (0, 0)
+       return Math.Sign(Math.Sqrt(m_x * m_x + m_y * m_y)
+            - Math.Sqrt(other.m_x * other.m_x + other.m_y * other.m_y));
+    }
+	
+	// Implementation of IComparable's CompareTo method
+    public Int32 CompareTo(Object o) 
+	{
+       if (GetType() != o.GetType()) 
+	   {
+           throw new ArgumentException("o is not a Point");
+       }
+	   
+       // Call type-safe CompareTo method
+       return CompareTo((Point) o);
+    }
+}
+
+
+// Create two Point instances on the stack.
+Point p1 = new Point(10, 10);
+Point p2 = new Point(20, 20);
+
+// p1 does NOT get boxed to call ToString (a virtual method).
+Console.WriteLine(p1.ToString());    // "(10, 10)"
+
+
+At first, you’d think that p1 would have to be boxed 
+because ToString is a virtual method 
+that is inherited from the base type, System.ValueType. 
+Normally, to call a virtual method, the CLR needs to determine
+the object’s type in order to locate the type’s method table. 
+Because p1 is an unboxed value type, there’s no type object pointer. 
+However, the just-in-time (JIT) compiler sees 
+that Point overrides the ToString method, 
+and it emits code that calls ToString directly (nonvirtually)
+without having to do any boxing.
+
+
+// p DOES get boxed to call GetType (a non-virtual method).
+Console.WriteLine(p1.GetType());   // "Point"
+
+Calling GetType In the call to the nonvirtual GetType method, p1 does have to be boxed.
+The reason is that the Point type inherits GetType from System.Object. 
+So to call GetType, the CLR must use a pointer to a type object, 
+which can be obtained only by boxing p1.
+
+// p1 does NOT get boxed to call CompareTo.
+// p2 does NOT get boxed because CompareTo(Point) is called.
+Console.WriteLine(p1.CompareTo(p2));   // "-1"
+
+In the first call to CompareTo, p1 doesn’t have to be boxed
+because Point implements the CompareTo method, 
+and the compiler can just call it directly.
+
+// p1 DOES get boxed, and the reference is placed in c.
+IComparable c = p1;
+Console.WriteLine(c.GetType());   // "Point"
+
+// p1 does NOT get boxed to call CompareTo.
+// Because CompareTo is not being passed a Point variable,
+// CompareTo(Object) is called, which requires a reference to
+// a boxed Point.
+// c does NOT get boxed because it already refers to a boxed Point.
+Console.WriteLine(p1.CompareTo(c));    // "0"
+
+// c does NOT get boxed because it already refers to a boxed Point.
+// p2 does get boxed because CompareTo(Object) is called.
+Console.WriteLine(c.CompareTo(p2));// "-1"
+
+// c is unboxed, and fields are copied into p2.
+p2 = (Point) c;
+
+
+
+73. Changing Fields in a Boxed Value Type 
+by Using Interfaces (and Why You Shouldn’t Do This)?
+
+// Point is a value type.
+internal struct Point 
+{
+    private Int32 m_x, m_y;
+	
+    public Point(Int32 x, Int32 y) 
+	{
+        m_x = x;
+        m_y = y;
+    }
+	
+    public void Change(Int32 x, Int32 y) 
+	{
+        m_x = x; 
+		m_y = y;
+    }
+	
+    public override String ToString() 
+	{
+        return String.Format("({0}, {1})", m_x.ToString(), m_y.ToString());
+    }
+}
+
+public static void Main() 
+{
+    Point p = new Point(1, 1);
+    Console.WriteLine(p);
+	
+    p.Change(2, 2);
+    Console.WriteLine(p);
+	
+    Object o = p;
+    Console.WriteLine(o);
+	
+    ((Point) o).Change(3, 3);
+    Console.WriteLine(o);
+}
+
+   I want to call the Change method 
+to update the fields in the boxed Point object. 
+However, Object (the type of the variable o) 
+doesn’t know anything about the Change method, 
+so I must first cast o to a Point.
+
+   Casting o to a Point unboxes o and
+copies the fields in the boxed Point 
+to a temporary Point on the thread’s stack!
+
+   The m_x and m_y fields of this temporary point are changed to 3 and 3, 
+but the boxed Point isn’t affected by this call to Change. 
+When WriteLine is called the fourth time, (2, 2) is displayed again. 
+Many developers do not expect this.
+
+// Interface defining a Change method
+internal interface IChangeBoxedPoint 
+{
+    void Change(Int32 x, Int32 y);
+}
+
+// Point is a value type.
+internal struct Point : IChangeBoxedPoint 
+{
+    private Int32 m_x, m_y;
+	
+    public Point(Int32 x, Int32 y) 
+	{
+       m_x = x;
+       m_y = y;
+    }
+	
+    public void Change(Int32 x, Int32 y) 
+	{
+       m_x = x; m_y = y;
+    }
+	
+    public override String ToString() 
+	{
+       return String.Format("({0}, {1})", m_x.ToString(), m_y.ToString());
+    }
+}
+
+public static void Main() 
+{
+    Point p = new Point(1, 1);
+    Console.WriteLine(p);                    (1)
+	
+    p.Change(2, 2); 
+    Console.WriteLine(p);                    (2)
+	
+    Object o = p;
+    Console.WriteLine(o);                    (3)
+	
+    ((Point) o).Change(3, 3);
+    Console.WriteLine(o);                    (4)
+	
+    // Boxes p, changes the boxed object and discards it
+    ((IChangeBoxedPoint) p).Change(4, 4);
+    Console.WriteLine(p);                    (5)
+	
+	// Changes the boxed object and shows it
+    ((IChangeBoxedPoint) o).Change(5, 5);
+    Console.WriteLine(o);                    (6)
+}
+
+Fifth call of Change method:
+
+In the first example, the unboxed Point, p, is cast to an IChangeBoxedPoint. 
+This cast causes the value in p to be boxed. 
+Change is called on the boxed value, which does change its m_x and m_y fields
+to 4 and 4, but after Change returns, 
+the boxed object is immediately ready to be garbage collected.
+So the fifth call to WriteLine displays (2, 2). Many developers won’t expect this result.
+
+In the last example, the boxed Point referred to by o is cast to an IChangeBoxedPoint. No boxing
+is necessary here because o is already a boxed Point. Then Change is called, which does change
+the boxed Point’s m_x and m_y fields. The interface method Change has allowed me to change the
+fields in a boxed Point object! Now, when WriteLine is called, it displays (5, 5) as expected. The
+purpose of this whole example is to demonstrate how an interface method is able to modify the fields
+of a boxed value type. In C#, this isn’t possible without using an interface method.
+
+Earlier in this chapter, I mentioned that value types should be immutable: that
+is, they should not define any members that modify any of the type’s instance fields. 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
 
 
 
