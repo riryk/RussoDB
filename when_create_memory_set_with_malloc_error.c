@@ -23,7 +23,7 @@ GIVEN(create_memory_set_with_malloc_error)
 {
 	mincontsize_cmswme = 100;
 
-	mm_cmswme->ctorMemContMan(mm_cmswme, malloc); 
+	mm_cmswme->ctorMemContMan(mm_cmswme, malloc, free); 
 
 	UnityMalloc_MakeMallocFailAfterCount(0);
 }
@@ -37,13 +37,12 @@ WHEN(create_memory_set_with_malloc_error)
 		 "test",
 		 mincontsize_cmswme,
 		 25,
-		 20,
-		 malloc);
+		 20);
 }
 
 TEST_TEAR_DOWN(create_memory_set_with_malloc_error)
 {
-	mm_cmswme->resetMemoryFromSet(topMemCont);
+	mm_cmswme->resetMemoryFromSet(mm_cmswme, topMemCont);
 
 	free(topMemCont);
 	free(mm_cmswme);

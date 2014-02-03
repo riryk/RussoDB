@@ -32,8 +32,7 @@ WHEN(create_memory_set)
 		 "test",
 		 15,
 		 25,
-		 20,
-		 malloc);
+		 20);
 }
 
 TEST_TEAR_DOWN(create_memory_set)

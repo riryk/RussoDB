@@ -134,6 +134,8 @@ void UnityIgnoreTest(const char * printableName)
 #define MALLOC_DONT_FAIL -1
 static int malloc_count;
 static int malloc_fail_countdown = MALLOC_DONT_FAIL;
+static int freeCount = 0;
+static int freeMem[1000];
 
 void UnityMalloc_StartTest()
 {
@@ -217,8 +219,10 @@ static void release_memory(void * mem)
 
 void unity_free(void * mem)
 {
-    int overrun = isOverrun(mem);//strcmp(&memAsChar[guard->size], end) != 0;
+    int overrun = isOverrun(mem);
+	freeMem[freeCount++] = mem;
     release_memory(mem);
+
     if (overrun)
     {
         TEST_FAIL_MESSAGE("Buffer overrun detected during free()");

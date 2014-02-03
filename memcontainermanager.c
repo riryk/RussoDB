@@ -14,15 +14,27 @@ unsigned char Log2Table[256] =
 	SeqOf16CopiesOf(8), SeqOf16CopiesOf(8), SeqOf16CopiesOf(8), SeqOf16CopiesOf(8)
 };
 
-MemoryContainer  topMemCont = NULL;
+MemoryContainer  topMemCont     = NULL;
+MemoryContainer  currentMemCont = NULL;
+MemoryContainer  errorMemCont   = NULL;
+
+FMalloc funcMalloc = NULL;
+FFree   funcFree   = NULL;  
 
 void ctorMemContMan(
     void*            self, 
-	void*          (*malloc)(size_t size))
+	FMalloc          funcMallocParam,
+	FFree            funcFreeParam)
 {
 	IMemContainerManager _         = (IMemContainerManager)self;
 	IErrorLogger         elog      = _->errorLogger;
- 
+
+	ASSERT_ARG_VOID(elog, funcMalloc == NULL);
+	ASSERT_ARG_VOID(elog, funcFree == NULL);
+
+    funcMalloc = funcMallocParam;
+    funcFree   = funcFreeParam;  
+
 	ASSERT_ARG_VOID(elog, topMemCont == NULL);
 
     topMemCont = memSetCreate(_,
@@ -31,8 +43,22 @@ void ctorMemContMan(
                               "TopMemoryContainer",
 	                          0,
 	                          8 * 1024,
-	                          8 * 1024,
-	                          malloc);
+	                          8 * 1024);
+
+    currentMemCont = topMemCont;
+    
+	/* Create error memory container.    
+	 * We do not expect much memory to be allocated here.
+	 * We have at least 8K memory to be preserved here
+	 * to treat properly out of memory error.
+	 */
+	errorMemCont = memSetCreate(_,
+		                        topMemCont,
+								topMemCont,
+								"ErrorContainer",
+								8 * 1024,
+                                8 * 1024,
+	                            8 * 1024);
 }
 
 /* Calculates the number of a free list
@@ -85,18 +111,25 @@ void* allocateChunkBlock(
 	size_t               blockSize = chunkSize + MEM_BLOCK_SIZE + MEM_CHUNK_SIZE;
 
 	MemorySet	  set       = (MemorySet)container;
-    MemoryBlock   block     = (MemoryBlock)malloc(blockSize);
+    MemoryBlock   block;
 	MemoryChunk	  chunk;
 
     void*         chunkPtr;
     size_t        size      = ALIGN_DEFAULT(chunkSize);
+    
+    ASSERT(elog, funcMalloc != NULL, NULL);
+    block = (MemoryBlock)funcMalloc(blockSize);
 
 	/* Report malloc error */
 	if (block == NULL)
+	{
+		showMemStat(_, topMemCont, 0);
+
 		elog->log(LOG_ERROR, 
 		          ERROR_CODE_OUT_OF_MEMORY, 
 				  "Out of memory. Failed request size: %lu", 
 				  chunkSize);
+	}
 
 	block->memset        = set;
 	block->freeStart     = (char*)block + blockSize;
@@ -166,14 +199,19 @@ void* allocateBlock(
 		blockSize <<= 1;
 
 	/* Allocate a new block */
-	block = (MemoryBlock)malloc(blockSize);
+	ASSERT(elog, funcMalloc != NULL, NULL);
+	block = (MemoryBlock)funcMalloc(blockSize);
 
 	/* Report malloc error */
 	if (block == NULL)
+	{
+		showMemStat(_, topMemCont, 0);
+
 		elog->log(LOG_ERROR, 
 		          ERROR_CODE_OUT_OF_MEMORY, 
 				  "Out of memory. Failed request size: %lu", 
 				  chunkSize);
+	}
 
 	block->memset    = set;
 	block->freeStart = ((char*)block) + MEM_BLOCK_SIZE;
@@ -392,8 +430,7 @@ MemoryContainer memContCreate(
 	MemoryContainer      parent,
     MemContType          type, 
 	size_t               size,
-	char*                name,
-	void*                (*malloc)(size_t size))
+	char*                name)
 {
 	IMemContainerManager  _    = (IMemContainerManager)self;
 	IErrorLogger          elog = _->errorLogger;
@@ -405,9 +442,10 @@ MemoryContainer memContCreate(
 	{
         newCont = (MemoryContainer)allocateMemory(self, container, neededSize);
 	}
-	else
+	else 
 	{
-        newCont = (MemoryContainer)malloc(neededSize); 
+        ASSERT(elog, funcMalloc != NULL, NULL); 
+        newCont = (MemoryContainer)funcMalloc(neededSize); 
 		ASSERT(elog, newCont != NULL, NULL); 
 	}
 
@@ -440,8 +478,7 @@ MemorySet memSetCreate(
     char*              name,
 	size_t             minContainerSize,
 	size_t             initBlockSize,
-	size_t             maxBlockSize,
-	void*              (*malloc)(size_t size))
+	size_t             maxBlockSize)
 {
 	IMemContainerManager  _    = (IMemContainerManager)self;
 	IErrorLogger          elog = _->errorLogger;
@@ -459,8 +496,7 @@ MemorySet memSetCreate(
 								  parent,
                                   MCT_MemorySet, 
 	                              sizeof(SMemorySet),
-	                              name,
-								  malloc);
+	                              name);
 
 	ASSERT(elog, set != NULL, NULL);
 
@@ -509,7 +545,9 @@ MemorySet memSetCreate(
 	 * In this case we allocate the first block.
 	 */
 	blockSize = ALIGN_DEFAULT(minContainerSize);
-    block     = (MemoryBlock)malloc(blockSize);
+
+	ASSERT(elog, funcMalloc != NULL, NULL); 
+    block     = (MemoryBlock)funcMalloc(blockSize);
 
 	/* An error has happened. We should report it. */
 	if (block == NULL)
@@ -536,8 +574,13 @@ MemorySet memSetCreate(
 	return (MemoryContainer)set;
 }
 
-void resetMemoryFromSet(MemorySet set)
+void resetMemoryFromSet(
+	void*              self,
+	MemorySet          set)
 {
+    IMemContainerManager  _    = (IMemContainerManager)self;
+	IErrorLogger          elog = _->errorLogger;
+
 	MemoryBlock  block;
 
     /* clear the free list first. */
@@ -561,7 +604,8 @@ void resetMemoryFromSet(MemorySet set)
 			break;
 		}
 
-		free(block);
+        ASSERT_VOID(elog, funcFree != NULL); 
+		funcFree(block);
 
 		block = next;
 	}
@@ -573,9 +617,11 @@ void resetMemoryFromSet(MemorySet set)
 /* Free the whole memory which has been allocated inside
  * a context and also inside its children.
  */
-void resetMemContainer(MemoryContainer cont)
+void resetMemContainer(
+    void*              self,
+	MemoryContainer    cont)
 {
-	MemoryContainer  child;
+	MemoryContainer    child;
 
 	/* If the context has children we first of all
 	 * try to free memory from all children first.
@@ -587,13 +633,13 @@ void resetMemContainer(MemoryContainer cont)
 		 */
 		for (child = cont->childHead; child != NULL; child = child->next)
 		{
-			resetMemContainer(child);
+			resetMemContainer(self, child);
 		}
     }
 
 	if (!cont->isReset)
 	{
-        resetMemoryFromSet(cont);
+        resetMemoryFromSet(self, cont);
         cont->isReset = True;
 	}
 }

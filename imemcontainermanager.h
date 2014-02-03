@@ -9,7 +9,10 @@ typedef struct SIMemContainerManager
 {
 	IErrorLogger  errorLogger;
 
-	void (*ctorMemContMan)(void* self);
+	void (*ctorMemContMan)(
+         void*                self, 
+	     FMalloc              funcMallocParam,
+	     FFree                funcFreeParam);
 
 	MemoryContainer (*memContCreate)(
 	     void*                self,
@@ -17,8 +20,7 @@ typedef struct SIMemContainerManager
 	     MemoryContainer      parent,
          MemContType          type, 
 	     size_t               size,
-	     char*                name,
-		 void*                (*malloc)(size_t size));
+	     char*                name);
 
 	MemorySet (*memSetCreate)(
          void*                self,
@@ -27,15 +29,16 @@ typedef struct SIMemContainerManager
          char*                name,
 	     size_t               minContainerSize,
 	     size_t               initBlockSize,
-	     size_t               maxBlockSize,
-	     void*                (*malloc)(size_t size));
+	     size_t               maxBlockSize);
 
 	void* (*allocateMemory)(
          void*                self,
          MemoryContainer      container, 
 	     size_t               size);
 
-	void (*resetMemoryFromSet)(MemorySet set);
+	void (*resetMemoryFromSet)(
+	     void*                self,
+	     MemorySet            set);
 
 } SIMemContainerManager, *IMemContainerManager;
 

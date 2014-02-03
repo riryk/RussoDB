@@ -32,8 +32,7 @@ WHEN(create_memory_set_with_large_min_size)
 		 "test",
 		 mincontsize_cmswlms,
 		 25,
-		 20,
-		 malloc);
+		 20);
 }
 
 TEST_TEAR_DOWN(create_memory_set_with_large_min_size)

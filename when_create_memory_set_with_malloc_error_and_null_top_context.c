@@ -33,8 +33,7 @@ WHEN(create_memory_set_with_malloc_error_and_null_top_context)
 		 "test",
 		 mincontsize_cmswmeantc,
 		 25,
-		 20,
-		 malloc);
+		 20);
 }
 
 TEST_TEAR_DOWN(create_memory_set_with_malloc_error_and_null_top_context)

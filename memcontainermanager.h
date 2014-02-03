@@ -3,6 +3,7 @@
 extern unsigned char Log2Table[256];
 
 extern MemoryContainer topMemCont;
+extern MemoryContainer currentMemCont;
 
 #define ASSERT(logger, condition, retval) \
 	if (!(condition)) \
@@ -32,7 +33,10 @@ extern MemoryContainer topMemCont;
 	   return (retval); \
     }
 
-void ctorMemContMan(void* self);
+void ctorMemContMan(
+    void*            self, 
+	FMalloc          funcMallocParam,
+	FFree            funcFreeParam);
 
 MemoryContainer memContCreate(
 	void*                self,
@@ -40,8 +44,7 @@ MemoryContainer memContCreate(
 	MemoryContainer      parent,
     MemContType          type, 
 	size_t               size,
-	char*                name,
-	void*                (*malloc)(size_t size));
+	char*                name);
 
 MemorySet memSetCreate(
     void*                self,
@@ -50,8 +53,7 @@ MemorySet memSetCreate(
     char*                name,
 	size_t               minContainerSize,
 	size_t               initBlockSize,
-	size_t               maxBlockSize,
-	void*                (*malloc)(size_t size));
+	size_t               maxBlockSize);
 
 void* allocateMemory(
     void*                self,
@@ -64,7 +66,9 @@ void showMemStat(
 	int                  level);
 
 void printSetStatistic(
-    MemorySet       set, 
-	int             level);
+    MemorySet            set, 
+	int                  level);
 
-void resetMemoryFromSet(MemorySet set);
+void resetMemoryFromSet(
+	void*                self,
+	MemorySet            set);

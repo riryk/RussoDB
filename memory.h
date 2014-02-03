@@ -185,6 +185,9 @@ typedef struct SMemoryChunk
    ((container) != NULL && \
       ((MemoryContainerBase)(container))->type == MCT_MemorySet)
 
+typedef	void* (*FMalloc)(size_t size);
+typedef void  (*FFree)  (void* mem);
+
 #endif
 
 
