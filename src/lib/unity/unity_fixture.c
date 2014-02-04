@@ -132,10 +132,13 @@ void UnityIgnoreTest(const char * printableName)
 //Malloc and free stuff
 //
 #define MALLOC_DONT_FAIL -1
-static int malloc_count;
-static int malloc_fail_countdown = MALLOC_DONT_FAIL;
-static int freeCount = 0;
-static int freeMem[1000];
+
+int malloc_count = 0;
+int malloc_mem_addrs[1000];
+int malloc_mem_sizes[1000];
+int malloc_fail_countdown = MALLOC_DONT_FAIL;
+int free_count = 0;
+int free_mem_addrs[1000];
 
 void UnityMalloc_StartTest()
 {
@@ -177,7 +180,7 @@ typedef struct GuardBytes
 
 static const char * end = "END";
 
-void * unity_malloc(size_t size)
+void* unity_malloc(size_t size)
 {
     char* mem;
     Guard* guard;
@@ -189,14 +192,28 @@ void * unity_malloc(size_t size)
         malloc_fail_countdown--;
     }
 
-    malloc_count++;
-
     guard = (Guard*)malloc(size + sizeof(Guard) + 4);
     guard->size = size;
     mem = (char*)&(guard[1]);
     memcpy(&mem[size], end, strlen(end) + 1);
 
+	malloc_mem_addrs[malloc_count] = mem;
+    malloc_mem_sizes[malloc_count] = size;
+
+	malloc_count++;
+
     return (void*)mem;
+}
+
+void unity_mem_stat_clear()
+{
+	int i;
+
+    for (i = 0; i < malloc_count; i++)
+	{
+        malloc_mem_addrs[i] = 0;
+        malloc_mem_sizes[i] = 0; 
+	} 
 }
 
 static int isOverrun(void * mem)
@@ -217,10 +234,10 @@ static void release_memory(void * mem)
     free(guard);
 }
 
-void unity_free(void * mem)
+void unity_free(void* mem)
 {
     int overrun = isOverrun(mem);
-	freeMem[freeCount++] = mem;
+	free_mem_addrs[free_count++] = mem;
     release_memory(mem);
 
     if (overrun)

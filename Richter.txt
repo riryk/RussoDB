@@ -3795,9 +3795,212 @@ Earlier in this chapter, I mentioned that value types should be immutable: that
 is, they should not define any members that modify any of the type’s instance fields. 
 
 
+73. The dynamic Primitive Type? 
+
+This dynamic expression/ variable can then be used to invoke 
+a member such as a field, a property/indexer, 
+a method, delegate, and unary/binary/conversion operators.
+
+When your code invokes a member by using a dynamic
+expression/variable, the compiler generates special IL code 
+that describes the desired operation. 
+This special code is referred to as the payload.
+
+internal static class DynamicDemo 
+{
+    public static void Main() 
+	{
+       dynamic value;
+	   
+       for (Int32 demo = 0; demo < 2; demo++) 
+	   {
+           value = (demo == 0) ? 
+		           (dynamic) 5 : 
+				   (dynamic) "A";
+				   
+           value = value + value;
+           M(value);
+       }
+    }
+	
+    private static void M(Int32 n) 
+	{ 
+	   Console.WriteLine("M(Int32): " + n); 
+	}
+	
+    private static void M(String s) 
+	{ 
+	   Console.WriteLine("M(String): " + s); 
+	}
+}
+
+The first time the + operator evaluates, 
+value contains 5 (an Int32) 
+and the result is 10 (also an Int32). 
+
+This puts this result in the value variable. 
+Then, the M method is called, passing it value. 
+For the call to M, the compiler will emit payload code that will, 
+at run time, examine the actual type of the argument 
+being passed to M and determine which overload of the M method to call. 
+When value contains an Int32, the overload of M 
+that takes an Int32 parameter is called.
+
+The second time the + operator evaluates, 
+value contains “A” (a String) and the result is “AA” 
+(the result of concatenating “A” with itself).
 
 
+74. Constants?
 
+A constant is a symbol that has a never-changing value. 
+When defining a constant symbol, its value must be determinable at compile time.
+
+The compiler then saves the constant’s value in the assembly’s metadata. 
+This means that you can define a constant only 
+for types that your compiler considers primitive types. 
+In C#, the following types are primitives and can be used to define constants: 
+Boolean, Char, Byte, SByte, Int16, UInt16, Int32, 
+UInt32, Int64, UInt64, Single, Double, Decimal, and String. 
+However, C# also allows you to define a constant variable 
+of a non-primitive type if you set the value to null.
+
+Because a constant value never changes, constants 
+are always considered to be part of the defining type. 
+In other words, constants are always considered 
+to be static members, not instance members.
+Defining a constant causes the creation of metadata.
+
+When code refers to a constant symbol, compilers look up 
+the symbol in the metadata of the assembly that defines the constant, 
+extract the constant’s value, 
+and embed the value in the emitted Intermediate Language (IL) code. 
+Because a constant’s value is embedded directly in code, 
+constants don’t require any memory to be allocated for them at run time.
+
+In addition, you can’t get the address
+of a constant and you can’t pass a constant by reference.
+
+using System;
+
+public sealed class SomeLibraryType 
+{
+   // NOTE: C# doesn't allow you to specify static for constants
+   // because constants are always implicitly static.
+   public const Int32 MaxEntriesInList = 50;
+}
+
+Then use the following code to build an application assembly.
+
+using System;
+
+public sealed class Program 
+{
+   public static void Main() 
+   {
+      Console.WriteLine(
+	     "Max entries supported in list: "
+         + SomeLibraryType.MaxEntriesInList);
+   }
+}
+
+You’ll notice that this application code references 
+the MaxEntriesInList constant defined
+in the SomeLibraryType class. 
+
+When the compiler builds the application code, it sees that MaxEntriesInList
+is a constant literal with a value of 50 
+and embeds the Int32 value of 50 right inside
+the application’s IL code, 
+as you can see in the following IL code. 
+
+In fact, after building the application assembly, 
+the DLL assembly isn’t even loaded at run time 
+and can be deleted from the disk because
+the compiler does not even add a reference 
+to the DLL assembly in the application's metadata.
+
+
+75. Readonly fields vs constants?
+
+You can assign a value to a readonly field only in the following contexts:
+
+- When the variable is initialized in the declaration, for example:
+  public readonly int y = 5;
+  
+- For an instance field, in the instance constructors of the class 
+  that contains the field declaration, or for a static field, 
+  in the static constructor of the class that contains the field declaration. 
+  These are also the only contexts in which it is valid 
+  to pass a readonly field as an out or ref parameter.
+  
+The readonly keyword is different from the const keyword. 
+A const field can only be initialized at the declaration of the field. 
+A readonly field can be initialized either at the declaration or in a constructor. 
+Therefore, readonly fields can have different values depending on the constructor used. 
+Also, while a const field is a compile-time constant, 
+the readonly field can be used for runtime constants as in the following example:  
+
+
+75. Passing Parameters by Reference to a Method?
+
+When reference type objects are passed, the reference (or pointer) 
+to the object is passed (by value) to the method. 
+This means that the method can modify the object 
+and the caller will see the change. 
+For value type instances, a copy of the instance is passed to the method.
+
+This means that the method gets its own private copy 
+of the value type and the instance in the caller isn’t affected.
+
+public static void Main() 
+{
+    Int32   x;             // x is uninitialized.
+    GetVal(out x);         // x doesn’t have to be initialized.
+    Console.WriteLine(x);  // Displays "10"
+}
+
+private static void GetVal(out Int32 v) 
+{
+    v = 10;   // This method must initialize v.
+}
+
+In this code, x is declared in Main’s stack frame. 
+The address of x is then passed to GetVal. 
+GetVal’s v is a pointer to the Int32 value in Main’s stack frame. 
+Inside GetVal, the Int32 that v points to is changed to 10. 
+When GetVal returns, Main’s x has a value of 10, 
+and 10 is displayed on the console.
+Using out with large value types is efficient 
+because it prevents instances of the value type’s
+fields from being copied when making method calls.
+Using out with large value types is efficient 
+because it prevents instances of the value type’s
+fields from being copied when making method calls.
+
+public static void Main() 
+{
+    Int32 x = 5;           // x is initialized.
+    AddVal(ref x);         // x must be initialized.
+    Console.WriteLine(x);  // Displays "15"
+}
+
+private static void AddVal(ref Int32 v) 
+{
+    v += 10;     // This method can use the initialized value in v.
+}
+
+In this code, x is also declared in Main’s stack frame and is initialized to 5. 
+The address of x is then passed to AddVal. 
+AddVal’s v is a pointer to the Int32 value in Main’s stack frame.
+
+In this code, x is also declared in Main’s stack frame and is initialized to 5. 
+The address of x is then passed to AddVal. 
+AddVal’s v is a pointer to the Int32 value in Main’s stack frame. 
+Inside AddVal, the Int32 that v points to is required to have a value already.
+
+
+217
 
 
 

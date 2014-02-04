@@ -62,7 +62,7 @@ WHEN(allocate_many_small_chunks_with_carving_up)
 TEST_TEAR_DOWN(allocate_many_small_chunks_with_carving_up)
 {
 	MemorySet set = (MemorySet)mc_amsc;
-	mm_amsc->resetMemoryFromSet(set);
+	mm_amsc->resetMemoryFromSet(mm_amsc, set);
 
 	free(mc_amsc);
 	free(mm_amsc);
