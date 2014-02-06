@@ -38,6 +38,9 @@ void ctorMemContMan(
 	FMalloc          funcMallocParam,
 	FFree            funcFreeParam);
 
+void dtorMemContMan(
+    void*            self);
+
 MemoryContainer memContCreate(
 	void*                self,
     MemoryContainer      container,

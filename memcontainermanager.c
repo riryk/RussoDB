@@ -61,6 +61,27 @@ void ctorMemContMan(
 	                            8 * 1024);
 }
 
+void dtorMemContMan(void*  self)
+{
+    IMemContainerManager  _ = (IMemContainerManager)self;
+    
+	_->resetMemoryFromSet(_, topMemCont);
+
+    ASSERT(elog, funcMalloc != NULL, NULL);
+    ASSERT(elog, funcFree != NULL, NULL);
+
+    block = (MemoryBlock)funcMalloc(blockSize);
+
+	free(topMemCont);
+
+    ASSERT(elog, topMemCont != NULL, NULL);
+    ASSERT(elog, currentMemCont != NULL, NULL);
+    ASSERT(elog, errorMemCont != NULL, NULL);
+
+    funcMalloc    = NULL;
+    funcFree      = NULL; 
+}
+
 /* Calculates the number of a free list
  * depending on size. The free list should 
  * contain a memory chunk of length of a power of two.
@@ -220,8 +241,8 @@ void* allocateBlock(
 	/* If the block size is an initial block size,
 	 * we adjust a keeper block.
 	 */
-	if (set->keeperBlock == NULL && blockSize == set->initBlockSize)
-		set->keeperBlock = block;
+	// if (set->keeperBlock == NULL && blockSize == set->initBlockSize)
+	//	set->keeperBlock = block;
 
 	/* Insert the new block into the head of the freelist */
 	block->next    = set->blockList;
@@ -569,7 +590,7 @@ MemorySet memSetCreate(
 	/* Insert this block into the head of the blocks list. */
 	block->next      = set->blockList;
 	set->blockList   = block;
-	set->keeperBlock = block;
+	//set->keeperBlock = block;
 
 	return (MemoryContainer)set;
 }

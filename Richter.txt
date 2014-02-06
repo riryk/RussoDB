@@ -4000,7 +4000,376 @@ AddVal’s v is a pointer to the Int32 value in Main’s stack frame.
 Inside AddVal, the Int32 that v points to is required to have a value already.
 
 
-217
+
+76. Raising an Event in a Thread-Safe Way?
+
+// Version 1
+protected virtual void OnNewMail(NewMailEventArgs e) 
+{
+    if (NewMail != null) 
+	    NewMail(this, e);
+}
+
+The problem with the OnNewMail method is that 
+the thread could see that NewMail is not null, 
+and then, just before invoking NewMail, 
+another thread could remove a delegate from
+the chain making NewMail null, 
+resulting in a NullReferenceException being thrown. 
+To fix this race condition, many developers 
+write the OnNewMail method as follows.
+
+// Version 2
+protected virtual void OnNewMail(NewMailEventArgs e) 
+{
+    EventHandler<NewMailEventArgs> temp = NewMail;
+	
+    if (temp != null) 
+	    temp(this, e);
+}
+
+However, what a lot of developers don’t realize 
+is that this code could be optimized by the compiler 
+to remove the local temp variable entirely. 
+If this happens, this version of the code is identical to the first version, 
+so a NullReferenceException is still possible.
+
+To really fix this code, you should rewrite OnNewMail like the following.
+// Version 3
+protected virtual void OnNewMail(NewMailEventArgs e) 
+{
+    EventHandler<NewMailEventArgs> temp = Volatile.Read(ref NewMail);
+	
+    if (temp != null) 
+	    temp(this, e);
+}
+
+The call to Volatile.Read forces NewMail to be read at the point 
+of the call and the reference really has to be copied to the temp variable now. 
+Then, temp will be invoked only if it is not null. 
+See Chapter 29, “Primitive Thread Synchronization Constructs,” 
+for more information about the Volatile.Read method.
+
+60. How the Compiler Implements an Event?
+
+public event EventHandler<NewMailEventArgs> NewMail;
+
+// 1. A PRIVATE delegate field that is initialized to null
+private EventHandler<NewMailEventArgs> NewMail = null;
+
+// 2. A PUBLIC add_Xxx method (where Xxx is the Event name)
+// Allows methods to register interest in the event.
+public void add_NewMail(EventHandler<NewMailEventArgs> value) 
+{
+    // The loop and the call to CompareExchange is all just a fancy way
+    // of adding a delegate to the event in a thread-safe way
+    EventHandler<NewMailEventArgs>prevHandler;
+    
+    EventHandler<NewMailEventArgs> newMail = this.NewMail;
+	
+    do 
+	{
+        prevHandler = newMail;
+		
+        EventHandler<NewMailEventArgs> newHandler =
+           (EventHandler<NewMailEventArgs>)
+		      Delegate.Combine(prevHandler, value);
+
+ 	    //  NOTE: the thread could be preempted here!
+        //  if (target == startVal) target = desiredVal
+        //  Value prior to potential change is returned
+        currentVal = Interlocked.CompareExchange(ref target, desiredVal, startVal);
+
+        // Return Value
+        // Type: System.Double
+        // The original value of this.NewMail.		
+        newMail = Interlocked
+		   .CompareExchange<EventHandler<NewMailEventArgs>>(
+               ref this.NewMail, newHandler, prevHandler);
+    } while (newMail != prevHandler); 	
+}
+
+Return Value
+Type: System.Double
+The original value in location1.
+
+// 3. A PUBLIC remove_Xxx method (where Xxx is the Event name)
+// Allows methods to unregister interest in the event.
+public void remove_NewMail(EventHandler<NewMailEventArgs> value) 
+{
+   // The loop and the call to CompareExchange is all just a fancy way
+   // of removing a delegate from the event in a thread-safe way
+   EventHandler<NewMailEventArgs> prevHandler;
+   
+   EventHandler<NewMailEventArgs> newMail = this.NewMail;
+   
+   do 
+   {
+      prevHandler = newMail;
+	  
+      EventHandler<NewMailEventArgs> newHandler =
+         (EventHandler<NewMailEventArgs>) Delegate.Remove(prevHandler, value);
+		 
+      newMail = Interlocked
+	     .CompareExchange<EventHandler<NewMailEventArgs>>(
+             ref this.NewMail, newHandler, prevHandler);
+   } while (newMail != prevHandler);
+}
+
+270
+
+
+61. Example of a deadlock in database and in C# code?
+
+static object object1 = new object();
+static object object2 = new object();
+
+public static void ObliviousFunction()
+{
+    lock (object1)
+    {
+        Thread.Sleep(1000); // Wait for the blind to lead
+        lock (object2)
+        {
+        }
+    }
+}
+
+public static void BlindFunction()
+{
+    lock (object2)
+    {
+        Thread.Sleep(1000); // Wait for oblivion
+        lock (object1)
+        {
+        }
+    }
+}
+
+
+SQL Server:
+
+To stimulate the Deadlock, let’s create two tables 
+which we are going to use as an example of Deadlock.
+
+-- Sample Table, which will track individual Orders entered by 
+-- Various Sales Persons
+create table Orders
+(
+   OrderID        int,
+   OrderDate      datetime,
+   Amount         money,
+   SalesPersonID  int
+)
+
+-- Sample Table, which will track all individual Sales Persons details
+create table SalesPerson
+(
+   SalesPersonID  int,
+   Name           varchar(100),
+   Region         varchar(100)
+);
+
+
+TRAN 1                                      TRAN2
+
+begin tran                            begin tran 
+
+update Orders                         update SalesPerson 
+set SalesPersonID=4                   set Name='Li Hu Chu' 
+where OrderID = 108;                  where SalesPersonID = 4; 
+
+update SalesPerson                    update Orders 
+set Region='Beijing'                  set OrderDate='2011-11-11 11:11:11.000'
+where SalesPersonID = 4;              where OrderID = 108;  
+
+commit tran                           commit tran
+
+
+Transaction A attempts to update table 1 
+and subsequently read/update data from table 2, 
+whereas transaction B attempts to update table 2 
+and subsequently read/update data from table 1. 
+
+In such situations, transaction A holds locks 
+that transaction B needs to complete its task and vice versa; 
+neither transaction can complete 
+until the other transaction releases locks.
+
+
+Read Lock   - all readers have access to this resource.
+Write Lock  - when this lock is set than no other readers and writers can read.
+Update lock - only one updateLock simultaneously and can be many readers.
+
+
+Intent Share     – intent shared lock. 
+Intent Exclusive – intent exclusive lock. 
+
+CREATE TABLE [dbo].[Tbl] 
+(
+  [X] [int] NULL,
+  [Y] [int] NULL,
+  [value] [varchar] (50)
+)
+
+insert into Tbl(X, Y, Value) VALUES (1, 10, 'Алма-Ата')
+insert into Tbl(X, Y, Value) VALUES (2, 9, 'Алушта')
+insert into Tbl(X, Y, Value) VALUES (3, 8, 'Алупка')
+insert into Tbl(X, Y, Value) VALUES (4, 7, 'Анкара')
+
+
+Example 1: 
+
+ Tran1                                                        Tran2
+
+BEGIN TRAN                                      BEGIN TRAN
+  UPDATE Tbl SET X = 1 WHERE X = 1                UPDATE Tbl SET X = 3 WHERE X = 3
+  UPDATE Tbl SET X = 3 WHERE X = 3                UPDATE Tbl SET X = 1 WHERE X = 1
+COMMIT TRAN                                     COMMIT TRAN 
+
+Example 2:
+
+SET TRANSACTION ISOLATION LEVEL REPEATABLE READ
+
+BEGIN TRAN
+   SELECT @Var = Y FROM Tbl WHERE X = 2
+   --- 
+   --- Do something with @Var
+   --- 
+   UPDATE Tbl SET Y = @Var WHERE X = 2
+COMMIT TRAN                                    
+
+When execute this code in two different transactions 
+we will get a deadlock.
+
+
+ Tran 1                                       Tran2
+ 
+ select 1 from Tbl where x = 2
+                                       select 1 from Tbl where x = 2.
+									   
+ update Tbl set .... where x = 2        									 
+                                       update Tbl set ... where x = 2.
+
+									   
+ When tran1 wants to acquire 
+ an exclusive lock the record is being 
+ read by another transaction and
+ a read lock is held until the end of the transaction.
+ 
+BEGIN TRAN
+
+  SELECT @Var = Y FROM Tbl WITH (UPDLOCK) WHERE X = 2
+  UPDATE Tbl SET Y = @Var WHERE X = 2
+  
+COMMIT TRAN                                    
+  
+
+Example 3:
+
+  Tran 1                                                                Tran 2
+  
+SET TRANSACTION ISOLATION LEVEL READ COMMITTED          SET TRANSACTION ISOLATION LEVEL READ COMMITTED  
+
+BEGIN TRAN                                              BEGIN TRAN     
+
+  UPDATE Tbl SET X = 4 WHERE X = 4                      UPDATE Tbl SET X = 2 WHERE X = 2
+  WAITFOR DELAY '00:00:10'
+  UPDATE Tbl SET X = 6 WHERE X = 6                      COMMIT TRAN
+  
+COMMIT TRAN                            
+
+
+The second transaction can even be:  UPDATE Tbl SET Y = 10 WHERE Y = 10
+
+
+62. Bookmark Lookup.
+
+A bookmark lookup is the process of finding 
+the actual data in the SQL table, 
+based on an entry found in a non-clustered index.
+
+When you search for a value in a non-clustered index, 
+and your query needs more fields 
+than are part of the index leaf node 
+(all the index fields, plus any possible INCLUDE columns), 
+then SQL Server needs to go retrieve the actual data page(s) 
+- that's what's called a bookmark lookup.
+
+In some cases, that's really the only way to go 
+- only if your query would require just one more field 
+(not a whole bunch of 'em), 
+it might be a good idea to INCLUDE that field in the non-clustered index. 
+In that case, the leaf-level node of the non-clustered index 
+would contain all fields needed to satisfy your query (a "covering" index), 
+and thus a bookmark lookup wouldn't be necessary anymore.
+
+
+63. Multiple indexes vs indexes on different columns?
+
+Are there certain reasons why one should be used over the other?
+
+Create NonClustered Index IX_IndexName On TableName
+(Column1 Asc, Column2 Asc, Column3 Asc)
+
+Versus
+
+Create NonClustered Index IX_IndexName1 On TableName
+(Column1 Asc)
+
+Create NonClustered Index IX_IndexName2 On TableName
+(Column2 Asc)
+
+Create NonClustered Index IX_IndexName3 On TableName
+(Column3 Asc)
+
+e.g. imagine you search a table on three columns:
+state, county, zip:
+
+ - you sometimes search by state only.
+ - you sometimes search by state and county.
+ - you frequently search by state, county, zip.
+ 
+Then an index with state, county, zip. 
+will be used in all three of these searches.
+
+If you search by zip alone quite a lot 
+then the above index will not be used (by SQL Server anyway) 
+as zip is the third part of that index 
+and the query optimiser will not see that index as helpful.
+
+You could then create an index on Zip alone 
+that would be used in this instance.
+
+SELECT * FROM tbl_name WHERE col1=val1 AND col2=val2;
+
+If a multiple-column index exists on col1 and col2, 
+the appropriate rows can be fetched directly.
+
+If separate single-column indexes exist on col1 and col2, 
+the optimizer attempts to use the Index Merge optimization
+or attempts to find the most restrictive index by deciding 
+which index excludes more rows and using that index to fetch the rows.
+
+
+Index Merge optimization:
+
+If your query has a complex WHERE clause with 
+deep AND/OR nesting and MySQL doesn't choose the optimal plan, 
+try distributing terms using the following identity laws:
+
+(x AND y) OR z = (x OR z) AND (y OR z)
+(x OR y) AND z = (x AND z) OR (y AND z)
+
+The Index Merge intersection algorithm performs simultaneous scans 
+on all used indexes and produces the intersection 
+of row sequences that it receives 
+from the merged index scans.
+
+
+
+
+
 
 
 

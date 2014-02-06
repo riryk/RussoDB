@@ -96,8 +96,10 @@ Bool isInArray(int* arr, int count, int val)
     int i;
 
 	for (i = 0; i < count; i++)
+	{
        if (arr[i] == val)
 	      return True;
+	}
 
 	return False;
 }

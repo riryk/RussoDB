@@ -214,6 +214,14 @@ void unity_mem_stat_clear()
         malloc_mem_addrs[i] = 0;
         malloc_mem_sizes[i] = 0; 
 	} 
+
+    for (i = 0; i < free_count; i++)
+	{
+        free_mem_addrs[i] = 0;
+	}
+
+    malloc_count = 0;
+    free_count   = 0;
 }
 
 static int isOverrun(void * mem)
@@ -230,7 +238,6 @@ static void release_memory(void * mem)
     Guard* guard = (Guard*)mem;
     guard--;
 
-    malloc_count--;
     free(guard);
 }
 

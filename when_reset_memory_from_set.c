@@ -19,6 +19,7 @@ SETUP_DEPENDENCIES(reset_memory_from_set)
 	mm_rmfs->ctorMemContMan     = &ctorMemContMan;
 	mm_rmfs->resetMemoryFromSet = resetMemoryFromSet;
 	mm_rmfs->allocateMemory     = allocateMemory;
+	mm_rmfs->dtorMemContMan     = dtorMemContMan;
 }
 
 GIVEN(reset_memory_from_set) 
@@ -38,6 +39,8 @@ GIVEN(reset_memory_from_set)
 		 0,
 		 1024,
 		 1024);
+
+	unity_mem_stat_clear();
 
 	/* We increase memory on the following value:
 	 * mem1 = 10 * 150 = 1500
@@ -68,9 +71,8 @@ WHEN(reset_memory_from_set)
 
 TEST_TEAR_DOWN(reset_memory_from_set)
 {
-	mm_rmfs->resetMemoryFromSet(mm_rmfs, topMemCont);
+	mm_rmfs->dtorMemContMan(mm_rmfs);
 
-	free(topMemCont);
 	free(mm_rmfs);
 }
 
