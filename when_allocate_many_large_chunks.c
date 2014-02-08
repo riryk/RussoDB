@@ -57,7 +57,7 @@ WHEN(allocate_many_large_chunks)
 TEST_TEAR_DOWN(allocate_many_large_chunks)
 {
 	MemorySet set = (MemorySet)mc_amlc;
-	mm_amlc->resetMemoryFromSet(set);
+	mm_amlc->resetMemoryFromSet(mm_amlc, set);
 	free(mc_amlc);
 	free(mm_amlc);
 }

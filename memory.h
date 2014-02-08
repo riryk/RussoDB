@@ -7,12 +7,16 @@
  */
 #define MIN_CHUNK_POWER_OF_2	    3	
 #define MEMORY_SET_FREELISTS_NUM	11
+#define MEM_BLOCK_INIT_MIN_SIZE     1024
 
 /* The maximum allowed memory chunk size */
-#define MEMORY_CHUNK_MAX_SIZE  (1 << (MEMORY_SET_FREELISTS_NUM-1+MIN_CHUNK_POWER_OF_2))
+#define MEMORY_CHUNK_MAX_SIZE  (1 << (MEMORY_SET_FREELISTS_NUM - 1 + MIN_CHUNK_POWER_OF_2))
 
-/* We allow chunks to be at most 1/4 of maxBlockSize */
-#define MEMORY_CHUNK_MAX_SIZE_TO_BLOCK 4
+/* We allow chunks to be at most 1/4 of maxBlockSize 
+ * So that if we fill in a block with the largest chunk
+ * we can put in only 4 such chunks.
+ */
+#define MAX_BLOCK_CHUNKS_NUM 4
 
 /* 1Byte  = 8 bits      = 1000 = 2^3 bits
  * 1KByte = 2^10 bytes  = 2^10 * 2^3  = 2^13 bits
@@ -180,6 +184,9 @@ typedef struct SMemoryChunk
 #define MemoryContainerIsValid(container) \
    ((container) != NULL && \
       ((MemoryContainerBase)(container))->type == MCT_MemorySet)
+
+typedef	void* (*FMalloc)(size_t size);
+typedef void  (*FFree)  (void* mem);
 
 #endif
 

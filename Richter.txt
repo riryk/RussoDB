@@ -2041,8 +2041,2080 @@ public static class Program
    }
 }
 
+60. What are events?
 
-782
+Events are simply Boolean variables maintained by the kernel. 
+A thread waiting on an event blocks 
+when the event is false and unblocks when the event is true. 
+There are two kinds of events. 
+When an auto-reset event is true, 
+it wakes up just one blocked thread, 
+because the kernel automatically resets the event back to false 
+after unblocking the first thread. 
+When a manual-reset event is true,
+it unblocks all threads waiting for it 
+because the kernel does not automatically reset the event back to false; 
+your code must manually reset the event back to false. 
+The classes related to events look like this.
+
+
+Using an auto-reset event, we can easily create a thread synchronization lock whose behavior is
+similar to the SimpleSpinLock class I showed earlier.
+
+internal sealed class SimpleWaitLock : IDisposable 
+{
+    private readonly AutoResetEvent m_available;
+	
+    public SimpleWaitLock() 
+	{
+        m_available = new AutoResetEvent(true); // Initially free
+    }
+	
+    public void Enter() 
+	{
+        // Block in kernel until resource available
+        m_available.WaitOne();
+    }
+	
+    public void Leave() 
+	{
+        // Let another thread access the resource
+        m_available.Set();
+    }
+	
+    public void Dispose() { m_available.Dispose(); }
+}
+
+61. What is semafore
+
+AutoReset Event 
+
+If there are threads that have called 
+waitHandle.WaitOne()
+They are blocked until another main thread calls   
+waitHandle.Set()
+
+
+class BasicWaitHandle
+{
+  static EventWaitHandle _waitHandle = new AutoResetEvent (false);
+ 
+  static void Main()
+  {
+    new Thread (Waiter).Start();
+    Thread.Sleep (1000);                  // Pause for a second...
+    _waitHandle.Set();                    // Wake up the Waiter.
+  }
+ 
+  static void Waiter()
+  {
+    Console.WriteLine ("Waiting...");
+    _waitHandle.WaitOne();                // Wait for notification
+    Console.WriteLine ("Notified");
+  }
+}
+
+
+Two way signalling: When one thread 1 waits for thread 2 
+to complete work then do its work and thread 2 waits for
+thread 1 to complete its work.
+
+
+class TwoWaySignaling
+{
+  static EventWaitHandle _ready = new AutoResetEvent (false);
+  static EventWaitHandle _go = new AutoResetEvent (false);
+  static readonly object _locker = new object();
+  static string _message;
+ 
+  static void Main()
+  {
+    new Thread (Work).Start();
+ 
+    _ready.WaitOne();                  // First wait until worker is ready
+    lock (_locker) _message = "ooo";
+    _go.Set();                         // Tell worker to go
+ 
+    _ready.WaitOne();
+    lock (_locker) _message = "ahhh";  // Give the worker another message
+    _go.Set();
+    _ready.WaitOne();
+    lock (_locker) _message = null;    // Signal the worker to exit
+    _go.Set();
+  }
+ 
+  static void Work()
+  {
+    while (true)
+    {
+      _ready.Set();                          // Indicate that we're ready
+      _go.WaitOne();                         // Wait to be kicked off...
+      lock (_locker)
+      {
+        if (_message == null) return;        // Gracefully exit
+        Console.WriteLine (_message);
+      }
+    }
+  }
+}
+
+Manual reset event?
+
+A ManualResetEvent functions like an ordinary gate. 
+Calling Set opens the gate, allowing any number 
+of threads calling WaitOne to be let through. 
+Calling Reset closes the gate. 
+Threads that call WaitOne on a closed gate will block; 
+when the gate is next opened, they will be released all at once. 
+Apart from these differences, a ManualResetEvent functions like an AutoResetEvent.
+
+Set   switches the event over to sgnalling state.
+Resrt makes it unsignalling. 
+
+When we have one thread and it is performing some work
+other threads are waiting for it. And when it finishes it
+it wants to notify other threads at once
+
+Semaphores can be useful in limiting concurrency 
+— preventing too many threads from executing a particular piece of code at once. 
+In the following example, five threads try 
+to enter a nightclub that allows only three threads in at once:
+
+class TheClub      // No door lists!
+{
+  static SemaphoreSlim _sem = new SemaphoreSlim (3);    // Capacity of 3
+ 
+  static void Main()
+  {
+    for (int i = 1; i <= 5; i++) new Thread (Enter).Start (i);
+  }
+ 
+  static void Enter (object id)
+  {
+    Console.WriteLine (id + " wants to enter");
+    _sem.Wait();
+    Console.WriteLine (id + " is in!");           // Only three threads
+    Thread.Sleep (1000 * (int) id);               // can be here at
+    Console.WriteLine (id + " is leaving");       // a time.
+    _sem.Release();
+  }
+}
+
+
+When multiple threads are waiting on a semaphore, 
+releasing the semaphore causes releaseCount threads to become unblocked 
+(where releaseCount is the argument passed to Semaphore’s Release method).
+
+Threads enter the semaphore by calling the WaitOne method, 
+which is inherited from the WaitHandle class. 
+When the call returns, the count on the semaphore is decremented. 
+When a thread requests entry and the count is zero, the thread blocks. 
+As threads release the semaphore by calling the Semaphore.
+Release method, blocked threads are allowed to enter. 
+
+
+61. What is mutex?
+
+A Mutex represents a mutual-exclusive lock. 
+It works similar to an AutoResetEvent or a Semaphore with a count 
+of 1 because all three constructs release only one waiting thread at a time. 
+The following shows what the Mutex class looks like.
+
+Second, Mutex objects maintain a recursion count indicating 
+how many times the owning thread owns the Mutex. 
+
+If a thread currently owns a Mutex and then that thread waits on the Mutex again,
+the recursion count is incremented and the thread is allowed to continue running. 
+When that thread calls ReleaseMutex, the recursion count is decremented. 
+Only when the recursion count becomes 0 can another thread become the owner of the Mutex.
+
+internal class SomeClass : IDisposable 
+{
+    private readonly Mutex m_lock = new Mutex();
+	
+    public void Method1() 
+	{
+        m_lock.WaitOne();
+		
+        // Do whatever...
+        Method2(); 
+		
+		// Method2 recursively acquires the lock
+        m_lock.ReleaseMutex();
+    }
+	
+    public void Method2() 
+	{
+        m_lock.WaitOne();
+		
+        // Do whatever...
+        m_lock.ReleaseMutex();
+    }
+	
+    public void Dispose() { m_lock.Dispose(); }
+}
+
+Generally you only use a Mutex across processes, e.g. 
+if you have a resource that multiple applications must share, 
+or if you want to build a single-instanced app 
+(i.e. only allow 1 copy to be running at one time).
+
+A semaphore allows you to limit access to a specific number of simultaneous threads, 
+so that you could have, for example, 
+a maximum of two threads executing a specific code path at a time.
+
+
+internal sealed class SimpleHybridLock : IDisposable 
+{
+   // The Int32 is used by the primitive user-mode constructs (Interlocked methods)
+   private Int32 m_waiters = 0;
+   
+   // The AutoResetEvent is the primitive kernel-mode construct
+   private readonly AutoResetEvent m_waiterLock = new AutoResetEvent(false);
+   
+   public void Enter() 
+   {
+      // Indicate that this thread wants the lock
+      if (Interlocked.Increment(ref m_waiters) == 1)
+          return; // Lock was free, no contention, just return
+		  
+      // Another thread has the lock (contention), make this thread wait
+      m_waiterLock.WaitOne(); // Bad performance hit here
+	  
+      // When WaitOne returns, this thread now has the lock
+   }
+   
+   public void Leave() 
+   {
+      // This thread is releasing the lock
+      if (Interlocked.Decrement(ref m_waiters) == 0)
+          return; // No other threads are waiting, just return
+		  
+      // Other threads are waiting, wake 1 of them
+      m_waiterLock.Set(); // Bad performance hit here
+   }
+   
+   public void Dispose() { m_waiterLock.Dispose(); }
+}
+
+In addition, some locks impose a limitation where the thread 
+that acquires the lock must be the thread that releases the lock.
+
+internal sealed class AnotherHybridLock : IDisposable 
+{
+    // The Int32 is used by the primitive user-mode constructs (Interlocked methods)
+    private Int32 m_waiters = 0;
+	
+    // The AutoResetEvent is the primitive kernel-mode construct
+    private AutoResetEvent m_waiterLock = new AutoResetEvent(false);
+	
+    // This field controls spinning in an effort to improve performance
+    private Int32 m_spincount = 4000; // Arbitrarily chosen count
+	
+    // These fields indicate which thread owns the lock and how many times it owns it
+    private Int32 m_owningThreadId = 0, m_recursion = 0;
+	
+    public void Enter() 
+	{
+        // If calling thread already owns the lock, increment recursion count and return
+        Int32 threadId = Thread.CurrentThread.ManagedThreadId;
+		
+        if (threadId == m_owningThreadId) 
+		{ 
+		   m_recursion++; 
+		   return; 
+		}
+		
+        // The calling thread doesn't own the lock, try to get it
+        SpinWait spinwait = new SpinWait();
+	   
+        for (Int32 spinCount = 0; spinCount < m_spincount; spinCount++) 
+		{
+           // If the lock was free, this thread got it; 
+		   // set some state and return
+           if (Interlocked.CompareExchange(ref m_waiters, 1, 0) == 0) 
+		       goto GotLock;
+			   
+           // Black magic: give other threads a chance to run
+           // in hopes that the lock will be released
+           spinwait.SpinOnce();
+        }
+		
+        // Spinning is over and the lock was still not obtained, 
+		// try one more time
+        if (Interlocked.Increment(ref m_waiters) > 1) 
+		{
+           // Still contention, this thread must wait
+           m_waiterLock.WaitOne(); // Wait for the lock; performance hit
+           // When this thread wakes, it owns the lock; set some state and return
+        }
+		
+        GotLock:
+		
+        // When a thread gets the lock, we record its ID and
+        // indicate that the thread owns the lock once
+        m_owningThreadId = threadId; 
+		m_recursion = 1;
+    }
+	
+	public void Leave() 
+	{
+        // If the calling thread doesn't own the lock, there is a bug
+        Int32 threadId = Thread.CurrentThread.ManagedThreadId;
+		
+        if (threadId != m_owningThreadId)
+            throw new SynchronizationLockException("Lock not owned by calling thread");
+			
+		// Decrement the recursion count. If this thread still owns the lock, just return
+        if (--m_recursion > 0) 
+		    return;
+			
+        m_owningThreadId = 0;   // No thread owns the lock now
+		
+        // If no other threads are waiting, just return
+        if (Interlocked.Decrement(ref m_waiters) == 0)
+            return;
+			
+        // Other threads are waiting, wake 1 of them
+        m_waiterLock.Set(); // Bad performance hit here
+    }
+	
+    public void Dispose() { m_waiterLock.Dispose(); }
+}
+
+
+62. Examples of hybrid syncronisation locks in .NET framework?
+
+ManualResetEventSlim, SemaphoreSlim, 
+
+When the CLR initializes, it allocates an array of sync blocks in native heap.
+whenever an object is created in the heap, it gets two additional overhead fields associated
+with it. The first overhead field, the type object pointer, contains the memory address of the type’s
+type object. The second overhead field, the sync block index, contains an integer index into the array
+of sync blocks. 
+
+When an object is constructed, the object’s sync block index is initialized to -1, which indicates
+that it doesn’t refer to any sync block. Then, when Monitor.Enter is called, the CLR finds a free sync
+block in the array and sets the object’s sync block index to refer to the sync block that was found.
+
+Problems with locks:
+
+- When you call Monitor’s methods, passing a reference to a proxy object, 
+  you are locking the proxy object, not the actual object that the proxy refers to.
+  
+- If a thread calls Monitor.Enter, passing it a reference to a type object 
+  that has been loaded domain neutral (discussed in Chapter 22), 
+  the thread is taking a lock on that type across all AppDomains in the process.
+
+- When passing a string across an AppDomain boundary, the CLR does not make a copy of
+  the string; instead, it simply passes a reference to the string into the other AppDomain. This
+  improves performance, and in theory, it should be OK because String objects are immutable.
+  However, like all objects, String objects have a sync block index associated with them, which
+  is mutable, and this allows threads in different AppDomains to synchronize with each other
+  unknowingly.
+  
+- Because Monitor’s methods take an Object, passing a value type causes the value type to
+  get boxed, resulting in the thread taking a lock on the boxed object. Each time Monitor.Enter
+  is called, a lock is taken on a completely different object 
+  and you get no thread synchronization at all.
+
+- Applying the [MethodImpl(MethodImplOptions.Synchronized)] attribute to a method
+  causes the JIT compiler to surround the method’s native code 
+  with calls to Monitor.Enter and Monitor.Exit. 
+  If the method is an instance method, then this is passed to these methods,
+  locking the implicitly public lock. 
+  If the method is static, then a reference to the type’s type object is passed to these methods, 
+  potentially locking a domain-neutral type. The recommendation is to never use this attribute.
+  
+- When calling a type’s type constructor (discussed in Chapter 8, “Methods”), 
+  the CLR takes a lock on the type’s type object to ensure 
+  that only one thread initializes the type object and its static fields. 
+  Again, this type could be loaded domain neutral, causing a problem. 
+  For example, if the type constructor’s code enters an infinite loop, 
+  then the type is unusable by all App-Domains in the process. 
+  The recommendation here is to avoid type constructors 
+  as much as possible or least keep them short and simple.
+  
+
+private void SomeMethod() 
+{
+   lock (this) 
+   {
+       // This code has exclusive access to the data...
+   }
+}
+
+It is equivalent to having written the method like this.
+private void SomeMethod() 
+{
+    Boolean lockTaken = false;
+	
+    try 
+	{
+       // An exception (such as ThreadAbortException) could occur here...
+       Monitor.Enter(this, ref lockTaken);
+	   
+       // This code has exclusive access to the data...
+    }
+    finally 
+	{
+       if (lockTaken) 
+	       Monitor.Exit(this);
+    }
+}
+
+
+However, this is not a good thing. 
+If an exception occurs inside the try block while changing state, 
+then the state is now corrupted. 
+When the lock is exited in the finally block, 
+another thread will now start manipulating the corrupted state. 
+It is better to have your application hang 
+than it is to continue running with a corrupted state and potential security holes.
+
+
+63. What is ReadWrite lock and benefits of using?
+
+However, if all the threads want to access the data
+in a read-only fashion, then there is no need to block them at all; 
+they should all be able to access the data concurrently. 
+On the other hand, if a thread wants to modify the data, 
+then this thread needs exclusive access to the data. 
+The ReaderWriterLockSlim construct encapsulates the logic to solve this problem. 
+Specifically, the construct controls threads like this:
+
+- When one thread is writing to the data, 
+  all other threads requesting access are blocked.
+
+- When one thread is reading from the data, other threads requesting read access 
+  are allowed to continue executing, 
+  but threads requesting write access are blocked.
+  
+- When a thread writing to the data has completed, 
+  either a single writer thread is unblocked
+  so it can access the data or all the reader threads are unblocked 
+  so that all of them can access the data concurrently. 
+  If no threads are blocked, then the lock is free and available 
+  for the next reader or writer thread that wants it.
+
+- When all threads reading from the data have completed, 
+  a single writer thread is unblocked so it can access the data. 
+  If no threads are blocked, then the lock is free 
+  and available for the next reader or writer thread that wants it.
+  
+Reader-Writer lock in use:
+
+internal sealed class Transaction : IDisposable 
+{
+   private readonly ReaderWriterLockSlim m_lock = 
+                new ReaderWriterLockSlim(LockRecursionPolicy.NoRecursion);
+				
+   private DateTime m_timeOfLastTrans;
+   
+   public void PerformTransaction() 
+   {
+      m_lock.EnterWriteLock();
+      // This code has exclusive access to the data...
+      m_timeOfLastTrans = DateTime.Now;
+      m_lock.ExitWriteLock();
+   }
+   
+   public DateTime LastTransaction 
+   {
+      get 
+	  {
+          m_lock.EnterReadLock();
+		  
+          // This code has shared access to the data...
+          DateTime temp = m_timeOfLastTrans;
+          m_lock.ExitReadLock();
+		  
+          return temp;
+      }
+   }
+   
+   public void Dispose() { m_lock.Dispose(); }
+
+}
+
+Now I’d like to give you a sense of how it works. 
+Internally, the class has an Int32 field for the state of the lock, 
+a Semaphore object that reader threads block on, 
+and an AutoResetEvent object that writer threads block on. 
+The Int64 state field is divided into five subfields as follows:
+
+Four bits represent the state of the lock itself. 
+The possibilities are 
+
+0=Free, 
+1=OwnedByWriter,
+2=OwnedByReaders, 
+3=OwnedByReadersAndWriterPending, 
+4=ReservedForWriter
+
+The other values are not used.
+
+Twenty bits (a number from 0 to 1,048,575) represent 
+the number of reader threads reading (RR) 
+that the lock has currently allowed in.
+
+Twenty bits represent the number of reader threads 
+waiting (RW) to get into the lock. 
+These threads block on the auto-reset event object.
+
+Twenty bits represent the number of reader threads 
+waiting (RW) to get into the lock. 
+These threads block on the auto-reset event object.
+
+Twenty bits represent the number of writer threads 
+waiting (WW) to get into the lock. 
+These threads block on the other semaphore object.
+
+- Thread entrers a lock for shared access:
+1. If the lock is Free: Set state to OwnedByReaders, RR=1, Return.
+2. If the lock is OwnedByReaders: RR++, Return.
+3. If the lock is OwnedByWriters: RW++. Block reader thread. 
+   When the thread wakes, loop around and try again.
+
+- Thread that has shared access leaves the lock:
+1. RR--.
+2. If RR > 0: Return
+3. If WW > 0: 
+    Set state to ReservedForWriter, WW--, 
+	Release 1 blocked writer thread, Return
+4. If RW == 0 && WW == 0: Set state to Free, Return
+
+- Thread enters the lock for exclusive access:
+1. If the lock is Free: Set state to OwnedByWriter, Return.
+2. If the lock is ReservedForWriter: Set state to OwnedByWriter, Return.
+3. If the lock is OwnedByWriter: WW++, Block writer thread. 
+   When thread wakes, loop around and try again.
+4. Set state to OwnedByReadersAndWriterPending, WW++, Block writer thread. 
+   When thread wakes, loop around and try again.
+   
+- Thread that has exclusive access leaves the lock:
+1. If WW == 0 && RW == 0: Set state to Free, Return
+2. If WW > 0: Set state to ReservedForWriter, WW--, 
+   Release 1 blocked writer thread, Return.
+3. If WW == 0 && RW > 0: Set state to Free , 
+   RW=0, Wake all blocked reader threads, Return
+
+
+64. Double-Check Locking Technique?
+
+internal sealed class Singleton 
+{
+   // s_lock is required for thread safety and having this object assumes that creating
+   // the singleton object is more expensive than creating a System.Object object and that
+   // creating the singleton object may not be necessary at all. Otherwise, it is more
+   // efficient and easier to just create the singleton object in a class constructor
+   private static readonly Object s_lock = new Object();
+   
+   // This field will refer to the one Singleton object
+   private static Singleton s_value = null;
+   
+   // Private constructor prevents any code outside this class from creating an instance
+   private Singleton() 
+   {
+      // Code to initialize the one Singleton object goes here...
+   }
+   
+   // Public, static method that returns the Singleton object (creating it if necessary)
+   public static Singleton GetSingleton() 
+   {
+      // If the Singleton was already created, just return it (this is fast)
+      if (s_value != null) 
+	      return s_value;
+		  
+      Monitor.Enter(s_lock); // Not created, let 1 thread create it
+	  
+      if (s_value == null) 
+	  {
+          // Still not created, create it
+          Singleton temp = new Singleton();
+		  
+          // Save the reference in s_value (see discussion for details)
+          Volatile.Write(ref s_value, temp);
+      }
+	  
+      Monitor.Exit(s_lock);
+
+      return s_value;    
+   }
+}
+
+In the CLR, calling any lock method is a full memory fence, 
+and any variable writes you have before the fence 
+must complete before the fence and any variable reads after the fence must start after it.
+
+What is memory fence?
+Instruction to a processor to refresh its cache lines.
+If a processor does reads and writes:
+
+
+a1 =  var1 == 4;
+a1 =  var1 == 10;
+
+var2 = 10;
+var2 = 15;
+
+memory fence:
+
+a2 = var2 == 15;
+var1 = 7;
+
+We have one read before memory fence.
+repeated reads of variable var1 before 
+the memory fence take var1 from register
+
+Reads before memory fence look like:
+
+
+load var1 from memory to register1
+register1 = 3.
+compare register1 with 4
+compare register2 witn 10.
+
+after mem fence
+
+load var1 from memory to register1
+compare register1 with 7
+
+Without memory fence we do not do reloading of a var1
+from memory to a register.
+
+Writes before the memory fence look like:
+
+load2 var2 from memory to register2
+set register2 to 10
+set register2 to 15
+
+write from register2 to memory var2.
+memory barrier
+
+
+For the GetSingleton method, this means that the s_value field 
+must be reread after the call to Monitor.Enter; 
+it cannot be cached in a register across this method call.
+
+The problems with this double-checking lock:
+
+1. s_value is cached in a processor's register
+   
+ if (s_value != null) 
+	 return s_value;
+	 
+ Monitor.Enter(s_lock); 
+	 
+ if (s_value == null) 
+ {  }
+ 
+ read s_value and it is null 
+ then pause
+ check if it is null again.
+ if it is chached, it will always be null
+ 
+ Monitor.Enter puts a full memory fence. 
+ And this fixes the problem.
+ 
+2. Compile optimization.
+
+
+      Monitor.Enter(s_lock); // Not created, let 1 thread create it
+	  
+      if (s_value == null) 
+	  {
+	      s_value = new Singleton();
+      }
+	  
+      Monitor.Exit(s_lock);
+
+ The compiler can generate the following code:
+ 
+ allocate new memory.
+ set s_value to point to this memory.
+ call constructor and initialize memory internals.
+ 
+ But this is not the desired behaviour because 
+ when s_value becomes not null another thread takes this as singleton object
+ and this object becomes invalid.
+ 
+ the desired behaviour is:
+ 
+ allocate new memory.
+ call constructor and initialize memory internals.
+ set s_value to point to this memory.
+ 
+ 
+  // Still not created, create it
+  Singleton temp = new Singleton();
+		  
+  // Save the reference in s_value (see discussion for details)
+  Volatile.Write(ref s_value, temp);
+ 
+ 
+ Volatile Write prevents code rearrangements
+ by C# .NET code optimization
+ It generates full memory barrier before and all
+ writes will be done into memory before volatile write.
+ 
+ internal sealed class Singleton 
+ { 
+     private static Singleton s_value = new Singleton();
+	 
+     // Private constructor prevents any code outside this class from creating an instance
+     private Singleton() 
+	 {
+        // Code to initialize the one Singleton object goes here...
+     }
+	 
+     // Public, static method that returns the Singleton object (creating it if necessary)
+     public static Singleton GetSingleton() { return s_value; }
+}
+
+
+Because the CLR automatically calls a type’s class constructor 
+the first time code attempts to access a member of the class, 
+the first time a thread queries Singleton’s GetSingleton method, 
+the CLR will automatically call the class constructor, 
+which creates an instance of the object. 
+Furthermore, the CLR already ensures that calls 
+to a class constructor are thread safe. 
+
+internal sealed class Singleton 
+{
+    private static Singleton s_value = null;
+	
+    // Private constructor prevents any code outside this class from creating an instance
+    private Singleton() 
+	{
+       // Code to initialize the one Singleton object goes here...
+    }
+	
+    // Public, static method that returns the Singleton object (creating it if necessary)
+    public static Singleton GetSingleton() 
+	{
+       if (s_value != null) return s_value;
+	   
+	   // Create a new Singleton and root it 
+	   // if another thread didn't do it first
+       Singleton temp = new Singleton();
+	   
+       Interlocked.CompareExchange(ref s_value, temp, null);
+	   
+	   // If this thread lost, then the second Singleton object gets GC'd
+       return s_value; // Return reference to the single object
+	}
+}
+
+
+65. Condition variable pattern.
+
+internal sealed class ConditionVariablePattern 
+{
+    private readonly Object m_lock = new Object();
+    private Boolean m_condition = false;
+	
+    public void Thread1() 
+	{ 
+        Monitor.Enter(m_lock); // Acquire a mutual-exclusive lock
+		
+        // While under the lock, test the complex condition "atomically"
+        while (!m_condition) 
+		{
+            // If condition is not met, wait for another thread to change the condition
+            Monitor.Wait(m_lock); // Temporarily release lock so other threads can get it
+        }
+		
+        // The condition was met, process the data...
+        Monitor.Exit(m_lock); // Permanently release lock
+    }
+	
+    public void Thread2() 
+	{
+        Monitor.Enter(m_lock);      // Acquire a mutual-exclusive lock
+		
+        // Process data and modify the condition...
+        m_condition = true;
+		
+        // Monitor.Pulse(m_lock);   // Wakes one waiter AFTER lock is released
+        Monitor.PulseAll(m_lock);   // Wakes all waiters AFTER lock is released
+		
+        Monitor.Exit(m_lock); // Release lock
+}
+}
+
+If the condition is false, then you want the thread to spin on the condition, 
+but spinning wastes CPU time, so instead, the thread calls Wait. 
+Wait releases the lock so that another thread can get it and blocks the calling thread.
+
+The Thread2 method shows code that the second thread executes. 
+It calls Enter to take ownership of the lock, processes some data, 
+which results in changing the state of the condition, 
+and then calls Pulse or PulseAll, which will unblock a thread from its Wait call. 
+Pulse unblocks the longest waiting thread (if any), 
+whereas PulseAll unblocks all waiting threads (if any).
+
+
+internal sealed class SynchronizedQueue<T> 
+{
+    private readonly Object   m_lock = new Object();
+    private readonly Queue<T> m_queue = new Queue<T>();
+	
+    public void Enqueue(T item) 
+	{
+        Monitor.Enter(m_lock);
+		
+        // After enqueuing an item, wake up any/all waiters
+        m_queue.Enqueue(item);
+        Monitor.PulseAll(m_lock);
+		
+        Monitor.Exit(m_lock);
+    }
+	
+    public T Dequeue() 
+	{
+        Monitor.Enter(m_lock);
+		
+        // Loop while the queue is empty (the condition)
+        while (m_queue.Count == 0)
+            Monitor.Wait(m_lock);
+			
+        // Dequeue an item from the queue and return it for processing
+        T item = m_queue.Dequeue();
+		
+        Monitor.Exit(m_lock);
+        return item;
+    }
+}
+
+66. What is TaskCompletionSource?
+
+Earlier I showed the code for a client application 
+that makes a request over a named pipe. 
+Let me show the server side of this code now.
+
+
+private static async void StartServer() 
+{
+    while (true) 
+	{
+        var pipe = new NamedPipeServerStream(
+		                 c_pipeName, 
+						 PipeDirection.InOut, 
+						 -1,
+                         PipeTransmissionMode.Message, 
+						 PipeOptions.Asynchronous | PipeOptions.WriteThrough);
+						 
+        // Asynchronously accept a client connection
+        // NOTE: NamedPipServerStream uses the old Asynchronous Programming Model (APM)
+        // I convert the old APM to the new Task model via TaskFactory's FromAsync method
+		
+        await Task.Factory.FromAsync(
+		                 pipe.BeginWaitForConnection, 
+						 pipe.EndWaitForConnection, 
+						 null);
+		
+        // Start servicing the client, which returns immediately because it is asynchronous
+        ServiceClientRequestAsync(pipe);
+    }
+}
+
+
+For the old event-based programming model, the FCL 
+does not include any helper methods to adapt this model into the new Task-based model. 
+So you have to hand-code it. 
+Here is code demonstrating how to wrap a WebClient 
+(which uses the event-based programming model) 
+with a TaskCompletionSource so it can be awaited on in an async function.
+
+
+private static async Task<String> AwaitWebClient(Uri uri) 
+{
+    // The System.Net.WebClient class supports the Event-based Asynchronous Pattern
+    var wc = new System.Net.WebClient();
+	
+    // Create the TaskCompletionSource and its underlying Task object
+    var tcs = new TaskCompletionSource<String>();
+	
+    // When a string completes downloading, the WebClient object raises the
+    // DownloadStringCompleted event, which completes the TaskCompletionSource
+	
+    wc.DownloadStringCompleted += (s, e) => 
+	{
+        if (e.Cancelled) 
+	        tcs.SetCanceled();
+	    else if (e.Error != null) 
+		    tcs.SetException(e.Error);
+        else 
+		    tcs.SetResult(e.Result);
+    };
+	
+    // Start the asynchronous operation
+    wc.DownloadStringAsync(uri);
+	
+    // Now, we can the TaskCompletionSource’s Task 
+	// and process the result as usual
+    String result = await tcs.Task;
+	
+    // Process the resulting string (if desired)...
+    return result;
+}
+
+
+
+
+66. Asyncronous blocking constructions.
+
+Locks are popular but, when held for a long time, 
+they introduce significant scalability issues. 
+What would really be useful is if we had asynchronous synchronization constructs 
+where your code indicates that it wants a lock.
+If the thread can’t have it, it can just return and perform some other work,
+rather than blocking indefinitely.
+Then, when the lock becomes available, 
+your code somehow gets resumed, 
+so it can access the resource that the lock protects.
+
+public Task<Boolean> WaitAsync(Int32 millisecondsTimeout, CancellationToken cancellationToken);
+
+With this, you can synchronize access to a resource asynchronously 
+(without blocking any thread).
+
+private static async Task AccessResourceViaAsyncSynchronization(SemaphoreSlim asyncLock) 
+{
+    // TODO: Execute whatever code you want here...
+    await asyncLock.WaitAsync(); // Request exclusive access to a resource via its lock
+   
+    // When we get here, we know that no other thread is accessing the resource
+    // TODO: Access the resource (exclusively)...
+    // When done accessing resource, relinquish lock so other code can access the resource
+    asyncLock.Release();
+	
+    // TODO: Execute whatever code you want here...
+}
+
+private static void ConcurrentExclusiveSchedulerDemo() 
+{
+    var cesp = new ConcurrentExclusiveSchedulerPair();
+    var tfExclusive = new TaskFactory(cesp.ExclusiveScheduler);
+    var tfConcurrent = new TaskFactory(cesp.ConcurrentScheduler);
+    
+    for (Int32 operation = 0; operation < 5; operation++) 
+	{
+        var exclusive = operation < 2; // For demo, I make 2 exclusive & 3 concurrent
+		
+       (exclusive ? tfExclusive : tfConcurrent).StartNew(() => 
+	   {
+           Console.WriteLine("{0} access", exclusive ? "exclusive" : "concurrent");
+           // TODO: Do exclusive write or concurrent read computation here...
+       });
+    }	
+}
+
+private static async Task AccessResourceViaAsyncSynchronization(AsyncOneManyLock asyncLock) 
+{
+    // TODO: Execute whatever code you want here...
+    // Pass OneManyMode.Exclusive or OneManyMode.Shared for wanted concurrent access
+    await asyncLock.AcquireAsync(OneManyMode.Shared); // Request shared access
+	
+    // When we get here, no threads are writing to the resource; other threads may be reading
+    // TODO: Read from the resource...
+    // When done accessing resource, relinquish lock so other code can access the resource
+    asyncLock.Release();
+	
+    // TODO: Execute whatever code you want here...
+}
+
+
+public sealed class AsyncOneManyLock 
+{
+   #region Lock code
+   
+   private SpinLock m_lock = new SpinLock(true);     // Don't use readonly with a SpinLock
+   
+   private void Lock() 
+   { 
+       Boolean taken = false; 
+	   m_lock.Enter(ref taken); 
+   }
+   
+   private void Unlock() 
+   { 
+       m_lock.Exit(); 
+   }
+   
+   #endregion
+   
+   #region Lock state and helper methods
+   
+   private Int32   m_state = 0;
+   private Boolean IsFree                { get { return m_state == 0; } }
+   private Boolean IsOwnedByWriter       { get { return m_state == -1; } }
+   private Boolean IsOwnedByReaders      { get { return m_state > 0; } }
+   private Int32 AddReaders(Int32 count) { return m_state += count; }
+   
+   private Int32 SubtractReader() { return --m_state; }
+   private void MakeWriter()      { m_state = -1; }
+   private void MakeFree()        { m_state = 0; }
+   
+   #endregion
+   
+   // For the no-contention case to improve performance and reduce memory consumption
+   private readonly Task m_noContentionAccessGranter;
+   
+   // Each waiting writers wakes up via their own TaskCompletionSource queued here
+   private readonly Queue<TaskCompletionSource<Object>> m_qWaitingWriters =
+                   new Queue<TaskCompletionSource<Object>>();
+				   
+   // All waiting readers wake up by signaling a single TaskCompletionSource
+   private TaskCompletionSource<Object> m_waitingReadersSignal =
+                          new TaskCompletionSource<Object>();
+						  
+   private Int32 m_numWaitingReaders = 0;
+   
+   public AsyncOneManyLock() 
+   {
+      m_noContentionAccessGranter = Task.FromResult<Object>(null);
+   }    
+   
+   public Task WaitAsync(OneManyMode mode) 
+   {
+      Task accressGranter = m_noContentionAccessGranter; // Assume no contention
+      Lock();
+	  
+      switch (mode) 
+	  {
+          case OneManyMode.Exclusive:
+              if (IsFree) 
+		      {
+                  MakeWriter(); // No contention
+              }    
+		      else 
+		      {
+                  // Contention: Queue new writer task & return it so writer waits
+			  
+                  var tcs = new TaskCompletionSource<Object>();
+                  m_qWaitingWriters.Enqueue(tcs);
+                  accressGranter = tcs.Task;
+              }
+              break;
+			  
+          case OneManyMode.Shared:
+              if (IsFree || (IsOwnedByReaders && m_qWaitingWriters.Count == 0)) 
+			  {
+                  AddReaders(1); // No contention
+              } 
+			  else 
+			  { 
+			      // Contention
+                  // Contention: Increment waiting readers & return reader task so reader waits
+                  m_numWaitingReaders++;
+                  accressGranter = m_waitingReadersSignal.Task.ContinueWith(t => t.Result);
+              }
+              break;
+      }
+	   
+      Unlock();
+	  
+      return accressGranter;
+   }
+   
+   public void Release() 
+   {
+       TaskCompletionSource<Object> accessGranter = null; // Assume no code is released
+	   
+       Lock();
+	   
+       if (IsOwnedByWriter) 
+	       MakeFree(); // The writer left
+       else 
+	       SubtractReader(); // A reader left
+		   
+       if (IsFree) 
+	   {
+           // If free, wake 1 waiting writer or all waiting readers
+           if (m_qWaitingWriters.Count > 0) 
+		   {
+               MakeWriter();
+               accessGranter = m_qWaitingWriters.Dequeue();
+           } 
+		   else if (m_numWaitingReaders > 0) 
+		   {
+               AddReaders(m_numWaitingReaders);
+               m_numWaitingReaders   = 0;
+               accessGranter         = m_waitingReadersSignal;
+			   
+               // Create a new TCS for future readers that need to wait
+               m_waitingReadersSignal = new TaskCompletionSource<Object>();
+           }
+       }
+	   
+	   Unlock();
+	   
+	   // Wake the writer/reader outside the lock to reduce
+       // chance of contention improving performance
+       if (accessGranter != null) 
+	       accessGranter.SetResult(null);
+   }
+}
+
+
+67. Concurrent collection classes.
+
+ConcurrentQueue<T>, 
+ConcurrentStack<T>,
+ConcurrentBag<T>,
+ConcurrentDictionary<TKey, TValue>,
+
+All these collection classes are non-blocking. 
+That is, if a thread tries to extract an element 
+when no such element exists, the thread returns immediately; 
+
+the thread does not block waiting for an element to appear. 
+This is why methods like TryDequeue, TryPop, TryTake, and TryGetValue 
+all return true if an item was obtained and returns false, if not.
+
+
+68. is, as?
+
+The is operator checks whether an
+object is compatible with a given type, and the result of the evaluation is a Boolean: true or false.
+The is operator will never throw an exception.
+
+
+69. How Things Relate at Run Time?
+
+Thread stack:
+
+void M1()
+{
+   // some other local variables
+   var1
+   var2
+   var3
+   String name = "Joe";
+   M2(name);
+   doit();
+   ...
+   return;
+}
+
+void M2(string s)
+{
+   int length = s.Length;
+   int tally;
+   ...
+   return;
+}
+
+--before calling M2:
+
+Stack
+var1
+var2
+var3
+name
+
+--going into method M2:
+
+Stack
+var1
+var2
+var3
+name
+s     //exact copy of name
+return address [doIt method]
+
+--inside method:
+
+Stack
+var1
+var2   // M1 locals
+var3
+name
+s      // exact copy of name
+return address [doIt method]
+length
+tally  // M2 locals.
+
+--when return from M2:
+return to doIt method.
+and delete all M2 stack variables:
+
+var1
+var2   // M1 locals
+var3
+name
+
+internal class Employee 
+{
+   public Int32 GetYearsEmployed() 
+   { 
+     ... 
+   }
+   
+   public virtual String GetProgressReport() 
+   { 
+     ... 
+   }
+   
+   public static Employee Lookup(String name) 
+   { 
+     ... 
+   }
+}
+
+internal sealed class Manager : Employee 
+{
+   public override String GetProgressReport() 
+   { 
+     ... 
+   }
+}
+
+void M3() 
+{
+   Employee e;
+   Int32 year;
+   
+   e = new Manager();
+   e = Employee.Lookup("Joe");
+   
+   year = e.GetYearsEmployed();
+   e.GetProgressReport();
+}
+
+It notices all of the types that are referred to inside M3: 
+Employee, Int32, Manager, and String (because of "Joe"). 
+
+Then, using the assembly’s metadata, 
+the CLR extracts information about these types 
+and creates some data structures to represent the types themselves.
+
+When M3’s prologue code executes, memory for 
+the local variables must be allocated from the thread’s stack,
+
+stack:
+e = null
+year = 0
+
+e = new Manager();
+allocates memory in a heap 
+and set e to this address.
+
+e = Employee.Lookup("Joe");
+it creates new Manager object and sets it
+to e variable. So the previous manager is no
+longer being referenced and can be garbage collected.
+
+
+When calling a virtual instance method, 
+the JIT compiler produces some additional code in the method,
+which will be executed each time the method is invoked. 
+
+This code will first look in the variable being used 
+to make the call and then follow the address to the calling object. 
+In this case, the variable e points to the Manager object representing “Joe.”
+
+
+69. Overflow?
+
+
+UInt32 invalid = unchecked((UInt32) (-1)); // OK
+
+And here is an example that uses the checked operator.
+
+Byte b = 100;
+b      = checked((Byte) (b + 200)); // OverflowException is thrown
+
+checked 
+{ 
+   // Start of checked block
+   Byte b = 100;
+   b = (Byte) (b + 200); // This expression is checked for overflow.
+} 
+// End of checked block
+
+
+70. Reference Types and Value Types?
+
+Reference Types drawbacks:
+- The memory must be allocated from the managed heap.
+- Each object allocated on the heap has some additional overhead members associated with it
+that must be initialized.
+- The other bytes in the object (for the fields) are always set to zero.
+- Allocating an object from the managed heap could force a garbage collection to occur.
+
+Even though you can’t choose a base type when defining your own value type, a value type
+can implement one or more interfaces if you choose. In addition, all value types are sealed, which
+prevents a value type from being used as a base type for any other reference type or value type. So,
+for example, it’s not possible to define any new types using Boolean, Char, Int32, UInt64, Single,
+Double, Decimal, and so on as base types.
+
+// Reference type (because of 'class')
+class SomeRef { public Int32 x; }
+
+// Value type (because of 'struct')
+struct SomeVal { public Int32 x; }
+
+static void ValueTypeDemo() 
+{
+    SomeRef r1 = new SomeRef(); // Allocated in heap
+    SomeVal v1 = new SomeVal(); // Allocated on stack
+
+	r1.x = 5;   // Pointer dereference
+    v1.x = 5;   // Changed on stack
+	
+	SomeRef r2 = r1; // Copies reference (pointer) only
+    SomeVal v2 = v1; // Allocate on stack & copies members
+	
+	r1.x = 8;   // Changes r1.x and r2.x
+    v1.x = 9;   // Changes v1.x, not v2.x
+}
+
+SomeVal  v1 = new SomeVal(); // Allocated on stack
+
+The preceding line could have been written like this instead.
+SomeVal  v1;    // Allocated on stack
+
+// These two lines compile because C# thinks that
+// v1's fields have been initialized to 0.
+SomeVal v1 = new SomeVal();
+Int32   a = v1.x;
+
+// These two lines don't compile because C# doesn't think that
+// v1's fields have been initialized to 0.
+SomeVal v1;
+Int32   a = v1.x; // error CS0170: Use of possibly unassigned field 'x'
+
+
+In particular, you should declare a type as a value type 
+if all the following statements are true:
+
+- The type acts as a primitive type. 
+  Specifically, this means that it is a fairly simple type 
+  that has no members that modify any of its instance fields. 
+  When a type offers no members that alter its fields, 
+  we say that the type is immutable.
+  
+- The type doesn’t need to inherit from any other type.
+
+- The type won’t have any other types derived from it.
+
+- Instances of the type are small (approximately 16 bytes or less).
+
+- Instances of the type are large (greater than 16 bytes) 
+  and are not passed as method parameters or returned from methods.
+
+- Because you can’t define a new value type or a new reference type 
+  by using a value type as a base class, 
+  you shouldn’t introduce any new virtual methods into a value type. 
+  No methods can be abstract, and all methods are implicitly sealed 
+  (can’t be overridden).
+  
+Because a value type variable isn’t a pointer, 
+it’s not possible to generate a NullReferenceException
+when accessing a value type. The CLR does offer a special feature that
+adds the notion of nullability to a value type.
+
+When you assign a value type variable to another value type variable, 
+a field-by-field copy is made. 
+When you assign a reference type variable to another reference type variable, 
+only the memory address is copied.
+
+
+71. How the CLR Controls the Layout of a Type’s Fields?
+
+To improve performance, the CLR is capable of arranging the fields of a type any way it chooses.
+For example, the CLR might reorder fields in memory so that object references are grouped
+together and data fields are properly aligned and packed. However, when you define a type,
+you can tell the CLR whether it must keep the type’s fields in the same order as the developer
+specified them or whether it can reorder them as it sees fit.
+
+To this attribute’s constructor, 
+you can pass:
+ 
+LayoutKind.Auto         to have the CLR arrange the fields, 
+LayoutKind.Sequential   to have the CLR preserve your field layout, or LayoutKind.
+LayoutKind.Explicit     to explicitly arrange the fields in memory by using offsets.
+
+You should be aware that Microsoft’s C# compiler 
+selects LayoutKind.Auto for reference types (classes) 
+and LayoutKind.Sequential for value types (structures).
+
+
+72. Boxing and unboxing?
+
+// Declare a value type.
+struct Point 
+{
+    public Int32 x, y;
+}
+
+public static void Main() 
+{
+    ArrayList a = new ArrayList();
+    Point p;                      // Allocate a Point (not in the heap).
+	
+    for (Int32 i = 0; i < 10; i++) 
+	{
+        p.x = p.y = i; // Initialize the members in the value type.
+        a.Add(p);      // Box the value type and add the
+        // reference to the Arraylist.
+    }
+    ...
+}
+
+For this code to work, the Point value type
+must be converted into a true heap-managed object, 
+and a reference to this object must be obtained.
+
+It’s possible to convert a value type to a reference type 
+by using a mechanism called boxing. 
+Internally, here’s what happens 
+when an instance of a value type is boxed:
+
+  1. Memory is allocated from the managed heap. 
+     The amount of memory allocated is the size
+     required by the value type’s fields plus 
+	 the two additional overhead members 
+	 (the type object pointer and the sync block index) 
+	 required by all objects on the managed heap.
+	 
+  2. The value type’s fields are copied to the newly allocated heap memory.
+  
+  3. The address of the object is returned. 
+     This address is now a reference to an object; 
+	 the value type is now a reference type.
+	 
+But one of the biggest improvements
+is that the generic collection classes 
+allow you to work with collections of value types
+without requiring that items in the collection be boxed/unboxed.
+
+Now that you know how boxing works, let’s talk about unboxing. 
+Let’s say that you want to grab the first element 
+out of the ArrayList by using the following code.
+
+Point p = (Point) a[0];
+
+For this to work, all of the fields contained in the boxed
+Point object must be copied into the value type variable, 
+p, which is on the thread’s stack.
+
+The CLR accomplishes this copying in two steps. 
+First, the address of the Point fields 
+in the boxed Point object is obtained. 
+This process is called unboxing. 
+Then, the values of these fields are copied 
+from the heap to the stack-based value type instance.
+
+public static void Main() 
+{
+    Int32  v = 5;    // Create an unboxed value type variable.
+    Object o = v;    // o refers to a boxed Int32 containing 5.
+    v = 123;         // Changes the unboxed value to 123
+    Console.WriteLine(v + ", " + (Int32) o); // Displays "123, 5"
+}
+
+// Box v and leave the pointer on the stack for Concat.
+IL_000c: ldloc.0
+IL_000d: box [mscorlib]System.Int32
+
+// Unbox o: Get the pointer to the In32's field on the stack.
+IL_0017: ldloc.1
+IL_0018: unbox.any [mscorlib]System.Int32
+
+// Box the Int32 and leave the pointer on the stack for Concat.
+IL_001d: box [mscorlib]System.Int32
+
+WriteLine wants a String object passed to it, 
+but there is no string object. 
+Instead, these three items are available: 
+  an unboxed Int32 value type instance (v), 
+  a String (which is a reference type), 
+  and a reference to a boxed Int32 value type instance (o) 
+  that is being cast to an unboxed Int32.
+
+public static String Concat(Object arg0, Object arg1, Object arg2);
+
+For the first parameter, arg0, v is passed. 
+But v is an unboxed value parameter 
+and arg0 is an Object, so v must be boxed 
+and the address to the boxed v is passed for arg0.
+
+Finally, for the arg2 parameter,
+o (a reference to an Object) is cast to an Int32. 
+This requires an unboxing operation (but no copy operation), 
+which retrieves the address of the unboxed Int32 
+contained inside the boxed Int32.
+This unboxed Int32 instance must be boxed again 
+and the new boxed instance’s memory address passed for Concat’s arg2 parameter.
+
+However, if your override of the virtual method calls 
+into the base type's implementation of the method, 
+then the value type instance does get boxed 
+when calling the base type's implementation 
+so that a reference to a heap object gets passed 
+to the this pointer into the base method.
+
+However, calling a nonvirtual inherited method 
+(such as GetType or MemberwiseClone) 
+always requires the value type to be boxed 
+because these methods are defined by System.Object, 
+so the methods expect the this argument to be 
+a pointer that refers to an object on the heap.
+
+In addition, casting an unboxed instance of a value type 
+to one of the type’s interfaces requires 
+the instance to be boxed, because interface variables 
+must always contain a reference to an object on the heap.
+
+internal struct Point : IComparable 
+{
+    private readonly Int32 m_x, m_y;
+	
+    // Constructor to easily initialize the fields
+    public Point(Int32 x, Int32 y) 
+	{
+        m_x = x;
+        m_y = y;
+    }
+	
+    // Override ToString method inherited from System.ValueType
+    public override String ToString() 
+	{
+       // Return the point as a string. Note: calling ToString prevents boxing
+       return String.Format("({0}, {1})", m_x.ToString(), m_y.ToString());
+    }
+	
+    // Implementation of type-safe CompareTo method
+    public Int32 CompareTo(Point other) 
+	{
+       // Use the Pythagorean Theorem to calculate
+       // which point is farther from the origin (0, 0)
+       return Math.Sign(Math.Sqrt(m_x * m_x + m_y * m_y)
+            - Math.Sqrt(other.m_x * other.m_x + other.m_y * other.m_y));
+    }
+	
+	// Implementation of IComparable's CompareTo method
+    public Int32 CompareTo(Object o) 
+	{
+       if (GetType() != o.GetType()) 
+	   {
+           throw new ArgumentException("o is not a Point");
+       }
+	   
+       // Call type-safe CompareTo method
+       return CompareTo((Point) o);
+    }
+}
+
+
+// Create two Point instances on the stack.
+Point p1 = new Point(10, 10);
+Point p2 = new Point(20, 20);
+
+// p1 does NOT get boxed to call ToString (a virtual method).
+Console.WriteLine(p1.ToString());    // "(10, 10)"
+
+
+At first, you’d think that p1 would have to be boxed 
+because ToString is a virtual method 
+that is inherited from the base type, System.ValueType. 
+Normally, to call a virtual method, the CLR needs to determine
+the object’s type in order to locate the type’s method table. 
+Because p1 is an unboxed value type, there’s no type object pointer. 
+However, the just-in-time (JIT) compiler sees 
+that Point overrides the ToString method, 
+and it emits code that calls ToString directly (nonvirtually)
+without having to do any boxing.
+
+
+// p DOES get boxed to call GetType (a non-virtual method).
+Console.WriteLine(p1.GetType());   // "Point"
+
+Calling GetType In the call to the nonvirtual GetType method, p1 does have to be boxed.
+The reason is that the Point type inherits GetType from System.Object. 
+So to call GetType, the CLR must use a pointer to a type object, 
+which can be obtained only by boxing p1.
+
+// p1 does NOT get boxed to call CompareTo.
+// p2 does NOT get boxed because CompareTo(Point) is called.
+Console.WriteLine(p1.CompareTo(p2));   // "-1"
+
+In the first call to CompareTo, p1 doesn’t have to be boxed
+because Point implements the CompareTo method, 
+and the compiler can just call it directly.
+
+// p1 DOES get boxed, and the reference is placed in c.
+IComparable c = p1;
+Console.WriteLine(c.GetType());   // "Point"
+
+// p1 does NOT get boxed to call CompareTo.
+// Because CompareTo is not being passed a Point variable,
+// CompareTo(Object) is called, which requires a reference to
+// a boxed Point.
+// c does NOT get boxed because it already refers to a boxed Point.
+Console.WriteLine(p1.CompareTo(c));    // "0"
+
+// c does NOT get boxed because it already refers to a boxed Point.
+// p2 does get boxed because CompareTo(Object) is called.
+Console.WriteLine(c.CompareTo(p2));// "-1"
+
+// c is unboxed, and fields are copied into p2.
+p2 = (Point) c;
+
+
+
+73. Changing Fields in a Boxed Value Type 
+by Using Interfaces (and Why You Shouldn’t Do This)?
+
+// Point is a value type.
+internal struct Point 
+{
+    private Int32 m_x, m_y;
+	
+    public Point(Int32 x, Int32 y) 
+	{
+        m_x = x;
+        m_y = y;
+    }
+	
+    public void Change(Int32 x, Int32 y) 
+	{
+        m_x = x; 
+		m_y = y;
+    }
+	
+    public override String ToString() 
+	{
+        return String.Format("({0}, {1})", m_x.ToString(), m_y.ToString());
+    }
+}
+
+public static void Main() 
+{
+    Point p = new Point(1, 1);
+    Console.WriteLine(p);
+	
+    p.Change(2, 2);
+    Console.WriteLine(p);
+	
+    Object o = p;
+    Console.WriteLine(o);
+	
+    ((Point) o).Change(3, 3);
+    Console.WriteLine(o);
+}
+
+   I want to call the Change method 
+to update the fields in the boxed Point object. 
+However, Object (the type of the variable o) 
+doesn’t know anything about the Change method, 
+so I must first cast o to a Point.
+
+   Casting o to a Point unboxes o and
+copies the fields in the boxed Point 
+to a temporary Point on the thread’s stack!
+
+   The m_x and m_y fields of this temporary point are changed to 3 and 3, 
+but the boxed Point isn’t affected by this call to Change. 
+When WriteLine is called the fourth time, (2, 2) is displayed again. 
+Many developers do not expect this.
+
+// Interface defining a Change method
+internal interface IChangeBoxedPoint 
+{
+    void Change(Int32 x, Int32 y);
+}
+
+// Point is a value type.
+internal struct Point : IChangeBoxedPoint 
+{
+    private Int32 m_x, m_y;
+	
+    public Point(Int32 x, Int32 y) 
+	{
+       m_x = x;
+       m_y = y;
+    }
+	
+    public void Change(Int32 x, Int32 y) 
+	{
+       m_x = x; m_y = y;
+    }
+	
+    public override String ToString() 
+	{
+       return String.Format("({0}, {1})", m_x.ToString(), m_y.ToString());
+    }
+}
+
+public static void Main() 
+{
+    Point p = new Point(1, 1);
+    Console.WriteLine(p);                    (1)
+	
+    p.Change(2, 2); 
+    Console.WriteLine(p);                    (2)
+	
+    Object o = p;
+    Console.WriteLine(o);                    (3)
+	
+    ((Point) o).Change(3, 3);
+    Console.WriteLine(o);                    (4)
+	
+    // Boxes p, changes the boxed object and discards it
+    ((IChangeBoxedPoint) p).Change(4, 4);
+    Console.WriteLine(p);                    (5)
+	
+	// Changes the boxed object and shows it
+    ((IChangeBoxedPoint) o).Change(5, 5);
+    Console.WriteLine(o);                    (6)
+}
+
+Fifth call of Change method:
+
+In the first example, the unboxed Point, p, is cast to an IChangeBoxedPoint. 
+This cast causes the value in p to be boxed. 
+Change is called on the boxed value, which does change its m_x and m_y fields
+to 4 and 4, but after Change returns, 
+the boxed object is immediately ready to be garbage collected.
+So the fifth call to WriteLine displays (2, 2). Many developers won’t expect this result.
+
+In the last example, the boxed Point referred to by o is cast to an IChangeBoxedPoint. No boxing
+is necessary here because o is already a boxed Point. Then Change is called, which does change
+the boxed Point’s m_x and m_y fields. The interface method Change has allowed me to change the
+fields in a boxed Point object! Now, when WriteLine is called, it displays (5, 5) as expected. The
+purpose of this whole example is to demonstrate how an interface method is able to modify the fields
+of a boxed value type. In C#, this isn’t possible without using an interface method.
+
+Earlier in this chapter, I mentioned that value types should be immutable: that
+is, they should not define any members that modify any of the type’s instance fields. 
+
+
+73. The dynamic Primitive Type? 
+
+This dynamic expression/ variable can then be used to invoke 
+a member such as a field, a property/indexer, 
+a method, delegate, and unary/binary/conversion operators.
+
+When your code invokes a member by using a dynamic
+expression/variable, the compiler generates special IL code 
+that describes the desired operation. 
+This special code is referred to as the payload.
+
+internal static class DynamicDemo 
+{
+    public static void Main() 
+	{
+       dynamic value;
+	   
+       for (Int32 demo = 0; demo < 2; demo++) 
+	   {
+           value = (demo == 0) ? 
+		           (dynamic) 5 : 
+				   (dynamic) "A";
+				   
+           value = value + value;
+           M(value);
+       }
+    }
+	
+    private static void M(Int32 n) 
+	{ 
+	   Console.WriteLine("M(Int32): " + n); 
+	}
+	
+    private static void M(String s) 
+	{ 
+	   Console.WriteLine("M(String): " + s); 
+	}
+}
+
+The first time the + operator evaluates, 
+value contains 5 (an Int32) 
+and the result is 10 (also an Int32). 
+
+This puts this result in the value variable. 
+Then, the M method is called, passing it value. 
+For the call to M, the compiler will emit payload code that will, 
+at run time, examine the actual type of the argument 
+being passed to M and determine which overload of the M method to call. 
+When value contains an Int32, the overload of M 
+that takes an Int32 parameter is called.
+
+The second time the + operator evaluates, 
+value contains “A” (a String) and the result is “AA” 
+(the result of concatenating “A” with itself).
+
+
+74. Constants?
+
+A constant is a symbol that has a never-changing value. 
+When defining a constant symbol, its value must be determinable at compile time.
+
+The compiler then saves the constant’s value in the assembly’s metadata. 
+This means that you can define a constant only 
+for types that your compiler considers primitive types. 
+In C#, the following types are primitives and can be used to define constants: 
+Boolean, Char, Byte, SByte, Int16, UInt16, Int32, 
+UInt32, Int64, UInt64, Single, Double, Decimal, and String. 
+However, C# also allows you to define a constant variable 
+of a non-primitive type if you set the value to null.
+
+Because a constant value never changes, constants 
+are always considered to be part of the defining type. 
+In other words, constants are always considered 
+to be static members, not instance members.
+Defining a constant causes the creation of metadata.
+
+When code refers to a constant symbol, compilers look up 
+the symbol in the metadata of the assembly that defines the constant, 
+extract the constant’s value, 
+and embed the value in the emitted Intermediate Language (IL) code. 
+Because a constant’s value is embedded directly in code, 
+constants don’t require any memory to be allocated for them at run time.
+
+In addition, you can’t get the address
+of a constant and you can’t pass a constant by reference.
+
+using System;
+
+public sealed class SomeLibraryType 
+{
+   // NOTE: C# doesn't allow you to specify static for constants
+   // because constants are always implicitly static.
+   public const Int32 MaxEntriesInList = 50;
+}
+
+Then use the following code to build an application assembly.
+
+using System;
+
+public sealed class Program 
+{
+   public static void Main() 
+   {
+      Console.WriteLine(
+	     "Max entries supported in list: "
+         + SomeLibraryType.MaxEntriesInList);
+   }
+}
+
+You’ll notice that this application code references 
+the MaxEntriesInList constant defined
+in the SomeLibraryType class. 
+
+When the compiler builds the application code, it sees that MaxEntriesInList
+is a constant literal with a value of 50 
+and embeds the Int32 value of 50 right inside
+the application’s IL code, 
+as you can see in the following IL code. 
+
+In fact, after building the application assembly, 
+the DLL assembly isn’t even loaded at run time 
+and can be deleted from the disk because
+the compiler does not even add a reference 
+to the DLL assembly in the application's metadata.
+
+
+75. Readonly fields vs constants?
+
+You can assign a value to a readonly field only in the following contexts:
+
+- When the variable is initialized in the declaration, for example:
+  public readonly int y = 5;
+  
+- For an instance field, in the instance constructors of the class 
+  that contains the field declaration, or for a static field, 
+  in the static constructor of the class that contains the field declaration. 
+  These are also the only contexts in which it is valid 
+  to pass a readonly field as an out or ref parameter.
+  
+The readonly keyword is different from the const keyword. 
+A const field can only be initialized at the declaration of the field. 
+A readonly field can be initialized either at the declaration or in a constructor. 
+Therefore, readonly fields can have different values depending on the constructor used. 
+Also, while a const field is a compile-time constant, 
+the readonly field can be used for runtime constants as in the following example:  
+
+
+75. Passing Parameters by Reference to a Method?
+
+When reference type objects are passed, the reference (or pointer) 
+to the object is passed (by value) to the method. 
+This means that the method can modify the object 
+and the caller will see the change. 
+For value type instances, a copy of the instance is passed to the method.
+
+This means that the method gets its own private copy 
+of the value type and the instance in the caller isn’t affected.
+
+public static void Main() 
+{
+    Int32   x;             // x is uninitialized.
+    GetVal(out x);         // x doesn’t have to be initialized.
+    Console.WriteLine(x);  // Displays "10"
+}
+
+private static void GetVal(out Int32 v) 
+{
+    v = 10;   // This method must initialize v.
+}
+
+In this code, x is declared in Main’s stack frame. 
+The address of x is then passed to GetVal. 
+GetVal’s v is a pointer to the Int32 value in Main’s stack frame. 
+Inside GetVal, the Int32 that v points to is changed to 10. 
+When GetVal returns, Main’s x has a value of 10, 
+and 10 is displayed on the console.
+Using out with large value types is efficient 
+because it prevents instances of the value type’s
+fields from being copied when making method calls.
+Using out with large value types is efficient 
+because it prevents instances of the value type’s
+fields from being copied when making method calls.
+
+public static void Main() 
+{
+    Int32 x = 5;           // x is initialized.
+    AddVal(ref x);         // x must be initialized.
+    Console.WriteLine(x);  // Displays "15"
+}
+
+private static void AddVal(ref Int32 v) 
+{
+    v += 10;     // This method can use the initialized value in v.
+}
+
+In this code, x is also declared in Main’s stack frame and is initialized to 5. 
+The address of x is then passed to AddVal. 
+AddVal’s v is a pointer to the Int32 value in Main’s stack frame.
+
+In this code, x is also declared in Main’s stack frame and is initialized to 5. 
+The address of x is then passed to AddVal. 
+AddVal’s v is a pointer to the Int32 value in Main’s stack frame. 
+Inside AddVal, the Int32 that v points to is required to have a value already.
+
+
+
+76. Raising an Event in a Thread-Safe Way?
+
+// Version 1
+protected virtual void OnNewMail(NewMailEventArgs e) 
+{
+    if (NewMail != null) 
+	    NewMail(this, e);
+}
+
+The problem with the OnNewMail method is that 
+the thread could see that NewMail is not null, 
+and then, just before invoking NewMail, 
+another thread could remove a delegate from
+the chain making NewMail null, 
+resulting in a NullReferenceException being thrown. 
+To fix this race condition, many developers 
+write the OnNewMail method as follows.
+
+// Version 2
+protected virtual void OnNewMail(NewMailEventArgs e) 
+{
+    EventHandler<NewMailEventArgs> temp = NewMail;
+	
+    if (temp != null) 
+	    temp(this, e);
+}
+
+However, what a lot of developers don’t realize 
+is that this code could be optimized by the compiler 
+to remove the local temp variable entirely. 
+If this happens, this version of the code is identical to the first version, 
+so a NullReferenceException is still possible.
+
+To really fix this code, you should rewrite OnNewMail like the following.
+// Version 3
+protected virtual void OnNewMail(NewMailEventArgs e) 
+{
+    EventHandler<NewMailEventArgs> temp = Volatile.Read(ref NewMail);
+	
+    if (temp != null) 
+	    temp(this, e);
+}
+
+The call to Volatile.Read forces NewMail to be read at the point 
+of the call and the reference really has to be copied to the temp variable now. 
+Then, temp will be invoked only if it is not null. 
+See Chapter 29, “Primitive Thread Synchronization Constructs,” 
+for more information about the Volatile.Read method.
+
+60. How the Compiler Implements an Event?
+
+public event EventHandler<NewMailEventArgs> NewMail;
+
+// 1. A PRIVATE delegate field that is initialized to null
+private EventHandler<NewMailEventArgs> NewMail = null;
+
+// 2. A PUBLIC add_Xxx method (where Xxx is the Event name)
+// Allows methods to register interest in the event.
+public void add_NewMail(EventHandler<NewMailEventArgs> value) 
+{
+    // The loop and the call to CompareExchange is all just a fancy way
+    // of adding a delegate to the event in a thread-safe way
+    EventHandler<NewMailEventArgs>prevHandler;
+    
+    EventHandler<NewMailEventArgs> newMail = this.NewMail;
+	
+    do 
+	{
+        prevHandler = newMail;
+		
+        EventHandler<NewMailEventArgs> newHandler =
+           (EventHandler<NewMailEventArgs>)
+		      Delegate.Combine(prevHandler, value);
+
+ 	    //  NOTE: the thread could be preempted here!
+        //  if (target == startVal) target = desiredVal
+        //  Value prior to potential change is returned
+        currentVal = Interlocked.CompareExchange(ref target, desiredVal, startVal);
+
+        // Return Value
+        // Type: System.Double
+        // The original value of this.NewMail.		
+        newMail = Interlocked
+		   .CompareExchange<EventHandler<NewMailEventArgs>>(
+               ref this.NewMail, newHandler, prevHandler);
+    } while (newMail != prevHandler); 	
+}
+
+Return Value
+Type: System.Double
+The original value in location1.
+
+// 3. A PUBLIC remove_Xxx method (where Xxx is the Event name)
+// Allows methods to unregister interest in the event.
+public void remove_NewMail(EventHandler<NewMailEventArgs> value) 
+{
+   // The loop and the call to CompareExchange is all just a fancy way
+   // of removing a delegate from the event in a thread-safe way
+   EventHandler<NewMailEventArgs> prevHandler;
+   
+   EventHandler<NewMailEventArgs> newMail = this.NewMail;
+   
+   do 
+   {
+      prevHandler = newMail;
+	  
+      EventHandler<NewMailEventArgs> newHandler =
+         (EventHandler<NewMailEventArgs>) Delegate.Remove(prevHandler, value);
+		 
+      newMail = Interlocked
+	     .CompareExchange<EventHandler<NewMailEventArgs>>(
+             ref this.NewMail, newHandler, prevHandler);
+   } while (newMail != prevHandler);
+}
 
 
 60. How the Compiler Implements an Event?
@@ -2111,11 +4183,39 @@ public void remove_NewMail(EventHandler<NewMailEventArgs> value)
    } while (newMail != prevHandler);
 }
 
-270
 
+61. Example of a deadlock in database and in C# code?
 
+static object object1 = new object();
+static object object2 = new object();
+
+public static void ObliviousFunction()
+{
+    lock (object1)
+    {
+        Thread.Sleep(1000); // Wait for the blind to lead
+        lock (object2)
+        {
+        }
+    }
+}
+
+public static void BlindFunction()
+{
+    lock (object2)
+    {
+        Thread.Sleep(1000); // Wait for oblivion
+        lock (object1)
+        {
+        }
+    }
+}
 
   
+
+
+
+
 
 
 

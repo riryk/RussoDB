@@ -476,6 +476,10 @@
 								RelativePath="src\include\tests\unit\memory\fakememmanager.h"
 								>
 							</File>
+							<File
+								RelativePath=".\memhelper.h"
+								>
+							</File>
 						</Filter>
 						<Filter
 							Name="commands"
@@ -865,6 +869,10 @@
 							RelativePath="src\tests\unit\memory\fakememmanager.c"
 							>
 						</File>
+						<File
+							RelativePath=".\memhelper.c"
+							>
+						</File>
 						<Filter
 							Name="memory_container"
 							>
@@ -915,6 +923,42 @@
 										>
 									</File>
 								</Filter>
+							</Filter>
+							<Filter
+								Name="memsetcreate"
+								>
+								<Filter
+									Name="negative"
+									>
+									<File
+										RelativePath=".\when_create_memory_set_with_malloc_error.c"
+										>
+									</File>
+									<File
+										RelativePath=".\when_create_memory_set_with_malloc_error_and_null_top_context.c"
+										>
+									</File>
+								</Filter>
+								<Filter
+									Name="positive"
+									>
+									<File
+										RelativePath=".\when_create_memory_set.c"
+										>
+									</File>
+									<File
+										RelativePath=".\when_create_memory_set_with_large_min_size.c"
+										>
+									</File>
+								</Filter>
+							</Filter>
+							<Filter
+								Name="reset_memory_from_set"
+								>
+								<File
+									RelativePath=".\when_reset_memory_from_set.c"
+									>
+								</File>
 							</Filter>
 						</Filter>
 					</Filter>

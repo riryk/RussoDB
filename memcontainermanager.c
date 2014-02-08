@@ -14,6 +14,74 @@ unsigned char Log2Table[256] =
 	SeqOf16CopiesOf(8), SeqOf16CopiesOf(8), SeqOf16CopiesOf(8), SeqOf16CopiesOf(8)
 };
 
+MemoryContainer  topMemCont     = NULL;
+MemoryContainer  currentMemCont = NULL;
+MemoryContainer  errorMemCont   = NULL;
+
+FMalloc funcMalloc = NULL;
+FFree   funcFree   = NULL;  
+
+void ctorMemContMan(
+    void*            self, 
+	FMalloc          funcMallocParam,
+	FFree            funcFreeParam)
+{
+	IMemContainerManager _         = (IMemContainerManager)self;
+	IErrorLogger         elog      = _->errorLogger;
+
+	ASSERT_ARG_VOID(elog, funcMalloc == NULL);
+	ASSERT_ARG_VOID(elog, funcFree == NULL);
+
+    funcMalloc = funcMallocParam;
+    funcFree   = funcFreeParam;  
+
+	ASSERT_ARG_VOID(elog, topMemCont == NULL);
+
+    topMemCont = memSetCreate(_,
+	                          NULL,
+                              NULL,
+                              "TopMemoryContainer",
+	                          0,
+	                          8 * 1024,
+	                          8 * 1024);
+
+    currentMemCont = topMemCont;
+    
+	/* Create error memory container.    
+	 * We do not expect much memory to be allocated here.
+	 * We have at least 8K memory to be preserved here
+	 * to treat properly out of memory error.
+	 */
+	errorMemCont = memSetCreate(_,
+		                        topMemCont,
+								topMemCont,
+								"ErrorContainer",
+								8 * 1024,
+                                8 * 1024,
+	                            8 * 1024);
+}
+
+void dtorMemContMan(void*  self)
+{
+    IMemContainerManager  _ = (IMemContainerManager)self;
+    
+	_->resetMemoryFromSet(_, topMemCont);
+
+    ASSERT(elog, funcMalloc != NULL, NULL);
+    ASSERT(elog, funcFree != NULL, NULL);
+
+    block = (MemoryBlock)funcMalloc(blockSize);
+
+	free(topMemCont);
+
+    ASSERT(elog, topMemCont != NULL, NULL);
+    ASSERT(elog, currentMemCont != NULL, NULL);
+    ASSERT(elog, errorMemCont != NULL, NULL);
+
+    funcMalloc    = NULL;
+    funcFree      = NULL; 
+}
+
 /* Calculates the number of a free list
  * depending on size. The free list should 
  * contain a memory chunk of length of a power of two.
@@ -64,18 +132,25 @@ void* allocateChunkBlock(
 	size_t               blockSize = chunkSize + MEM_BLOCK_SIZE + MEM_CHUNK_SIZE;
 
 	MemorySet	  set       = (MemorySet)container;
-    MemoryBlock   block     = (MemoryBlock)malloc(blockSize);
+    MemoryBlock   block;
 	MemoryChunk	  chunk;
 
     void*         chunkPtr;
     size_t        size      = ALIGN_DEFAULT(chunkSize);
+    
+    ASSERT(elog, funcMalloc != NULL, NULL);
+    block = (MemoryBlock)funcMalloc(blockSize);
 
 	/* Report malloc error */
 	if (block == NULL)
+	{
+		showMemStat(_, topMemCont, 0);
+
 		elog->log(LOG_ERROR, 
 		          ERROR_CODE_OUT_OF_MEMORY, 
 				  "Out of memory. Failed request size: %lu", 
 				  chunkSize);
+	}
 
 	block->memset        = set;
 	block->freeStart     = (char*)block + blockSize;
@@ -145,14 +220,19 @@ void* allocateBlock(
 		blockSize <<= 1;
 
 	/* Allocate a new block */
-	block = (MemoryBlock)malloc(blockSize);
+	ASSERT(elog, funcMalloc != NULL, NULL);
+	block = (MemoryBlock)funcMalloc(blockSize);
 
 	/* Report malloc error */
 	if (block == NULL)
+	{
+		showMemStat(_, topMemCont, 0);
+
 		elog->log(LOG_ERROR, 
 		          ERROR_CODE_OUT_OF_MEMORY, 
 				  "Out of memory. Failed request size: %lu", 
 				  chunkSize);
+	}
 
 	block->memset    = set;
 	block->freeStart = ((char*)block) + MEM_BLOCK_SIZE;
@@ -161,8 +241,8 @@ void* allocateBlock(
 	/* If the block size is an initial block size,
 	 * we adjust a keeper block.
 	 */
-	if (set->keeperBlock == NULL && blockSize == set->initBlockSize)
-		set->keeperBlock = block;
+	// if (set->keeperBlock == NULL && blockSize == set->initBlockSize)
+	//	set->keeperBlock = block;
 
 	/* Insert the new block into the head of the freelist */
 	block->next    = set->blockList;
@@ -243,8 +323,11 @@ Bool checkFreeBlockSpace(
 		chunk->sizeRequested = 0;		
 
 		/* Insert the chunk into free list. */
-		chunk->memsetorchunk        = (void*)set->freelist[availFreeInd];
-		set->freelist[availFreeInd] = chunk;
+        chunk->memsetorchunk = (set->freelist[availFreeInd] != NULL) ?
+			(void*)set->freelist[availFreeInd] :
+		    chunk;
+
+        set->freelist[availFreeInd] = chunk;
 	}
     
 	/* Here we have carved the free space up 
@@ -332,7 +415,7 @@ void* allocateMemory(
 	/* If the actual active block does not contain enough
 	 * free space for the chunk we should create a new block.
 	 */
-	if (block == NULL || checkFreeBlockSpace(_, set, block, chunkSize))
+	if (block == NULL || !checkFreeBlockSpace(_, set, block, chunkSize))
         block = allocateBlock(_, chunkSize, container);
 
     /* do the allocation */
@@ -368,8 +451,7 @@ MemoryContainer memContCreate(
 	MemoryContainer      parent,
     MemContType          type, 
 	size_t               size,
-	char*                name,
-	void*                (*malloc)(size_t size))
+	char*                name)
 {
 	IMemContainerManager  _    = (IMemContainerManager)self;
 	IErrorLogger          elog = _->errorLogger;
@@ -381,9 +463,10 @@ MemoryContainer memContCreate(
 	{
         newCont = (MemoryContainer)allocateMemory(self, container, neededSize);
 	}
-	else
+	else 
 	{
-        newCont = (MemoryContainer)malloc(neededSize); 
+        ASSERT(elog, funcMalloc != NULL, NULL); 
+        newCont = (MemoryContainer)funcMalloc(neededSize); 
 		ASSERT(elog, newCont != NULL, NULL); 
 	}
 
@@ -418,7 +501,10 @@ MemorySet memSetCreate(
 	size_t             initBlockSize,
 	size_t             maxBlockSize)
 {
-	size_t         maxChunkSizeToBlock;
+	IMemContainerManager  _    = (IMemContainerManager)self;
+	IErrorLogger          elog = _->errorLogger;
+
+	size_t         blockMaxChunkSize;
     size_t         blockSize;
 	MemoryBlock    block;
 
@@ -431,14 +517,21 @@ MemorySet memSetCreate(
 								  parent,
                                   MCT_MemorySet, 
 	                              sizeof(SMemorySet),
-	                              name,
-								  malloc);
+	                              name);
+
+	ASSERT(elog, set != NULL, NULL);
 
 	initBlockSize = ALIGN_DEFAULT(initBlockSize);
-	if (initBlockSize < 1024)
-		initBlockSize = 1024;
+
+	/* Check if initBlockSize is less than 
+	 * the minimum allowed value. 
+	 */
+	if (initBlockSize < MEM_BLOCK_INIT_MIN_SIZE)
+		initBlockSize = MEM_BLOCK_INIT_MIN_SIZE;
 
 	maxBlockSize = ALIGN_DEFAULT(maxBlockSize);
+
+	/* maxBlock should be bigger than initBlockSize. */
 	if (maxBlockSize < initBlockSize)
 		maxBlockSize = initBlockSize;
 
@@ -446,6 +539,9 @@ MemorySet memSetCreate(
 	set->maxBlockSize  = maxBlockSize;
 	set->nextBlockSize = initBlockSize;
 
+	/* chunkMaxSize can't be more than chunk_max_size 
+	 * because the number of free lists is restricted.
+	 */
 	set->chunkMaxSize  = MEMORY_CHUNK_MAX_SIZE;
 
 	/* Calculate the max chunk size in comparison 
@@ -454,13 +550,13 @@ MemorySet memSetCreate(
 	 * In the case when all chunks have the maximum size 
 	 * only 1/8 of the block space will be wasted.
 	 */
-	maxChunkSizeToBlock = (maxBlockSize - MEM_BLOCK_SIZE) / MEMORY_CHUNK_MAX_SIZE_TO_BLOCK;
+	blockMaxChunkSize = (maxBlockSize - MEM_BLOCK_SIZE) / MAX_BLOCK_CHUNKS_NUM;
     
 	/* There can be a situation when memory chunk max size is more than 
 	 * the max chunk size to block. So we should syncronize this and
 	 * we divide it on 2 until chunk max size becomes less than maxChunkSizeToBlock.
 	 */
-	while (set->chunkMaxSize + MEM_CHUNK_SIZE > maxChunkSizeToBlock)
+	while (set->chunkMaxSize + MEM_CHUNK_SIZE > blockMaxChunkSize)
 		set->chunkMaxSize >>= 1;
 
     if (minContainerSize <= MEM_BLOCK_SIZE + MEM_CHUNK_SIZE)    
@@ -470,10 +566,22 @@ MemorySet memSetCreate(
 	 * In this case we allocate the first block.
 	 */
 	blockSize = ALIGN_DEFAULT(minContainerSize);
-    block     = (MemoryBlock)malloc(blockSize);
 
+	ASSERT(elog, funcMalloc != NULL, NULL); 
+    block     = (MemoryBlock)funcMalloc(blockSize);
+
+	/* An error has happened. We should report it. */
 	if (block == NULL)
-		; /* An error has happened. We should report it. */
+	{
+        showMemStat(_, topMemCont, 0);
+
+	    elog->log(LOG_ERROR, 
+		          ERROR_CODE_OUT_OF_MEMORY, 
+				  "Out of memory. Failed request size: %lu", 
+				  blockSize);
+
+		return NULL;
+	}
 
 	block->memset    = set;
 	block->freeStart = ((char*)block) + MEM_BLOCK_SIZE;
@@ -482,13 +590,18 @@ MemorySet memSetCreate(
 	/* Insert this block into the head of the blocks list. */
 	block->next      = set->blockList;
 	set->blockList   = block;
-	set->keeperBlock = block;
+	//set->keeperBlock = block;
 
 	return (MemoryContainer)set;
 }
 
-void resetMemoryFromSet(MemorySet set)
+void resetMemoryFromSet(
+	void*              self,
+	MemorySet          set)
 {
+    IMemContainerManager  _    = (IMemContainerManager)self;
+	IErrorLogger          elog = _->errorLogger;
+
 	MemoryBlock  block;
 
     /* clear the free list first. */
@@ -512,7 +625,8 @@ void resetMemoryFromSet(MemorySet set)
 			break;
 		}
 
-		free(block);
+        ASSERT_VOID(elog, funcFree != NULL); 
+		funcFree(block);
 
 		block = next;
 	}
@@ -524,9 +638,11 @@ void resetMemoryFromSet(MemorySet set)
 /* Free the whole memory which has been allocated inside
  * a context and also inside its children.
  */
-void resetMemContainer(MemoryContainer cont)
+void resetMemContainer(
+    void*              self,
+	MemoryContainer    cont)
 {
-	MemoryContainer  child;
+	MemoryContainer    child;
 
 	/* If the context has children we first of all
 	 * try to free memory from all children first.
@@ -538,14 +654,38 @@ void resetMemContainer(MemoryContainer cont)
 		 */
 		for (child = cont->childHead; child != NULL; child = child->next)
 		{
-			resetMemContainer(child);
+			resetMemContainer(self, child);
 		}
     }
 
 	if (!cont->isReset)
 	{
-        resetMemoryFromSet(cont);
+        resetMemoryFromSet(self, cont);
         cont->isReset = True;
+	}
+}
+
+void showMemStat(
+	void*             self,
+    MemoryContainer   container,
+	int               level)
+{
+    IMemContainerManager  _    = (IMemContainerManager)self;
+	IErrorLogger          elog = _->errorLogger;
+	MemoryContainer       child;
+
+    Bool isContValid = MemoryContainerIsValid(container);
+
+	ASSERT_ARG_VOID(elog, isContValid);
+
+    printSetStatistic(container, level);
+    
+	for (child = container->childHead; child != NULL; child = child->next)
+	{
+		/* We should prevent an infinite loop. */
+        ASSERT_VOID(elog, child != container);
+
+        showMemStat(_, child, level + 1);    
 	}
 }
 
@@ -555,10 +695,10 @@ void printSetStatistic(
 {
     MemoryBlock   block;
 	MemoryChunk   chunk;
-	long          nblocks;
-	long          nchunks;
-	long          totalSpace;
-    long          freeSpace;
+	long          nblocks    = 0;
+	long          nchunks    = 0;
+	long          totalSpace = 0;
+    long          freeSpace  = 0;
     int           ind;
 	int           i;
 

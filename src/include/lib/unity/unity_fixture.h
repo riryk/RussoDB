@@ -13,8 +13,14 @@
 #include "unity_fixture_malloc_overrides.h"
 #include "unity_fixture_internals.h"
 
-int UnityMain(int argc, char* argv[], void (*runAllTests)());
+extern int malloc_count;
+extern int malloc_mem_addrs[1000];
+extern int malloc_mem_sizes[1000];
+extern int malloc_fail_countdown;
+extern int free_count;
+extern int free_mem_addrs[1000];
 
+int UnityMain(int argc, char* argv[], void (*runAllTests)());
 
 #define TEST_GROUP(group)\
     int TEST_GROUP_##group = 0
