@@ -72,8 +72,8 @@ WHEN(reset_memory_from_set)
 TEST_TEAR_DOWN(reset_memory_from_set)
 {
 	mm_rmfs->dtorMemContMan(mm_rmfs);
-
 	free(mm_rmfs);
+	unity_mem_stat_clear();
 }
 
 TEST(reset_memory_from_set, then_all_malloc_calls_should_be_freed)

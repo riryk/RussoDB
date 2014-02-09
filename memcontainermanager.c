@@ -63,16 +63,15 @@ void ctorMemContMan(
 
 void dtorMemContMan(void*  self)
 {
-    IMemContainerManager  _ = (IMemContainerManager)self;
+    IMemContainerManager  _    = (IMemContainerManager)self;
+	IErrorLogger          elog = _->errorLogger;
     
 	_->resetMemoryFromSet(_, topMemCont);
 
     ASSERT(elog, funcMalloc != NULL, NULL);
     ASSERT(elog, funcFree != NULL, NULL);
 
-    block = (MemoryBlock)funcMalloc(blockSize);
-
-	free(topMemCont);
+	funcFree(topMemCont);
 
     ASSERT(elog, topMemCont != NULL, NULL);
     ASSERT(elog, currentMemCont != NULL, NULL);
@@ -80,6 +79,7 @@ void dtorMemContMan(void*  self)
 
     funcMalloc    = NULL;
     funcFree      = NULL; 
+	topMemCont    = NULL;
 }
 
 /* Calculates the number of a free list
@@ -274,13 +274,13 @@ Bool checkFreeBlockSpace(
 	 *             /             /
 	 *       freeStart       freeEnd
 	 */
-    size_t    availSpace = block->freeEnd - block->freeStart;
+    size_t    availSpace   = block->freeEnd - block->freeStart;
 	size_t    minPosChunkSize; 
-    
+
 	/* If available space is more than chunk size
 	 * the block is valid and we return true.
 	 */
-	if (availSpace > chunkSize + MEM_CHUNK_SIZE)
+	if (availSpace >= chunkSize + MEM_CHUNK_SIZE)
 		return True;
 
 	/* Minimum chunk size including the chunk header. */
@@ -390,7 +390,7 @@ void* allocateMemory(
 		set->freelist[freeListInd] = (MemoryChunk)chunk->memsetorchunk;
 
 		/* MemSetOrChunk now points to the parent memory set */
-		chunk->memsetorchunk = (void*)set;
+		chunk->memsetorchunk = set;
         chunk->sizeRequested = size;		
 
         chunkPtr = MemoryChunkGetPointer(chunk);
@@ -734,12 +734,25 @@ void printSetStatistic(
 		totalSpace - freeSpace);
 }
 
-void freeChunk(void* mem)
+/* Frees a piece of memory that have been allocated
+ * as a chunk. The function converts this memory address
+ * to a chunk and checks how this chunks has been allocated.
+ * If it was like a full block we should free this block.
+ * If is was an ordinary chunk we give it back to the freelist
+ * for recycling.
+ */
+void freeChunk(
+    void*          self,
+	void*          mem)
 {
+    IMemContainerManager  _    = (IMemContainerManager)self;
+	IErrorLogger          elog = _->errorLogger;
+
     MemoryChunk  chunk;
 	MemorySet    set;
 	int          ind;
 
+	/* Get a pointer to MemoryChunk header. */
 	chunk  = (MemoryChunk)((char*)mem - MEM_CHUNK_SIZE);     
 	set    = chunk->memsetorchunk;
 
@@ -752,26 +765,37 @@ void freeChunk(void* mem)
         /* Try to find the corresponding block first 
 		 */
 		MemoryBlock   block     = set->blockList;
-        MemoryBlock   prevblock = set->blockList;
+        MemoryBlock   prevblock = NULL;
 
 		while (block != NULL)
 		{
             if (chunk == (MemoryChunk)((char*)block + MEM_BLOCK_SIZE))
 				break;
+
 			prevblock = block;
 			block     = block->next;
 		}
 
+		/* Could not find the block. We should report an error. */
 		if (block == NULL)
-			; /* Could not find the block. We should report an error. */
-        
+		{
+			 elog->log(LOG_ERROR, 
+		          ERROR_CODE_BLOCK_NOT_FOUND, 
+				  "Could not find block containing chunk %p", 
+				  chunk);
+
+			 return;
+		}
+
 		/* Remove the block from the block list */
 		if (prevblock == NULL)
 			set->blockList  = block->next;
 		else
 			prevblock->next = block->next;
+        
+		ASSERT_VOID(elog, funcFree != NULL); 
+		funcFree(block);
 
-		free(block);
 		return;
 	}
 

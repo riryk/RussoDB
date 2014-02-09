@@ -75,3 +75,8 @@ void printSetStatistic(
 void resetMemoryFromSet(
 	void*                self,
 	MemorySet            set);
+
+void freeChunk(
+    void*                self,
+	void*                mem);
+

@@ -960,6 +960,18 @@
 									>
 								</File>
 							</Filter>
+							<Filter
+								Name="free_chunk"
+								>
+								<File
+									RelativePath=".\when_free_large_chunk.c"
+									>
+								</File>
+								<File
+									RelativePath=".\when_free_ordinary_chunk.c"
+									>
+								</File>
+							</Filter>
 						</Filter>
 					</Filter>
 					<Filter

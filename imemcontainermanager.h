@@ -43,6 +43,10 @@ typedef struct SIMemContainerManager
 	     void*                self,
 	     MemorySet            set);
 
+	void (*freeChunk)(
+         void*                self,
+	     void*                mem);
+
 } SIMemContainerManager, *IMemContainerManager;
 
 #endif

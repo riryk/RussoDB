@@ -43,6 +43,7 @@ typedef enum
 
 
 #define ERROR_CODE_OUT_OF_MEMORY    1000
+#define ERROR_CODE_BLOCK_NOT_FOUND  1001
 
 /* The structure contains complete information 
  * about an error
