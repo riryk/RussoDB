@@ -1,0 +1,34 @@
+
+
+Intention:
+
+In ANSI C we do not have a centralized memory management subcomponent.
+When we malloc and free small pieces of memory very frequently, it 
+can drastically degrade perfomance and it will be very difficult 
+to cure memory leakages. When we malloc a small piece of memory,
+windows can look up an already freed block that can come up.
+And of course windows free fucntion only marks it as recyclable
+and it can do an additional logic and check if adjacent pieces
+of memory are also free. If it is true, they will be merged.
+
+
+Memory Containers:
+
+Every allocated memory pieces are united into containers
+that can be freed entirely. And even if a memory leakage has occured
+inside some memory container it won't bring any damages by the time
+when this container is reset or freed.
+
+Memory container contains:
+ - parent memory context.
+ - child memory contexts.
+ - blocks list.
+ - chunk free lists.
+
+Containers are united into a tree. There exists an old container
+with large life time and there are younger containers with lifetime
+less than their father's. For example when we open a new transaction 
+we create a transaction context and allocate there some memory 
+that is needed in the transaction. Then we start rows scanning and 
+for every row we create another row scan context. When we 
+

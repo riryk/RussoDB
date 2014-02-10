@@ -556,6 +556,10 @@
 				Name="memory"
 				>
 				<File
+					RelativePath=".\mem_management.txt"
+					>
+				</File>
+				<File
 					RelativePath=".\memcontainermanager.c"
 					>
 				</File>

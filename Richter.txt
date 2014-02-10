@@ -4211,7 +4211,305 @@ public static void BlindFunction()
     }
 }
 
-  
+62. Open and closed types.
+
+However, a type with generic type parameters is called an open type, 
+and the CLR does not allow any instance of an open type to be constructed 
+(similar to how the CLR prevents an instance of 
+an interface type from being constructed).  
+
+When code references a generic type, it can specify a set of generic type arguments. 
+If actual data types are passed in for all of the type arguments, 
+the type is called a closed type, 
+and the CLR does allow instances of a closed type to be constructed.
+
+63. Code explosion?
+
+First, if a method is called for a particular type argument, 
+and later, the method is called again using the same type argument, 
+the CLR will compile the code for this method/type combination just once. 
+
+So if one assembly uses List<DateTime>, 
+and a completely different assembly 
+(loaded in the same AppDomain)
+also uses List<DateTime>, 
+the CLR will compile the methods for List<DateTime> just once. 
+This reduces code explosion substantially.
+
+The CLR has another optimization: the CLR considers all reference type arguments to be identical,
+and so again, the code can be shared. For example, the code compiled by the CLR for List<String>’s
+methods can be used for List<Stream>’s methods, because String and Stream are both reference
+types. In fact, for any reference type, the same code will be used. The CLR can perform this optimization
+because all reference type arguments or variables are really just pointers (all 32 bits on a 32-bit
+Windows system and 64 bits on a 64-bit Windows system)
+
+But if any type argument is a value type, the CLR must produce native code specifically for that
+value type. The reason is because value types can vary in size. And even if two value types are the
+same size (such as Int32 and UInt32, which are both 32 bits)
+
+
+64. Implicit and Explicit Interface Method Implementations.
+
+
+internal sealed class SimpleType : IDisposable 
+{
+    public void Dispose() { Console.WriteLine("Dispose"); }
+}
+
+public sealed class Program 
+{
+    public static void Main() 
+	{
+        SimpleType st = new SimpleType();
+		 
+        // This calls the public Dispose method implementation
+        st.Dispose();
+		
+        // This calls IDisposable's Dispose method implementation
+        IDisposable d = st;
+        d.Dispose();
+    }
+}
+
+Because C# requires the public Dispose method to also 
+be the implementation for IDisposable’s Dispose method, 
+the same code will execute, and, in this example, 
+you can’t see any observable difference. 
+The output is as follows.
+
+internal sealed class SimpleType : IDisposable 
+{
+    public void Dispose() 
+	{ 
+	    Console.WriteLine("public Dispose"); 
+	}
+	
+    void IDisposable.Dispose() 
+	{ 
+	    Console.WriteLine("IDisposable Dispose"); 
+	}
+}
+
+65. Improving Compile-Time Type Safety 
+    with Explicit Interface Method Implementations.
+
+public interface IComparable 
+{
+    Int32 CompareTo(Object other);
+}
+
+internal struct SomeValueType : IComparable 
+{
+    private Int32 m_x;
+	
+    public SomeValueType(Int32 x) 
+	{ 
+	   m_x = x; 
+	}
+	
+    public Int32 CompareTo(Object other) 
+	{
+       return(m_x - ((SomeValueType) other).m_x);
+    }
+}
+
+public static void Main() 
+{
+    SomeValueType v = new SomeValueType(0);
+    Object o = new Object();
+    Int32 n = v.CompareTo(v); // Undesired boxing
+    n = v.CompareTo(o);       // InvalidCastException
+}
+
+Both of these issues can be fixed by using EIMIs. 
+Here’s a modified version of SomeValueType 
+that has an EIMI added to it.
+
+internal struct SomeValueType : IComparable 
+{
+    private Int32 m_x;
+	
+    public SomeValueType(Int32 x) { m_x = x; }
+	
+	public Int32 CompareTo(SomeValueType other) 
+	{
+       return(m_x - other.m_x);
+    }
+	
+    // NOTE: No public/private used on the next line
+    Int32 IComparable.CompareTo(Object other) 
+	{
+        return CompareTo((SomeValueType) other);
+    }
+}
+
+public static void Main() 
+{
+    SomeValueType v = new SomeValueType(0);
+    Object o = new Object();
+    Int32 n = v.CompareTo(v); // No boxing
+    n = v.CompareTo(o);       // compile-time error
+}
+
+public static void Main() 
+{
+    SomeValueType v = new SomeValueType(0);
+    IComparable c = v; // Boxing! 
+    Object o = new Object();
+    Int32 n = c.CompareTo(v); // Undesired boxing
+    n = c.CompareTo(o); // InvalidCastException
+}
+
+
+66. Cast char to another type?
+
+The easiest way to convert a Char to a numeric value 
+such as an Int32 is simply by casting. 
+Of the three techniques, this is the most efficient 
+because the compiler emits Intermediate Language (IL) 
+instructions to perform the conversion, and no methods have to be called.
+
+Use the IConvertible interface. 
+The Char type and all of the numeric types in the .NET
+Framework Class Library (FCL) implement the IConvertible interface. 
+This interface defines methods such as ToUInt16 and ToChar.
+
+This technique is the least efficient of the three
+because calling an interface method on 
+a value type requires that the instance be boxed—
+Char and all of the numeric types are value types.
+
+67. Strings Are Immutable?
+
+The most important thing to know about a String object is that it is immutable. 
+That is, once created, a string can never get longer, get shorter, 
+or have any of its characters changed. 
+Having immutable strings offers several benefits. 
+First, it allows you to perform operations on 
+a string without actually changing the string.
+
+if (s.ToUpperInvariant().Substring(10, 21).EndsWith("EXE")) 
+{
+   ...
+}
+
+Here, ToUpperInvariant returns a new string; it doesn’t modify the characters of the string s.
+Substring operates on the string returned by ToUpperInvariant and also returns a new string,
+which is then examined by EndsWith. The two temporary strings created by ToUpperInvariant
+and Substring are not referenced for long by the application code, and the garbage collector will
+reclaim their memory at the next collection. If you perform a lot of string manipulations, you end up
+creating a lot of String objects on the heap, which causes more frequent garbage collections, thus
+hurting your application’s performance.
+
+68. Delegate?
+
+In unmanaged C/C++, the address of a non-member function is just a memory address. 
+This address doesn’t carry any additional information 
+such as the number of parameters the function expects, 
+the types of these parameters, the function’s return value type, 
+and the function’s calling convention. 
+In short, unmanaged C/C++ callback functions 
+are not type-safe 
+(although they are a very lightweight mechanism).
+
+However, the .NET Framework provides a type-safe mechanism 
+called delegates. 
+I’ll start off the discussion of delegates by showing 
+you how to use them. 
+The following code demonstrates how to declare, create, 
+and use delegates.
+
+internal delegate void Feedback(Int32 value);
+
+internal class Feedback : System.MulticastDelegate 
+{
+    // Constructor
+    public Feedback(Object @object, IntPtr method);
+   
+    // Method with same prototype as specified by the source code
+    public virtual void Invoke(Int32 value);
+	
+    // Methods allowing the callback to be called asynchronously
+    public virtual IAsyncResult BeginInvoke(
+	   Int32           value,
+       AsyncCallback   callback, 
+	   Object          @object);
+	   
+    public virtual void EndInvoke(IAsyncResult result);
+}
+
+MulticastDelegate
+{
+    _target       System.Object  
+	
+	  When the delegate object wraps a static method, this field is
+      null. When the delegate objects wraps an instance method, this
+      field refers to the object that should be operated on when the
+      callback method is called. In other words, this field indicates the
+      value that should be passed for the instance method’s implicit
+      this parameter.
+	
+	_methodPtr    System.IntPtr
+	
+	  An internal integer the CLR uses to identify the method 
+	  that is to be called back. 
+
+    _invocationList	  
+	
+	  This field is usually null. It can refer to an array of delegates 
+	  when building a delegate chain (discussed later in this chapter).
+}
+
+
+69. Multicast Delegate Invocation list?
+
+Feadback  fb1;
+Feadback  fb2;
+Feadback  fb3;
+
+fbChain = (Feedback) Delegate.Combine(fbChain, fb1);
+fbChain = (Feedback) Delegate.Combine(fbChain, fb2);
+fbChain = (Feedback) Delegate.Combine(fbChain, fb3);
+
+public void Invoke(Int32 value) 
+{
+    Delegate[] delegateSet = _invocationList as Delegate[];
+	
+    if (delegateSet != null) 
+	{
+        // This delegate's array indicates the delegates that should be called
+        foreach (Feedback d in delegateSet)
+           d(value); // Call each delegate
+    } 
+	else 
+	{
+        // This delegate identifies a single method to be called back
+        // Call the callback method on the specified target object.
+        _methodPtr.Invoke(_target, value);
+		
+        // The preceding line is an approximation of the actual code.
+        // What really happens cannot be expressed in C#.
+    }
+}
+
+Note that it is also possible to remove a delegate 
+from a chain by calling Delegate’s public, 
+static Remove method. 
+This is demonstrated toward the end of the ChainDelegateDemo1 method.
+
+fbChain = (Feedback) Delegate.Remove(fbChain, new Feedback(FeedbackToMsgBox));
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
