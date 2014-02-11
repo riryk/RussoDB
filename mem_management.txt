@@ -30,5 +30,110 @@ with large life time and there are younger containers with lifetime
 less than their father's. For example when we open a new transaction 
 we create a transaction context and allocate there some memory 
 that is needed in the transaction. Then we start rows scanning and 
-for every row we create another row scan context. When we 
+for every row we create another row scan context. When we have finished
+scanning a row we should release memory from the whole container.
+
+1. Allocate memory.
+1.1 Allocate memory, large piece.
+
+Memory container has chunkMaxSize parameter. 
+If the size exceeds chunkMaxSize it is considered as 
+a large chunk and we need to allocate a new full block for it.
+The difference between block and chunk is that a block
+should be deleted after having been used. Otherwise a chunk 
+will be returned to the free list. The chunk should be small.
+If a large chunk has been removed to the free list 
+it can cause an excessive memory usage. It can run out the whole
+process memory. 
+
+So if size > chunkMaxSize we allocate the whole block 
+and add it to the BlockList.
+
+1.2 Allocate memory, small piece.
+
+First of all look up an appropriate chunk in the free list.
+If it exists we overwrite it and remove it from the free list.
+If a chunk of appropriate size does not exist in the free list 
+we allocate a block and insert this block into the head of the block list.
+When another user is allocating several large blocks, they will
+be inserted after the block list header.
+We have taken a small piece of memory from the head block and 
+other memory is left for further usage.
+So that when we allocate a new small piece of memory again
+the memory will be taken from this block.
+
+1.3 The header block memory has ran out.
+
+We are going to allocate a new small piece of memory but 
+the header's available memory is less than needed.
+Then the only thing which is left for us is to allocate a new block.
+But the memory which is left in the previous block can fit
+for future smaller requests. We carve it up to smaller power of 2
+pieces and distribute them among free lists.
+Then we allocate a new block and insert it in the head of the block list.
+
+2. Free memory.
+
+When we free memory the memory is represented by a pointer.
+Then we obtain a pointer to a ChunkHeader by the formula:
+
+  [ .... Chunk header .... ][........... Memory .................]
+  ^                         ^  
+  |                         |  
+chunkPointer            memoryPointer
+
+  memoryPointer = chunkPointer + sizeof(MemoryChunk)  =>
+  chunkPointer  = memoryPointer - sizeof(MemoryChunk).
+
+Then we retrieve information about the chunk size and check
+whether it was allocated as a block or as a chunk.
+  
+2.1 The chunk's size is small.
+
+If the chunk is small we simply add it to the free list.
+
+2.2 The chunk's size is large.
+
+If the chunk is large. chunk->size > container->chunkMaxSize
+A full block was allocated and we should delete it.
+The chunk does not contain a direct link to a block header.
+But the chunk's structure is well-known. So that we can 
+easily obtain a pointer to the block:
+
+  [ .... Block header ..... ][ ..... Chunk header  ..... ][ ..... Memory ...... ]
+  ^                          ^                            ^
+  |                          |                            |
+blockPointer              chunkPointer                   memoryPointer
+  
+  blockPointer = memoryPointer + chunkPointer + memoryPointer
+  
+Having the pointer we should check if the block is present in 
+set's block list. We loop through this list and compare block pointers.
+If we have not found this block we throw an exception.
+If we have found the block we remove it from the block list
+and free the block memory.
+
+
+3. Reset memory from set with all descendants.
+
+First of all we reset the current memory set.
+Then we loop through all children and reset memory
+for every child. 
+
+3.1 Reset memory from a separate set.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 

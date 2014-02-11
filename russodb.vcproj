@@ -926,6 +926,10 @@
 										RelativePath=".\when_allocate_small_chunk.c"
 										>
 									</File>
+									<File
+										RelativePath=".\when_allocate_small_large_chunk.c"
+										>
+									</File>
 								</Filter>
 							</Filter>
 							<Filter
