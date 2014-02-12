@@ -61,6 +61,25 @@ void ctorMemContMan(
 	                            8 * 1024);
 }
 
+void resetErrCont(void* self)
+{
+    resetMemContainer(self, errorMemCont);
+}
+
+MemoryContainer changeCurrContainer(
+	MemoryContainer    container)
+{
+	MemoryContainer oldCont = currentMemCont;
+
+	currentMemCont = container;
+	return oldCont;
+}
+
+MemoryContainer changeToErrorContainer()
+{
+    return changeCurrContainer(errorMemCont);
+}
+
 void dtorMemContMan(void*  self)
 {
     IMemContainerManager  _    = (IMemContainerManager)self;

@@ -3,10 +3,14 @@
 #include "common.h"
 #include "error.h"
 #include "ierrorlogger.h"
+#include "string.h"
 
-jmp_buf*    exceptionStack = NULL;
-int	        stackDepth     = -1;
-SErrorInfo  errorInfos[ERROR_STACK_SIZE];
+jmp_buf*          exceptionStack = NULL;
+int	              stackDepth     = -1;
+int	              recursDepth    = 0;	
+SErrorInfo        errorInfos[ERROR_STACK_SIZE];
+ErrorCallback*    errorStack     = NULL; 
+
 
 /* checks if errorLevel is logically more 
  * than min error level or not. 
@@ -27,17 +31,13 @@ Bool compareErrorLevels(int errorLevel, int minErrorLevel)
 	 * are always send to the server unless min error
 	 * level is more than ERROR. 
 	 */
-    if (isLog || isCommErr)
-	{
-        if (isMinLessThanError)
-			return True;
-	}
-	else if (isMinEqualToLog)
-	{
-        if (moreThanFatal)
-			return True;
-	}
-	else if (errorLevel >= minErrorLevel)
+    if ((isLog || isCommErr) && isMinLessThanError)
+	    return True;
+
+	if (isMinEqualToLog && moreThanFatal)
+	    return True;
+
+	if (errorLevel >= minErrorLevel)
 		return True;
 
 	return False;
@@ -54,8 +54,10 @@ Bool beginError(
     IErrorLogger             _   = (IErrorLogger)self;
     IConfManager             cm  = _->confManager;
     IErrorLoggerConfManager  em  = cm->errLogConfgMan;    
+	IMemContainerManager     mm  = _->memContManager;
 
 	int                i;
+	ErrorInfo          einf;
 
 	Bool		       writeToServer  = False;
 	Bool		       writeToClient  = False;
@@ -92,5 +94,108 @@ Bool beginError(
     /* Skip processing effort if non-error message will not be output */
 	if (level < LOG_ERROR && !writeToServer && !writeToClient)
 		return False;
+
+	if (recursDepth++ > 0 && level >= ERROR)
+	{
+		/* Here an error has occured during an error processing
+		 * We clear all previous error info and reduce 
+		 * ErrorContainer memory size to 8K. It will be enough
+		 * to report even OutOfMemory error
+		 */
+		mm->resetErrCont(mm);
+
+		/* Prevent infinite recursion. */
+        if (recursDepth > 2)
+            errorStack = NULL;
+	}
+
+	if (++stackDepth >= ERROR_STACK_SIZE)
+	{
+        /* Stack is not big enough.  
+		 * It can also be an infinite recursion.
+		 * Report a panic error.
+		 */
+		stackDepth = -1;	/* make room on stack */
+		//ereport(PANIC, (errmsg_internal("ERRORDATA_STACK_SIZE exceeded")));
+	}
+
+	/* Initialize data for this error frame */
+	einf = &errorInfos[stackDepth];
+	MemSet(einf, 0, sizeof(SErrorInfo));
+
+	einf->level          = level;
+	einf->reportToServer = writeToServer;
+	einf->reportToClient = writeToClient;
+
+	if (filename != NULL)
+	{
+		/* Keep only base name */
+		char* slash = strrchr(filename, '/');
+
+		if (slash != NULL)
+			filename = slash + 1;
+	}
+
+	einf->fileName = filename;
+	einf->lineNum  = linenum;
+	einf->funcName = funcname;
+    
+	einf->domain = (domain != NULL) ?
+                domain :
+                "postgres";
+
+	einf->errorCode = ERROR_CODE_SUCCESS;
+
+	if (level >= LOG_ERROR)
+		einf->errorCode = ERROR_CODE_INTERNAL_ERROR;
+
+    if (level == LOG_WARNING)
+        einf->errorCode = ERROR_CODE_WARNING;
+
+	einf->savedError = errno;
+
+	recursDepth--;
+	return True;
 }
 
+/* endError completes error reporting and 
+ * clears error stack.
+ */
+void endError(
+    void*           self,
+	int             dummy,
+	...)
+{
+	IErrorLogger         _  = (IErrorLogger)self;
+    IMemContainerManager mm = _->memContManager;
+
+	ErrorInfo       einf  = &errorInfos[stackDepth];
+	int             level = einf->level; 
+
+	MemoryContainer oldContainer;
+    ErrorCallback   errcal;
+
+	recursDepth++;
+    
+    if (stackDepth < 0)
+	{
+	    stackDepth = -1;
+		// ereport(ERROR, (errmsg_internal("errstart was not called"))); 
+	}
+    
+	oldContainer = mm->changeToErrorContainer();
+
+	/* Call all callback functions */
+	for (errcal = errorStack; 
+		 errcal != NULL; 
+		 errcal = errcal->prev)
+	{
+		(*errcal->callback)(errcal->arg);
+	}
+
+	if (level == LOG_ERROR)
+	{
+        recursDepth--;
+		PG_RE_THROW();
+	}
+}
