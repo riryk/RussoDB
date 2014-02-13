@@ -199,3 +199,83 @@ void endError(
 		PG_RE_THROW();
 	}
 }
+
+/* ExceptionalCondition - Handles the failure of an Assert() */
+void writeException(
+    char*    condName,
+    char*    errType,
+	char*    fileName,
+	int      lineNum)
+{
+    if (condName == NULL || fileName == NULL || errType == NULL)
+	{
+	    fprintf(stderr, "writeException: bad arguments\n");
+		return;
+	}
+
+	fprintf(stderr, 
+		"writeException: %s(\"%s\", File: \"%s\", Line: %d)\n",
+        errType,
+        condName,
+        fileName,
+        lineNum);
+}
+
+void assertCond(Bool condition)
+{ }
+
+void reThrowError(void*  self)
+{
+	IMemContainerManager  _    = (IMemContainerManager)self;
+	IErrorLogger          elog = _->errorLogger;
+
+	/* If possible, throw the error to the next outer setjmp handler */
+	if (exceptionStack != NULL)
+	{
+		/* Restores the environment to the state indicated by env, 
+		 * evaluating the setjmp expression that filled env as val.
+         * The function never returns to the point where it has been invoked. 
+		 * Instead, the function transfers the control to the point 
+		 * where setjmp was last used to fill the env, 
+		 * and evaluates the whole expression as val 
+		 * (unless this is zero, in which case it evaluates as value of 1).
+		 */
+		longjmp(*exceptionStack, 1);
+
+	    /* setjmp has not been called before.
+		 * Report an error.
+		 */ 
+	    writeException(
+			"pg_re_throw tried to return", 
+			"FailedAssertion",
+			__FILE__, 
+			__LINE__);
+
+		return;
+	}
+
+    /* The error was thrown in TRY block. So we should promote it 
+	 * to fatal and report.
+	 */
+	ErrorInfo einf = &errorInfos[stackDepth];
+
+	assertCond(stackDepth >= 0);
+	assertCond(einf->level == LOG_ERROR);
+
+	einf->level = LOG_FATAL;
+
+    einf->reportToServer = IsPostmaster ? 
+		compareErrorLevels(level, minLogLevel) :
+	    (level >= minLogLevel);
+
+	if (outputDest == OutputRemote)
+		einf->reportToClient = (LOG_FATAL >= minLogLevel);
+
+	errorStack = NULL;
+    
+	endError(_, 0);
+
+    errfinish(0);
+}
+
+
