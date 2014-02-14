@@ -4,6 +4,7 @@
 #define ERROR_H
 
 #define ERROR_STACK_SIZE  5
+#define TIME_STRING_LEN 128
 
 typedef enum
 {

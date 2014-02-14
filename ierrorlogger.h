@@ -6,8 +6,9 @@
 
 typedef struct SIErrorLogger
 {
-	IConfManager         confManager;
-	IMemContainerManager memContManager;
+	IConfManager   confManager;
+	IStringManager strManager;
+	void*          memContManager;
 
 	void (*assertArg)(Bool condition);	
 	void (*assert)(Bool condition);

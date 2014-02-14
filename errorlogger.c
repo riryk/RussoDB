@@ -4,6 +4,7 @@
 #include "error.h"
 #include "ierrorlogger.h"
 #include "string.h"
+#include "string_info.h"
 
 jmp_buf*          exceptionStack = NULL;
 int	              stackDepth     = -1;
@@ -11,6 +12,8 @@ int	              recursDepth    = 0;
 SErrorInfo        errorInfos[ERROR_STACK_SIZE];
 ErrorCallback*    errorStack     = NULL; 
 
+char  str_start_time[TIME_STRING_LEN];
+char  str_log_time[TIME_STRING_LEN];
 
 /* checks if errorLevel is logically more 
  * than min error level or not. 
@@ -196,8 +199,77 @@ void endError(
 	if (level == LOG_ERROR)
 	{
         recursDepth--;
-		PG_RE_THROW();
+		reThrowError(self);
+		exit(0);
 	}
+}
+
+void errorInfoToString(
+    StringInfo         buf, 
+	ErrorInfo          einf)
+{
+	long   line_number = 0;
+	int	   my_pid      = 0;
+
+	int	   format_len;
+	int	   i;
+    
+	line_number++;
+
+	if (Log_line_prefix == NULL)
+		return;	
+
+
+}
+
+void sendToServer(
+    void*        self,
+	ErrorInfo    einf)
+{
+    IErrorLogger   _  = (IErrorLogger)self;
+	IStringManager sm = _->strManager;
+
+    SStringInfo  buf;
+
+	sm->initStringInfo(sm, &buf);
+
+	str_log_time[0] = '\0';
+
+
+	char  str_start_time[TIME_STRING_LEN];
+    char  str_log_time[TIME_STRING_LEN];
+
+}
+
+void sendToClient(ErrorInfo  einf)
+{
+     
+}
+
+void emitError(void*  self)
+{
+	IErrorLogger          _  = (IErrorLogger)self;
+	IMemContainerManager  mm = _->memContManager
+
+    MemoryContainer  oldContainer;
+    ErrorInfo        einf = errorInfos[errordata_stack_depth];
+
+    recursDepth++;
+    
+	if (stackDepth < 0)
+	{
+	    stackDepth = -1;
+		// ereport(ERROR, (errmsg_internal("errstart was not called"))); 
+	}
+
+	oldContainer = mm->changeToErrorContainer();  
+
+	/* Report error to server log */
+	if (einf->reportToServer)
+		sendToServer(einf);
+
+	if (einf->reportToClient)
+		sendToClient(einf);
 }
 
 /* ExceptionalCondition - Handles the failure of an Assert() */
@@ -226,8 +298,7 @@ void assertCond(Bool condition)
 
 void reThrowError(void*  self)
 {
-	IMemContainerManager  _    = (IMemContainerManager)self;
-	IErrorLogger          elog = _->errorLogger;
+	IErrorLogger _ = (IErrorLogger)self;
 
 	/* If possible, throw the error to the next outer setjmp handler */
 	if (exceptionStack != NULL)
@@ -246,8 +317,8 @@ void reThrowError(void*  self)
 		 * Report an error.
 		 */ 
 	    writeException(
-			"pg_re_throw tried to return", 
-			"FailedAssertion",
+			"reThrowError tried to return", 
+			"assertion failed",
 			__FILE__, 
 			__LINE__);
 
@@ -274,8 +345,6 @@ void reThrowError(void*  self)
 	errorStack = NULL;
     
 	endError(_, 0);
-
-    errfinish(0);
 }
 
 

@@ -295,6 +295,10 @@
 						>
 					</File>
 					<File
+						RelativePath=".\string_info.h"
+						>
+					</File>
+					<File
 						RelativePath="src\include\common\types.h"
 						>
 					</File>
@@ -1289,6 +1293,10 @@
 				</File>
 				<File
 					RelativePath="src\common\snprintf.c"
+					>
+				</File>
+				<File
+					RelativePath=".\string_info.c"
 					>
 				</File>
 				<Filter
