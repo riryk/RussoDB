@@ -18,22 +18,28 @@ MemoryContainer  topMemCont     = NULL;
 MemoryContainer  currentMemCont = NULL;
 MemoryContainer  errorMemCont   = NULL;
 
-FMalloc funcMalloc = NULL;
-FFree   funcFree   = NULL;  
+FMalloc  funcMalloc  = NULL;
+FFree    funcFree    = NULL;  
+FRealloc funcRealloc = NULL;
+
+typedef void* (*FRealloc)(void* mem, size_t size);
 
 void ctorMemContMan(
     void*            self, 
 	FMalloc          funcMallocParam,
-	FFree            funcFreeParam)
+	FFree            funcFreeParam,
+	FRealloc         funcReallocParam)
 {
 	IMemContainerManager _         = (IMemContainerManager)self;
 	IErrorLogger         elog      = _->errorLogger;
 
 	ASSERT_ARG_VOID(elog, funcMalloc == NULL);
 	ASSERT_ARG_VOID(elog, funcFree == NULL);
+    ASSERT_ARG_VOID(elog, funcRealloc == NULL);
 
-    funcMalloc = funcMallocParam;
-    funcFree   = funcFreeParam;  
+    funcMalloc  = funcMallocParam;
+    funcFree    = funcFreeParam;  
+	funcRealloc = funcReallocParam;
 
 	ASSERT_ARG_VOID(elog, topMemCont == NULL);
 
@@ -89,6 +95,7 @@ void dtorMemContMan(void*  self)
 
     ASSERT(elog, funcMalloc != NULL, NULL);
     ASSERT(elog, funcFree != NULL, NULL);
+    ASSERT(elog, funcRealloc != NULL, NULL);
 
 	funcFree(topMemCont);
 
@@ -98,6 +105,7 @@ void dtorMemContMan(void*  self)
 
     funcMalloc    = NULL;
     funcFree      = NULL; 
+    funcRealloc   = NULL;
 	topMemCont    = NULL;
 }
 
@@ -827,3 +835,119 @@ void freeChunk(
 	chunk->memsetorchunk = (void*)set->freelist[ind];
     set->freelist[ind]   = chunk;
 }
+
+/* Reallocate memory. When we need more memory
+ * we allocate a piece of memory with an appropriate size,
+ * copy an old memory and then free it.
+ */
+void* reallocateMemory(
+    void*                  self,
+	MemoryContext          container, 
+	void*                  old_mem, 
+	size_t                 new_size)
+{
+	IMemContainerManager  _    = (IMemContainerManager)self;
+	IErrorLogger          elog = _->errorLogger;
+    
+	MemorySet    set   = (MemorySet)container;
+    MemoryChunk	 chunk = (MemoryChunk)((char*)old_mem - MEM_CHUNK_SIZE);  
+
+	size_t		 oldsize = chunk->size;   
+	void*        chunkPtr;
+	void*        new_mem;
+
+	/* Always return when a requested size is a decrease */
+	if (oldsize >= size)
+	    return old_mem;
+
+	/* Check if for the chunk there was allocate a block */
+	if (oldsize > set->chunkMaxSize)
+	{
+        /* Try to find the corresponding block first 
+		 */
+		MemoryBlock   block     = set->blockList;
+        MemoryBlock   prevblock = NULL;
+
+        size_t		  chunk_size;
+		size_t		  block_size;
+		char*         expected_block_end;
+
+		while (block != NULL)
+		{
+            if (chunk == (MemoryChunk)((char*)block + MEM_BLOCK_SIZE))
+				break;
+
+			prevblock = block;
+			block     = block->next;
+		}
+
+		/* Could not find the block. We should report an error. */
+		if (block == NULL)
+		{
+			 elog->log(LOG_ERROR, 
+		          ERROR_CODE_BLOCK_NOT_FOUND, 
+				  "Could not find block containing chunk %p", 
+				  chunk);
+
+			 return NULL;
+		}
+
+        /* We should check that the chunk is only one 
+		 * on the block.
+		 */
+		expected_block_end = (char*)block + 
+			chunk->size +
+            MEM_BLOCK_SIZE + 
+			MEM_CHUNK_SIZE;
+
+		ASSERT(elog, block->freeEnd == expected_block_end, NULL); 
+
+		/* Do the realloc */
+		chunk_size = ALIGN_DEFAULT(new_size);
+		block_size = chunk_size + MEM_BLOCK_SIZE + MEM_CHUNK_SIZE;
+
+		ASSERT(elog, funcRealloc != NULL, NULL); 
+		block      = (MemoryBlock)funcRealloc(block, block_size);
+
+		if (block == NULL)
+		{
+            showMemStat(_, topMemCont, 0);
+
+	        elog->log(LOG_ERROR, 
+		          ERROR_CODE_OUT_OF_MEMORY, 
+				  "Out of memory. Failed request size: %lu", 
+				  blockSize);
+
+		    return NULL;
+		}
+
+		block->freeStart = block->freeEnd = (char*)block + block_size;
+        chunk = (MemoryChunk)((char*)block + MEM_BLOCK_SIZE);
+
+		/* Change block pointer to newly allocated block. */
+		if (prevblock == NULL)
+			set->blocks = block;
+		else
+			prevblock->next = block;
+
+		chunk->size = chunk_size;
+
+		chunkPtr = MemoryChunkGetPointer(chunk);
+	    return chunkPtr;
+	}
+
+	/* If we are here that this small block
+	 * was taken from the free list. We allocate
+	 * a new free chunk and the old chunk add to
+	 * the free list. 
+	 */
+    new_mem = allocateMemory(_, container, size);
+
+	/* copy existing memory to a new memory. */
+	memcpy(new_mem, old_mem, oldsize);
+
+	/* free old chunk */
+	freeChunk(self, old_mem);
+	return new_mem;
+}
+

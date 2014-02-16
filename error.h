@@ -43,11 +43,14 @@ typedef enum
 #define LOG_PANIC		            22		/* take down the other backends with me */
 
 
-#define ERROR_CODE_OUT_OF_MEMORY    1000
-#define ERROR_CODE_BLOCK_NOT_FOUND  1001
-#define ERROR_CODE_INTERNAL_ERROR   1002
-#define ERROR_CODE_WARNING          1003
-#define ERROR_CODE_SUCCESS          1004
+#define ERROR_CODE_OUT_OF_MEMORY            1000
+#define ERROR_CODE_BLOCK_NOT_FOUND          1001
+#define ERROR_CODE_INTERNAL_ERROR           1002
+#define ERROR_CODE_WARNING                  1003
+#define ERROR_CODE_SUCCESS                  1004
+#define ERROR_CODE_BAD_FORMAT               1005
+#define ERROR_CODE_INVALID_PARAM            1006
+#define ERROR_CODE_MAX_ALLOC_MEM_EXCEEDED   1007
 
 /* The structure contains complete information 
  * about an error

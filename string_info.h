@@ -1,3 +1,5 @@
+#include "ierrorlogger.h"
+#include "snprintf.h"
 
 #ifndef ISTRING_INFO_H
 #define ISTRING_INFO_H
