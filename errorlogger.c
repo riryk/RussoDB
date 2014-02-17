@@ -222,6 +222,49 @@ void errorInfoToString(
 
 }
 
+char* severity_message(int level)
+{
+	char* prefix;
+
+	switch (level)
+	{
+		case DEBUG1:
+		case DEBUG2:
+		case DEBUG3:
+		case DEBUG4:
+		case DEBUG5:
+			prefix = "DEBUG";
+			break;
+		case LOG:
+		case COMMERROR:
+			prefix = "LOG";
+			break;
+		case INFO:
+			prefix = "INFO";
+			break;
+		case NOTICE:
+			prefix = "NOTICE";
+			break;
+		case WARNING:
+			prefix = "WARNING";
+			break;
+		case ERROR:
+			prefix = "ERROR";
+			break;
+		case FATAL:
+			prefix = "FATAL";
+			break;
+		case PANIC:
+			prefix = "PANIC";
+			break;
+		default:
+			prefix = "???";
+			break;
+	}
+
+	return prefix;
+}
+
 void sendToServer(
     void*        self,
 	ErrorInfo    einf)
@@ -235,9 +278,13 @@ void sendToServer(
 
 	str_log_time[0] = '\0';
 
+	sm->appendStringInfo(sm, &buf, "%s:  ", severity_message(einf->level));
+	
+	if (einf->message != NULL)
+		sm->appendWithTabs(sm, &buf, einf->message);
+	else 
+        sm->appendWithTabs(sm, &buf, "missing error text");
 
-	char  str_start_time[TIME_STRING_LEN];
-    char  str_log_time[TIME_STRING_LEN];
 
 }
 

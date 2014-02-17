@@ -18,6 +18,24 @@ typedef struct SIStringManager
 	void*           errorLogger;
 
     void (*initStringInfo)(void* self, StringInfo str);
+
+	void (*appendStringInfo)(
+         void*           self,
+	     StringInfo      strinf, 
+	     char*           str,
+	     ...);
+
+	void (*appendWithTabs)(
+	     void*           self,
+         StringInfo      buf,
+	     char*           str);
+
 } SIStringManager, *IStringManager;
+
+void appendStringInfo(
+    void*           self,
+	StringInfo      strinf, 
+	char*           str,
+	...);
 
 #endif

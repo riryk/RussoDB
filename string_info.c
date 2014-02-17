@@ -70,8 +70,9 @@ void enlargeStringInfo(
 	StringInfo      strinf, 
 	int             needed_size)
 {
-	IStringManager _    = (IStringManager)self;
-	IErrorLogger   elog = (IErrorLogger)_->errorLogger;
+	IStringManager  _    = (IStringManager)self;
+	IErrorLogger    elog = (IErrorLogger)_->errorLogger;
+	IMemoryManager  mm   = (IMemoryManager)_->memManager;
 
     int  newlen;
 
@@ -117,7 +118,8 @@ void enlargeStringInfo(
 	if (newlen > MAX_ALLOC_SIZE)
 		newlen = MAX_ALLOC_SIZE;
 
-
+	strinf->data = (char*)mm->realloc(strinf->data, newlen);
+	strinf->maxlen = newlen;
 }
 
 /* Add new string to an existed string.
@@ -128,11 +130,18 @@ void appendStringInfo(
 	char*           str,
 	...)
 {
+	IStringManager  _    = (IStringManager)self;
+    IErrorLogger    elog = (IErrorLogger)_->errorLogger;
+
+	int  cycleCount = 0;
+
 	CYCLE
 	{
         va_list		args;
 		Bool		success;  
-         
+        
+		ASSERT(elog, cycleCount < 2, False); 
+
         va_start(args, fmt);
 
 		success = appendStringInfoBase(
@@ -144,24 +153,43 @@ void appendStringInfo(
         va_end(args);
 
 		if (success)
-			break;
-	}
+			 break;
 
-	for (;;)
-	{
-		va_list		args;
-		bool		success;
+        enlargeStringInfo(
+             self,
+	         strinf, 
+			 strinf->maxlen); 
 
-		/* Try to format the data. */
-		va_start(args, fmt);
-		success = appendStringInfoVA(str, fmt, args);
-		va_end(args);
-
-		if (success)
-			break;
-
-		/* Double the buffer size and try again. */
-		enlargeStringInfo(str, str->maxlen);
+		cycleCount++;
 	}
 }
 
+void appendStringInfoChar(
+    void*             self,
+	StringInfo        str, 
+	char              ch)
+{
+	/* Make more room if needed */
+	if (str->len + 1 >= str->maxlen)
+		enlargeStringInfo(self, str, 1);
+
+	/* OK, append the character */
+	str->data[str->len] = ch;
+	str->len++;
+	str->data[str->len] = '\0';
+}
+
+void appendWithTabs(
+	void*             self,
+    StringInfo        buf,
+	char*             str)
+{
+	char		ch;
+
+	while ((ch = *str++) != '\0')
+	{
+		appendStringInfoChar(self, buf, ch);
+		if (ch == '\n')
+		    appendStringInfoChar(self, buf, '\t');
+	}
+}
