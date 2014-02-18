@@ -30,6 +30,11 @@ typedef struct SIStringManager
          StringInfo      buf,
 	     char*           str);
 
+	void (*appendStringInfoChar)(
+         void*           self,
+	     StringInfo      str, 
+	     char            ch);
+
 } SIStringManager, *IStringManager;
 
 void appendStringInfo(

@@ -2,6 +2,7 @@
 #include <setjmp.h>
 #include "common.h"
 #include "error.h"
+#include "logger.h"
 #include "ierrorlogger.h"
 #include "string.h"
 #include "string_info.h"
@@ -202,6 +203,30 @@ void endError(
 		reThrowError(self);
 		exit(0);
 	}
+
+	/* Emit the message to the right places */
+	emitError(self);
+
+	/* Now free up subsidiary data attached to stack entry, and release it */
+	if (einf->message != NULL)
+        free(einf->message);
+
+	if (einf->detailedMessage != NULL)
+        free(einf->detailedMessage);
+
+	if (einf->detailedLogMessage != NULL)
+		free(einf->detailedLogMessage);
+
+	if (einf->hintMessage != NULL);
+	    free(einf->hintMessage);
+	
+	if (einf->contextMessage != NULL)
+        free(einf->contextMessage);
+	
+	if (einf->internalQuery != NULL);
+	    free(einf->internalQuery);
+    
+
 }
 
 void errorInfoToString(
@@ -218,8 +243,6 @@ void errorInfoToString(
 
 	if (Log_line_prefix == NULL)
 		return;	
-
-
 }
 
 char* severity_message(int level)
@@ -265,19 +288,50 @@ char* severity_message(int level)
 	return prefix;
 }
 
+void writeMessageInChunks(
+    void*            self,
+    char*            data, 
+	int              len, 
+	int              dest)
+{
+    UPipeProtoChunk  p;
+	int			     fd = fileno(stderr);
+	int			     result;
+
+	assertCond(len > 0);
+
+	p.header.nuls[0] = p.header.nuls[1] = '\0';
+	p.header.pid     = ProcId;
+
+	/* write all but the last chunk */
+	while (len > PIPE_CHUNK_MAX_LOAD)
+	{
+		p.header.isLast = 'f';
+		p.header.len    = PIPE_CHUNK_MAX_LOAD;
+		memcpy(p.header.data, data, PIPE_CHUNK_MAX_LOAD);
+		result = write(fd, &p, PIPE_CHUNK_HEADER_SIZE + PIPE_CHUNK_MAX_LOAD);
+		data += PIPE_CHUNK_MAX_LOAD;
+		len  -= PIPE_CHUNK_MAX_LOAD;
+	}
+
+	/* write the last chunk */
+	p.header.isLast = 't';
+	p.header.len    = len;
+	memcpy(p.header.data, data, len);
+	result = write(fd, &p, PIPE_CHUNK_HEADER_SIZE + len);
+}
+
 void sendToServer(
     void*        self,
 	ErrorInfo    einf)
 {
-    IErrorLogger   _  = (IErrorLogger)self;
-	IStringManager sm = _->strManager;
+    IErrorLogger   _      = (IErrorLogger)self;
+	IStringManager sm     = _->strManager;
+	ILogger        logger = _->logger;
 
     SStringInfo  buf;
 
 	sm->initStringInfo(sm, &buf);
-
-	str_log_time[0] = '\0';
-
 	sm->appendStringInfo(sm, &buf, "%s:  ", severity_message(einf->level));
 	
 	if (einf->message != NULL)
@@ -285,12 +339,63 @@ void sendToServer(
 	else 
         sm->appendWithTabs(sm, &buf, "missing error text");
 
+	if (einf->cursorPosition > 0)
+		sm->appendStringInfo(sm, &buf, " at character %d", einf->cursorPosition);
+	else if (einf->internalPosition > 0)
+		sm->appendStringInfo(sm, &buf, " at character %d", einf->internalPosition);
 
+	sm->appendStringInfoChar(sm, &buf, '\n');
+
+	/* Write message to stderr */
+    if (!IsSysLogger)
+	{
+		/* Use chunk message logging protocol to write a message.
+		 * If we are a syslogger process, we write messages 
+		 * directly to stderr.
+		 */
+        writeMessageInChunks(self, buf.data, buf.len, dest);
+	}
+	else
+	{
+		/* Here we are inside the syslogger process.
+		 * So we write the message directly to the 
+		 * syslogger file.		
+		 */
+		logger->write_message_file(buf.data, buf.len);
+	}
+
+	free(buf.data);
 }
 
-void sendToClient(ErrorInfo  einf)
+void sendToClient(
+    void*         self,
+    ErrorInfo     einf)
 {
-     
+	IErrorLogger   _      = (IErrorLogger)self;
+	IStringManager sm     = _->strManager;
+
+    SStringInfo  buf;
+
+	sm->initStringInfo(sm, &buf);    
+	sm->appendStringInfo(sm, &buf, "%s:  ", severity_message(einf->level));
+
+	if (einf->funcName != NULL)
+		sm->appendStringInfo(sm, &buf, "%s:  ", einf->funcName);
+    
+	if (einf->message != NULL)
+		sm->appendStringInfo(sm, &buf, einf->message);
+    else
+		sm->appendStringInfo(sm, &buf, "missing error text");
+    
+	if (einf->cursorPosition > 0)
+		sm->appendStringInfo(sm, &buf, " at character %d", einf->cursorPosition);
+	else if (einf->internalPosition > 0)
+		sm->appendStringInfo(sm, &buf, " at character %d", einf->internalPosition);
+
+    sm->appendStringInfoChar(sm, &buf, '\n');
+
+    free(buf.data);
+    // Here the message should be sent to a client thru socket
 }
 
 void emitError(void*  self)
