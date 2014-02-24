@@ -187,6 +187,7 @@ typedef struct SMemoryChunk
 
 typedef	void* (*FMalloc)(size_t size);
 typedef void  (*FFree)  (void* mem);
+typedef void* (*FRealloc)(void* mem, size_t size);
 
 #endif
 

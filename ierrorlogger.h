@@ -1,11 +1,16 @@
 #include "iconfmanager.h"
+#include "imemcontainermanager.h"
+#include "ilogger.h"
 
 #ifndef IERRORLOGGER_H
 #define IERRORLOGGER_H
 
 typedef struct SIErrorLogger
 {
-	IConfManager  confManager;
+	IConfManager   confManager;
+	IStringManager strManager;
+	ILogger        logger;
+	void*          memContManager;
 
 	void (*assertArg)(Bool condition);	
 	void (*assert)(Bool condition);

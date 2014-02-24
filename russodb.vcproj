@@ -238,6 +238,14 @@
 						RelativePath=".\ierrorlogger.h"
 						>
 					</File>
+					<File
+						RelativePath=".\ilogger.h"
+						>
+					</File>
+					<File
+						RelativePath=".\logger.h"
+						>
+					</File>
 				</Filter>
 				<Filter
 					Name="memory"
@@ -292,6 +300,10 @@
 					</File>
 					<File
 						RelativePath="src\include\common\snprintf.h"
+						>
+					</File>
+					<File
+						RelativePath=".\string_info.h"
 						>
 					</File>
 					<File
@@ -549,6 +561,10 @@
 				>
 				<File
 					RelativePath=".\errorlogger.c"
+					>
+				</File>
+				<File
+					RelativePath=".\logger.c"
 					>
 				</File>
 			</Filter>
@@ -1289,6 +1305,10 @@
 				</File>
 				<File
 					RelativePath="src\common\snprintf.c"
+					>
+				</File>
+				<File
+					RelativePath=".\string_info.c"
 					>
 				</File>
 				<Filter

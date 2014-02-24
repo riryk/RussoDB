@@ -43,6 +43,8 @@ typedef int            Bool;
 #define MAX_PRINTED_CHARS 10
 
 extern Bool	IsPostmaster;
+extern Bool	IsSysLogger;
+extern int  ProcId;
 
 typedef struct SBlockId
 {

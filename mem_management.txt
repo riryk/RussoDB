@@ -122,6 +122,12 @@ for every child.
 
 3.1 Reset memory from a separate set.
 
+We loop through the block list and free each block.
+We do not need to free items from the free lists 
+because they point to memory from some blocks.
+We need just to free them
+
+
 
 
 

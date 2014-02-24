@@ -38,6 +38,10 @@ void ctorMemContMan(
 	FMalloc          funcMallocParam,
 	FFree            funcFreeParam);
 
+void resetErrCont(void* self);
+
+MemoryContainer changeToErrorContainer();
+
 void dtorMemContMan(
     void*            self);
 

@@ -51,7 +51,7 @@ void doint(
 		*(info->curr++) = str[--len];
 }
 
-int doprintf(
+Bool doprintf(
 	PrintfInfo   info, 
 	char*        fmt, 
 	va_list      args)
@@ -83,7 +83,11 @@ int doprintf(
 				doint(num, info);
      			break;
 		}
+
+        return False;
 	}
+
+	return True;
 }
 
 int snprintf(
@@ -113,3 +117,30 @@ int snprintf(
 
 	return info.curr - info.start;
 }
+
+int snprintf_args(
+	char*        s, 
+	size_t       count, 
+	char*        fmt, 
+	va_list      args)
+{
+	SPrintfInfo  info;
+
+	if (s == NULL || count == 0)
+		return 0;
+
+	info.start = s;
+	info.curr  = s;
+	info.end   = s + count - 1;
+
+	if (!doprintf(&info, fmt, args))
+	{
+		*(info.curr) = '\0';
+		errno = ERROR_CODE_BAD_FORMAT;
+        return -1;
+	}
+
+	*(info.curr) = '\0';
+	return info.curr - info.start;
+}
+
