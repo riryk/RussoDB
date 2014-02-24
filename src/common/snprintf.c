@@ -1,5 +1,6 @@
 #include "snprintf.h"
 #include "common.h"
+#include "error.h"
 
 typedef struct SPrintfInfo
 {

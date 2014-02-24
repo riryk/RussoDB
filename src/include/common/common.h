@@ -1,11 +1,9 @@
 
-#include <stdlib.h>
-#include <string.h>
-#include <io.h>
-#include "icommon.h"
-
 #ifndef COMMON_H
 #define COMMON_H
+
+#include <io.h>
+#include "icommon.h"
 
 extern const SICommon sCommonHelper;
 extern const ICommon  commonHelper;

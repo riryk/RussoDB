@@ -1,9 +1,9 @@
 
-#include <stdlib.h>
-#include <string.h>
-
 #ifndef ICOMMON_H
 #define ICOMMON_H
+
+#include <stdlib.h>
+#include <string.h>
 
 typedef struct SICommon
 {

@@ -1,7 +1,8 @@
-#include "common.h"
 
 #ifndef ERROR_H
 #define ERROR_H
+
+#include "common.h"
 
 #define ERROR_STACK_SIZE  5
 #define TIME_STRING_LEN 128

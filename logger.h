@@ -22,7 +22,7 @@ typedef union
 #define PIPE_CHUNK_HEADER_SIZE  offsetof(SPipeChunkHeader, data)
 #define PIPE_CHUNK_MAX_LOAD  ((int)(PIPE_CHUNK_SIZE - PIPE_CHUNK_HEADER_SIZE))
 
-extern FILE* logFile = NULL;
+extern FILE* logFile;
 
 void write_message_file(
 	char*               buffer, 
