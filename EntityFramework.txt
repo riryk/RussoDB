@@ -308,7 +308,9 @@ Get locations list:
  
  
  
- Optimistic lock:
+ 
+
+ lock:
  
  As the name suggests “optimistic” it assumes 
  that multiple transaction will work without affecting each other. 
