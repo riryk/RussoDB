@@ -1,4 +1,5 @@
 #include "memcontainermanager.h"
+#include "ierrorlogger.h"
 #include <stdio.h>
 
 /* This table matches n to log2(n) + 1 
@@ -155,7 +156,7 @@ void* allocateChunkBlock(
     MemoryContainer   container)
 {
 	IMemContainerManager _         = (IMemContainerManager)self;
-	IErrorLogger         elog      = _->errorLogger;
+	IErrorLogger         elog      = (IErrorLogger)_->errorLogger;
 	size_t               blockSize = chunkSize + MEM_BLOCK_SIZE + MEM_CHUNK_SIZE;
 
 	MemorySet	  set       = (MemorySet)container;
@@ -842,7 +843,7 @@ void freeChunk(
  */
 void* reallocateMemory(
     void*                  self,
-	MemoryContext          container, 
+	MemoryContainer        container, 
 	void*                  old_mem, 
 	size_t                 new_size)
 {
@@ -926,7 +927,7 @@ void* reallocateMemory(
 
 		/* Change block pointer to newly allocated block. */
 		if (prevblock == NULL)
-			set->blocks = block;
+			set->blockList = block;
 		else
 			prevblock->next = block;
 

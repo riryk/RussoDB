@@ -1,6 +1,6 @@
 
 #include "string_info.h"
-
+#include "ierrorlogger.h"
 
 void initStringInfo(
 	void*             self,

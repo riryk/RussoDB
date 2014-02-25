@@ -294,6 +294,7 @@ void writeMessageInChunks(
 	int              len, 
 	int              dest)
 {
+	/*
     UPipeProtoChunk  p;
 	int			     fd = fileno(stderr);
 	int			     result;
@@ -306,6 +307,9 @@ void writeMessageInChunks(
 
 	p.header.nuls[0] = p.header.nuls[1] = '\0';
 	p.header.pid     = ProcId;
+
+	p.header.isLast  = 'f';
+	*/
 
 	/* write all but the last chunk */
 	while (len > PIPE_CHUNK_MAX_LOAD)
