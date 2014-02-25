@@ -1,9 +1,8 @@
 
-#include "error.h"
-
 #ifndef ICONFMANAGER_H
 #define ICONFMANAGER_H
 
+#include "error.h"
 
 typedef struct SIErrorLoggerConfManager
 {

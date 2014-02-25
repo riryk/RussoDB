@@ -6,7 +6,7 @@
 typedef struct SPipeChunkHeader
 {
 	char		nuls[2];		/* always \0\0 */
-	uint16		len;			/* chunk's size */
+	int  		len;			/* chunk's size */
 	int		    pid;			/* process id */
 	char		isLast;		    /* last chunk of message? */
 	char		data[1];		/* data */

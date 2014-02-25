@@ -1,13 +1,13 @@
-#include "common.h"
-#include "memory.h"
-#include "ierrorlogger.h"
 
 #ifndef IMEM_CONTAINER_MANAGER_H
 #define IMEM_CONTAINER_MANAGER_H
 
+#include "common.h"
+#include "memory.h"
+
 typedef struct SIMemContainerManager
 {
-	IErrorLogger  errorLogger;
+	void*  errorLogger;
 
 	void (*ctorMemContMan)(
          void*                self, 

@@ -1,6 +1,7 @@
 #include "iconfmanager.h"
 #include "imemcontainermanager.h"
 #include "ilogger.h"
+#include "string_info.h"
 
 #ifndef IERRORLOGGER_H
 #define IERRORLOGGER_H

@@ -251,33 +251,33 @@ char* severity_message(int level)
 
 	switch (level)
 	{
-		case DEBUG1:
-		case DEBUG2:
-		case DEBUG3:
-		case DEBUG4:
-		case DEBUG5:
+		case LOG_DEBUG1:
+		case LOG_DEBUG2:
+		case LOG_DEBUG3:
+		case LOG_DEBUG4:
+		case LOG_DEBUG5:
 			prefix = "DEBUG";
 			break;
-		case LOG:
-		case COMMERROR:
+		case LOG_LOG:
+		case LOG_COMMUNICATION_ERROR:
 			prefix = "LOG";
 			break;
-		case INFO:
+		case LOG_INFO:
 			prefix = "INFO";
 			break;
-		case NOTICE:
+		case LOG_NOTICE:
 			prefix = "NOTICE";
 			break;
-		case WARNING:
+		case LOG_WARNING:
 			prefix = "WARNING";
 			break;
-		case ERROR:
+		case LOG_ERROR:
 			prefix = "ERROR";
 			break;
-		case FATAL:
+		case LOG_FATAL:
 			prefix = "FATAL";
 			break;
-		case PANIC:
+		case LOG_PANIC:
 			prefix = "PANIC";
 			break;
 		default:
@@ -297,6 +297,10 @@ void writeMessageInChunks(
     UPipeProtoChunk  p;
 	int			     fd = fileno(stderr);
 	int			     result;
+	SPipeChunkHeader hdr;
+	char*            hdrIsLast = &(hdr.isLast);
+	int              hdrLen    = &(hdr.len);
+	char*            hdrData   = &(hdr.data);
 
 	assertCond(len > 0);
 
@@ -307,18 +311,26 @@ void writeMessageInChunks(
 	while (len > PIPE_CHUNK_MAX_LOAD)
 	{
 		p.header.isLast = 'f';
+		/*
 		p.header.len    = PIPE_CHUNK_MAX_LOAD;
 		memcpy(p.header.data, data, PIPE_CHUNK_MAX_LOAD);
 		result = write(fd, &p, PIPE_CHUNK_HEADER_SIZE + PIPE_CHUNK_MAX_LOAD);
 		data += PIPE_CHUNK_MAX_LOAD;
 		len  -= PIPE_CHUNK_MAX_LOAD;
+		*/
 	}
 
 	/* write the last chunk */
-	p.header.isLast = 't';
-	p.header.len    = len;
-	memcpy(p.header.data, data, len);
+
+	/*
+	*hdrIsLast = 't';
+	*hdrLen    = len;
+	*/
+
+	/*
+	memcpy((void*)hdrData, data, len);
 	result = write(fd, &p, PIPE_CHUNK_HEADER_SIZE + len);
+	*/
 }
 
 void sendToServer(
@@ -401,7 +413,7 @@ void sendToClient(
 void emitError(void*  self)
 {
 	IErrorLogger          _  = (IErrorLogger)self;
-	IMemContainerManager  mm = _->memContManager
+	IMemContainerManager  mm = _->memContManager;
 
     MemoryContainer  oldContainer;
     ErrorInfo        einf = errorInfos[errordata_stack_depth];
