@@ -858,7 +858,7 @@ void* reallocateMemory(
 	void*        new_mem;
 
 	/* Always return when a requested size is a decrease */
-	if (oldsize >= size)
+	if (oldsize >= new_size)
 	    return old_mem;
 
 	/* Check if for the chunk there was allocate a block */
@@ -917,7 +917,7 @@ void* reallocateMemory(
 	        elog->log(LOG_ERROR, 
 		          ERROR_CODE_OUT_OF_MEMORY, 
 				  "Out of memory. Failed request size: %lu", 
-				  blockSize);
+				  block_size);
 
 		    return NULL;
 		}
@@ -942,7 +942,7 @@ void* reallocateMemory(
 	 * a new free chunk and the old chunk add to
 	 * the free list. 
 	 */
-    new_mem = allocateMemory(_, container, size);
+    new_mem = allocateMemory(_, container, new_size);
 
 	/* copy existing memory to a new memory. */
 	memcpy(new_mem, old_mem, oldsize);

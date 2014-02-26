@@ -6,6 +6,7 @@
 #include "ierrorlogger.h"
 #include "string.h"
 #include "string_info.h"
+#include "errorlogger.h"
 
 jmp_buf*          exceptionStack = NULL;
 int	              stackDepth     = -1;
@@ -99,7 +100,7 @@ Bool beginError(
 	if (level < LOG_ERROR && !writeToServer && !writeToClient)
 		return False;
 
-	if (recursDepth++ > 0 && level >= ERROR)
+	if (recursDepth++ > 0 && level >= LOG_ERROR)
 	{
 		/* Here an error has occured during an error processing
 		 * We clear all previous error info and reduce 
@@ -125,7 +126,7 @@ Bool beginError(
 
 	/* Initialize data for this error frame */
 	einf = &errorInfos[stackDepth];
-	MemSet(einf, 0, sizeof(SErrorInfo));
+	memset(einf, 0, sizeof(SErrorInfo));
 
 	einf->level          = level;
 	einf->reportToServer = writeToServer;
@@ -225,8 +226,6 @@ void endError(
 	
 	if (einf->internalQuery != NULL);
 	    free(einf->internalQuery);
-    
-
 }
 
 void errorInfoToString(
@@ -241,8 +240,8 @@ void errorInfoToString(
     
 	line_number++;
 
-	if (Log_line_prefix == NULL)
-		return;	
+	//if (Log_line_prefix == NULL)
+	//	return;	
 }
 
 char* severity_message(int level)
@@ -291,50 +290,34 @@ char* severity_message(int level)
 void writeMessageInChunks(
     void*            self,
     char*            data, 
-	int              len, 
-	int              dest)
+	int              len)
 {
-	/*
     UPipeProtoChunk  p;
 	int			     fd = fileno(stderr);
 	int			     result;
-	SPipeChunkHeader hdr;
-	char*            hdrIsLast = &(hdr.isLast);
-	int              hdrLen    = &(hdr.len);
-	char*            hdrData   = &(hdr.data);
 
 	assertCond(len > 0);
 
 	p.header.nuls[0] = p.header.nuls[1] = '\0';
 	p.header.pid     = ProcId;
 
-	p.header.isLast  = 'f';
-	*/
-
 	/* write all but the last chunk */
 	while (len > PIPE_CHUNK_MAX_LOAD)
 	{
 		p.header.isLast = 'f';
-		/*
 		p.header.len    = PIPE_CHUNK_MAX_LOAD;
 		memcpy(p.header.data, data, PIPE_CHUNK_MAX_LOAD);
 		result = write(fd, &p, PIPE_CHUNK_HEADER_SIZE + PIPE_CHUNK_MAX_LOAD);
 		data += PIPE_CHUNK_MAX_LOAD;
 		len  -= PIPE_CHUNK_MAX_LOAD;
-		*/
 	}
 
 	/* write the last chunk */
-
-	/*
-	*hdrIsLast = 't';
-	*hdrLen    = len;
-	*/
-
-	/*
-	memcpy((void*)hdrData, data, len);
+    p.header.isLast = 't';
+	p.header.len    = len;
+	
+	memcpy(p.header.data, data, len);
 	result = write(fd, &p, PIPE_CHUNK_HEADER_SIZE + len);
-	*/
 }
 
 void sendToServer(
@@ -369,7 +352,7 @@ void sendToServer(
 		 * If we are a syslogger process, we write messages 
 		 * directly to stderr.
 		 */
-        writeMessageInChunks(self, buf.data, buf.len, dest);
+        writeMessageInChunks(self, buf.data, buf.len);
 	}
 	else
 	{
@@ -420,7 +403,7 @@ void emitError(void*  self)
 	IMemContainerManager  mm = _->memContManager;
 
     MemoryContainer  oldContainer;
-    ErrorInfo        einf = errorInfos[errordata_stack_depth];
+    ErrorInfo        einf = &(errorInfos[stackDepth]);
 
     recursDepth++;
     
@@ -434,10 +417,10 @@ void emitError(void*  self)
 
 	/* Report error to server log */
 	if (einf->reportToServer)
-		sendToServer(einf);
+		sendToServer(self, einf);
 
 	if (einf->reportToClient)
-		sendToClient(einf);
+		sendToClient(self, einf);
 }
 
 /* ExceptionalCondition - Handles the failure of an Assert() */
@@ -464,9 +447,10 @@ void writeException(
 void assertCond(Bool condition)
 { }
 
-void reThrowError(void*  self)
+void reThrowError(void*  self, int minLogLevel)
 {
 	IErrorLogger _ = (IErrorLogger)self;
+	ErrorInfo    einf;
 
 	/* If possible, throw the error to the next outer setjmp handler */
 	if (exceptionStack != NULL)
@@ -496,7 +480,7 @@ void reThrowError(void*  self)
     /* The error was thrown in TRY block. So we should promote it 
 	 * to fatal and report.
 	 */
-	ErrorInfo einf = &errorInfos[stackDepth];
+	einf = &errorInfos[stackDepth];
 
 	assertCond(stackDepth >= 0);
 	assertCond(einf->level == LOG_ERROR);
@@ -504,11 +488,8 @@ void reThrowError(void*  self)
 	einf->level = LOG_FATAL;
 
     einf->reportToServer = IsPostmaster ? 
-		compareErrorLevels(level, minLogLevel) :
-	    (level >= minLogLevel);
-
-	if (outputDest == OutputRemote)
-		einf->reportToClient = (LOG_FATAL >= minLogLevel);
+		compareErrorLevels(einf->level , minLogLevel) :
+	    (einf->level >= minLogLevel);
 
 	errorStack = NULL;
     

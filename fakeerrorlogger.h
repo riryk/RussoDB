@@ -1,6 +1,6 @@
 #include "ierrorlogger.h"
 
-extern SIErrorLogger sFakeErrorLogger;
+extern const SIErrorLogger sFakeErrorLogger;
 
 extern uint assertArgFails;
 extern uint assertFails;

@@ -1,6 +1,7 @@
 
 #include "string_info.h"
 #include "ierrorlogger.h"
+#include "memcontainermanager.h"
 
 void initStringInfo(
 	void*             self,
@@ -112,7 +113,7 @@ void enlargeStringInfo(
 	 * it may be not enough. So we continue
 	 * doubling the space until we cover the need.
 	 */
-	while (needed > newlen)
+	while (needed_size > newlen)
 		newlen = 2 * newlen;
 
 	if (newlen > MAX_ALLOC_SIZE)
@@ -142,7 +143,7 @@ void appendStringInfo(
         
 		ASSERT(elog, cycleCount < 2, False); 
 
-        va_start(args, fmt);
+        va_start(args, str);
 
 		success = appendStringInfoBase(
 			 self,

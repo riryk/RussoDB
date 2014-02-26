@@ -84,3 +84,6 @@ void freeChunk(
     void*                self,
 	void*                mem);
 
+void resetMemContainer(
+    void*              self,
+	MemoryContainer    cont);

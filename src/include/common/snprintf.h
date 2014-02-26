@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdarg.h>
+#include "error.h"
 
 int snprintf(
     char*        s, 

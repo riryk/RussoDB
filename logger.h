@@ -1,5 +1,6 @@
 #include "common.h"
 #include "stdio.h"
+#include "stddef.h"
 
 #define PIPE_CHUNK_SIZE  512
 

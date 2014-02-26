@@ -137,7 +137,7 @@ int snprintf_args(
 	if (!doprintf(&info, fmt, args))
 	{
 		*(info.curr) = '\0';
-		errno = ERROR_CODE_BAD_FORMAT;
+		errno = 1005; /*ERROR_CODE_BAD_FORMAT;*/
         return -1;
 	}
 
