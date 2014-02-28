@@ -4,6 +4,13 @@
 
 #define PIPE_CHUNK_SIZE  512
 
+/*
+ * We read() into a temp buffer twice as big as a chunk, so that any fragment
+ * left after processing can be moved down to the front and we'll still have
+ * room to read a full chunk.
+ */
+#define READ_BUF_SIZE (2 * PIPE_CHUNK_SIZE)
+
 typedef struct SPipeChunkHeader
 {
 	char		nuls[2];		/* always \0\0 */
@@ -28,3 +35,5 @@ extern FILE* logFile;
 void write_message_file(
 	char*               buffer, 
 	int                 count);
+
+uint __stdcall pipeThread(void *arg);
