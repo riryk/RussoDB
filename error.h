@@ -54,6 +54,7 @@ typedef enum
 #define ERROR_CODE_INVALID_PARAM            1007
 #define ERROR_CODE_MAX_ALLOC_MEM_EXCEEDED   1008
 #define ERROR_CODE_CREATE_THREAD_FAILED     1009
+#define ERROR_CODE_FILE_ACCESS              1010
 
 /* The structure contains complete information 
  * about an error

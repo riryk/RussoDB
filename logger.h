@@ -1,6 +1,7 @@
 #include "common.h"
 #include "stdio.h"
 #include "stddef.h"
+#include "list.h"
 
 #define PIPE_CHUNK_SIZE  512
 
@@ -27,10 +28,19 @@ typedef union
 } UPipeProtoChunk;
 
 
+typedef struct SBuffer
+{
+	int		        id;		 /* PID of source process */
+	StringInfoData  data;		 /* accumulated data, as a StringInfo */
+} SBuffer, *Buffer;
+
+
 #define PIPE_CHUNK_HEADER_SIZE  offsetof(SPipeChunkHeader, data)
 #define PIPE_CHUNK_MAX_LOAD  ((int)(PIPE_CHUNK_SIZE - PIPE_CHUNK_HEADER_SIZE))
+#define BUFFER_LISTS_COUNT 256
 
 extern FILE* logFile;
+List* buffer_lists[BUFFER_LISTS_COUNT];
 
 void write_message_file(
 	char*               buffer, 

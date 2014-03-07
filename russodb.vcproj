@@ -295,7 +295,15 @@
 						>
 					</File>
 					<File
+						RelativePath=".\list.h"
+						>
+					</File>
+					<File
 						RelativePath="src\include\common\lock.h"
+						>
+					</File>
+					<File
+						RelativePath=".\nodes.h"
 						>
 					</File>
 					<File
@@ -1297,6 +1305,10 @@
 				</File>
 				<File
 					RelativePath="src\common\latchmanager.c"
+					>
+				</File>
+				<File
+					RelativePath=".\list.c"
 					>
 				</File>
 				<File

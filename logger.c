@@ -2,6 +2,7 @@
 #include "stdio.h"
 #include "osfile.h"
 #include "latch.h"
+#include "nodes.h"
 
 FILE*  logFile       = NULL;
 
@@ -82,13 +83,94 @@ void logger_main(void*  self)
 
 }
 
-/* This method transfers data from the pipe to the current log file. */
-uint __stdcall pipeThread(void *arg)
+void processLogBuffer(
+	void*       self,
+    char*       buf, 
+	int*        buf_bytes)
 {
-	char   logbuffer[READ_BUF_SIZE];
-	int	   bytes_in_logbuffer = 0;
-    
+    char*       cursor = buf;
+	int			count  = *buf_bytes;
+	int			dest   = LOG_DESTINATION_STDERR;   
 
+    /* While we have enough for a header, process data... */
+	while (count >= (int)sizeof(SPipeChunkHeader))
+	{
+        SPipeChunkHeader  hdr;
+		int			      chunklen;
+		Bool              isHeaderValid;
+
+        /* Do we have a valid header? */
+		memcpy(&hdr, cursor, sizeof(SPipeChunkHeader));
+
+		isHeaderValid = hdr.nuls[0] == '\0' 
+			         && hdr.nuls[1] == '\0'
+					 && hdr.len > 0
+					 && hdr.len <= PIPE_CHUNK_MAX_LOAD
+					 && hdr.pid != 0 &&
+					 (hdr.isLast == 't' || hdr.isLast == 'f' ||
+					  hdr.isLast == 'T' || hdr.isLast == 'F');
+
+		/* Process a protocal message. */
+		if (isHeaderValid)
+		{
+            List        buf_list;
+			ListCell    cell;
+            Buffer      exist_slot = NULL;
+            Buffer      free_slot  = NULL;
+            StringInfo  str;
+            
+			chunklen = PIPE_CHUNK_HEADER_SIZE + hdr.len;
+            
+			if (count < chunklen)
+				break;
+
+			buf_list = buffer_lists[hdr.pid % BUFFER_LISTS_COUNT];
+		}
+	}
+}
+
+/* This method transfers data from the pipe to the current log file. */
+uint __stdcall pipeThread(
+    void*       self,
+	void*       arg)
+{
+	char   buf[READ_BUF_SIZE];
+	int	   bufbytes = 0;
+    
+    CYCLE
+	{
+        DWORD	bytesRead;
+		BOOL    result;
+
+        result = ReadFile(logPipe[0],
+						  buf + bufbytes,
+						  sizeof(buf) - bufbytes,
+						  &bytesRead, 
+						  0); 
+
+        EnterCriticalSection(&logSection);
+
+        if (!result)
+		{
+            DWORD		error = GetLastError();
+
+			if (error == ERROR_HANDLE_EOF ||
+				error == ERROR_BROKEN_PIPE)
+				break;
+            
+            elog->log(LOG_LOG, 
+		          ERROR_CODE_FILE_ACCESS, 
+				  "could not read from logger pipe");
+		}
+
+		if (bytesRead > 0)
+		{
+            bufbytes += bytesRead;
+
+		}
+
+		LeaveCriticalSection(&logSection);
+	}
 
     return 0;    
 }
