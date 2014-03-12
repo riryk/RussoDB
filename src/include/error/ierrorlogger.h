@@ -1,6 +1,5 @@
+
 #include "iconfmanager.h"
-#include "imemcontainermanager.h"
-#include "ilogger.h"
 #include "string_info.h"
 
 #ifndef IERRORLOGGER_H
@@ -10,7 +9,7 @@ typedef struct SIErrorLogger
 {
 	IConfManager   confManager;
 	IStringManager strManager;
-	ILogger        logger;
+	void*          logger;
 	void*          memContManager;
 
 	void (*assertArg)(Bool condition);	

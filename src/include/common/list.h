@@ -9,7 +9,7 @@ typedef struct SListCell
 		int        int_value;
         uint       uint_value;
 	}           data;
-    SListCell*  next;  
+    struct SListCell*  next;  
 } SListCell, *ListCell;
 
 typedef struct SList

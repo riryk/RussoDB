@@ -7,6 +7,7 @@
 #include "string.h"
 #include "string_info.h"
 #include "errorlogger.h"
+#include "imemcontainermanager.h"
 
 jmp_buf*          exceptionStack = NULL;
 int	              stackDepth     = -1;
@@ -62,7 +63,8 @@ Bool beginError(
 	IMemContainerManager     mm  = _->memContManager;
 
 	int                i;
-	ErrorInfo          einf;
+	SErrorInfo         seinf;
+    ErrorInfo          einf  = &(seinf);
 
 	Bool		       writeToServer  = False;
 	Bool		       writeToClient  = False;

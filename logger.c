@@ -3,6 +3,7 @@
 #include "osfile.h"
 #include "latch.h"
 #include "nodes.h"
+#include "ilogger.h"
 
 FILE*  logFile       = NULL;
 
@@ -13,7 +14,7 @@ Latch             loggerLatch   = NULL;
 #ifdef WIN32
 
 HANDLE		      logPipe[2]    = {0, 0};
-CRITICAL_SECTION  logSection    = NULL;
+CRITICAL_SECTION  logSection;
 HANDLE            threadHandle  = NULL;
 
 #endif
@@ -36,9 +37,9 @@ void write_message_file(
 
 void logger_main(void*  self)
 {
-	ILogger        _  = (ILogger)self;
-    ILatchManager  lm = (ILatchManager)_->latchManager;
-	IErrorLogger   el = (IErrorLogger)_->errorLogger;
+	ILogger        _    = (ILogger)self;
+    ILatchManager  lm   = (ILatchManager)_->latchManager;
+	IErrorLogger   elog = (IErrorLogger)_->errorLogger;
 
     if (redirect_done)
 	{
@@ -59,10 +60,10 @@ void logger_main(void*  self)
 	else
 		_setmode(_fileno(stderr), _O_TEXT);
  
-    if (syslogPipe[1] != NULL)
-        CloseHandle(syslogPipe[1]);
+    if (logPipe[1] != NULL)
+        CloseHandle(logPipe[1]);
 
-    syslogPipe[1] = 0;
+    logPipe[1] = 0;
 
 #endif
 
@@ -137,6 +138,9 @@ uint __stdcall pipeThread(
 	char   buf[READ_BUF_SIZE];
 	int	   bufbytes = 0;
     
+    ILogger      _    = (ILogger)self;
+    IErrorLogger elog = (IErrorLogger)_->errorLogger;
+
     CYCLE
 	{
         DWORD	bytesRead;

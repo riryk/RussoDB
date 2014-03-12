@@ -44,7 +44,7 @@
 				Name="VCCLCompilerTool"
 				AdditionalOptions="/MP"
 				Optimization="0"
-				AdditionalIncludeDirectories="src/include/file;src/include/error;src/include/common;src/include/os/file;src/include/commands;src/include/commands/relation;src/include/memory;src/include/lib/unity;src/include/tests/unit;src/include/common/hashtable;src/include/tests/unit/memory;src/include/tests/unit/common/hashtable;src/include/commands/relation/row;src/include/tests/unit/commands/relation/row;src/include/commands/relation/buffer;src/include/tests/unit/file/file_manager;"
+				AdditionalIncludeDirectories="src/include/file;src/include/error;src/include/common;src/include/os/file;src/include/commands;src/include/commands/relation;src/include/memory;src/include/lib/unity;src/include/tests/unit;src/include/common/hashtable;src/include/tests/unit/memory;src/include/tests/unit/common/hashtable;src/include/commands/relation/row;src/include/tests/unit/commands/relation/row;src/include/commands/relation/buffer;src/include/tests/unit/file/file_manager;src/include/common/config;src/include/tests/unit/error;"
 				StringPooling="false"
 				RuntimeLibrary="3"
 				AssemblerOutput="0"
@@ -227,23 +227,23 @@
 					Name="error"
 					>
 					<File
-						RelativePath=".\error.h"
+						RelativePath="src\include\error\error.h"
 						>
 					</File>
 					<File
-						RelativePath=".\errorlogger.h"
+						RelativePath="src\include\error\errorlogger.h"
 						>
 					</File>
 					<File
-						RelativePath=".\ierrorlogger.h"
+						RelativePath="src\include\error\ierrorlogger.h"
 						>
 					</File>
 					<File
-						RelativePath=".\ilogger.h"
+						RelativePath="src\include\error\ilogger.h"
 						>
 					</File>
 					<File
-						RelativePath=".\logger.h"
+						RelativePath="src\include\error\logger.h"
 						>
 					</File>
 				</Filter>
@@ -251,7 +251,7 @@
 					Name="memory"
 					>
 					<File
-						RelativePath=".\imemcontainermanager.h"
+						RelativePath="src\include\memory\imemcontainermanager.h"
 						>
 					</File>
 					<File
@@ -259,11 +259,11 @@
 						>
 					</File>
 					<File
-						RelativePath=".\memcontainermanager.h"
+						RelativePath="src\include\memory\memcontainermanager.h"
 						>
 					</File>
 					<File
-						RelativePath=".\memory.h"
+						RelativePath="src\include\memory\memory.h"
 						>
 					</File>
 					<File
@@ -295,7 +295,7 @@
 						>
 					</File>
 					<File
-						RelativePath=".\list.h"
+						RelativePath="src\include\common\list.h"
 						>
 					</File>
 					<File
@@ -303,7 +303,7 @@
 						>
 					</File>
 					<File
-						RelativePath=".\nodes.h"
+						RelativePath="src\include\common\nodes.h"
 						>
 					</File>
 					<File
@@ -311,7 +311,7 @@
 						>
 					</File>
 					<File
-						RelativePath=".\string_info.h"
+						RelativePath="src\include\common\string_info.h"
 						>
 					</File>
 					<File
@@ -347,18 +347,18 @@
 						</File>
 					</Filter>
 					<Filter
-						Name="common"
+						Name="config"
 						>
 						<File
-							RelativePath=".\confmanager.h"
+							RelativePath="src\include\common\config\confmanager.h"
 							>
 						</File>
 						<File
-							RelativePath=".\iconfmanager.h"
+							RelativePath="src\include\common\config\iconfmanager.h"
 							>
 						</File>
 						<File
-							RelativePath=".\ierrorconfmanager.h"
+							RelativePath="src\include\common\config\ierrorconfmanager.h"
 							>
 						</File>
 					</Filter>
@@ -497,7 +497,7 @@
 								>
 							</File>
 							<File
-								RelativePath=".\memhelper.h"
+								RelativePath="src\include\tests\unit\memory\memhelper.h"
 								>
 							</File>
 						</Filter>
@@ -545,7 +545,7 @@
 							Name="error"
 							>
 							<File
-								RelativePath=".\fakeerrorlogger.h"
+								RelativePath="src\include\tests\unit\error\fakeerrorlogger.h"
 								>
 							</File>
 						</Filter>

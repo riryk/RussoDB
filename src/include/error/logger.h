@@ -2,8 +2,10 @@
 #include "stdio.h"
 #include "stddef.h"
 #include "list.h"
+#include "ilogger.h"
 
 #define PIPE_CHUNK_SIZE  512
+#define LOG_DESTINATION_STDERR 1
 
 /*
  * We read() into a temp buffer twice as big as a chunk, so that any fragment
@@ -30,8 +32,8 @@ typedef union
 
 typedef struct SBuffer
 {
-	int		        id;		 /* PID of source process */
-	StringInfoData  data;		 /* accumulated data, as a StringInfo */
+	int		        id;		  /* PID of source process */
+	StringInfo      data;     /* accumulated data, as a StringInfo */
 } SBuffer, *Buffer;
 
 
