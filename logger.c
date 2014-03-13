@@ -89,6 +89,10 @@ void processLogBuffer(
     char*       buf, 
 	int*        buf_bytes)
 {
+	ILogger        _      = (ILogger)self;
+	IStringManager strman = _->stringManager;
+	IMemoryManager memman = _->memManager;
+
     char*       cursor = buf;
 	int			count  = *buf_bytes;
 	int			dest   = LOG_DESTINATION_STDERR;   
@@ -116,8 +120,8 @@ void processLogBuffer(
 		{
             List        buf_list;
 			ListCell    cell;
-            Buffer      exist_slot = NULL;
-            Buffer      free_slot  = NULL;
+            Buffer      existing_buf = NULL;
+            Buffer      free_buf  = NULL;
             StringInfo  str;
             
 			chunklen = PIPE_CHUNK_HEADER_SIZE + hdr.len;
@@ -126,6 +130,47 @@ void processLogBuffer(
 				break;
 
 			buf_list = buffer_lists[hdr.pid % BUFFER_LISTS_COUNT];
+
+            foreach(cell, buf_list)
+			{
+                Buffer buf = (Buffer)list_first(cell);
+
+				if (buf->proc_id == hdr.pid)
+				{
+					existing_buf = buf;
+					break;
+				}
+
+				if (buf->proc_id == 0 && free_buf == NULL)
+                    free_buf = buf;
+			}
+
+			/* If the buffer is not the last */
+			if (hdr.isLast == 'f' || hdr.isLast == 'F')
+			{
+				/* Save a complete non-final chunk in a per process id buffer */
+                if (existing_buf != NULL)
+				{
+                    /* Add the chunk to the preceding chunk */ 
+					str = &(existing_buf->data);
+
+					strman->appendStringInfoBinary(
+						      strman, 
+							  str, 
+							  cursor + PIPE_CHUNK_HEADER_SIZE,
+							  hdr.len);
+					break;
+				}
+
+                /* We have not found an existing buffer where to put a buffer.
+				 * Try to put it into a free buffer.
+				 */
+                if (free_slot == NULL)
+				{
+					free_buf     = (Buffer)memman->alloc(sizeof(SBuffer));
+                    buffer_lists = 
+				}
+			}
 		}
 	}
 }

@@ -34,6 +34,12 @@ typedef struct SIStringManager
          void*           self,
 	     StringInfo      str, 
 	     char            ch);
+    
+	void (*appendStringInfoBinary)(
+	     void*           self,
+	     StringInfo      str,
+	     char*           data,
+	     int             datalen);
 
 } SIStringManager, *IStringManager;
 
@@ -42,5 +48,11 @@ void appendStringInfo(
 	StringInfo      strinf, 
 	char*           str,
 	...);
+
+void appendStringInfoBinary(
+	void*             self,
+	StringInfo        str,
+	char*             data,
+	int               datalen);
 
 #endif

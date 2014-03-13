@@ -22,9 +22,10 @@ typedef struct SList
 
 ListCell getListHead(List list);
 
-#define lnext(lc) ((lc)->next)
+#define list_next(lc) ((lc)->next)
+#define list_first(lc) ((lc)->data.ptr_value)
 
 /* A macro to loop through the list */
 #define foreach(cell, l)	\
-	for ((cell) = getListHead(l); (cell) != NULL; (cell) = lnext(cell))
+	for ((cell) = getListHead(l); (cell) != NULL; (cell) = list_next(cell))
 

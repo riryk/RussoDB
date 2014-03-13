@@ -180,6 +180,25 @@ void appendStringInfoChar(
 	str->data[str->len] = '\0';
 }
 
+void appendStringInfoBinary(
+	void*             self,
+	StringInfo        str,
+	char*             data,
+	int               datalen)
+{
+    IStringManager _    = (IStringManager)self;
+	IErrorLogger   elog = (IErrorLogger)_->errorLogger;
+
+    ASSERT(elog, str != NULL, False); 
+	enlargeStringInfo(self, str, datalen);
+
+	memcpy(str->data + str->len, data, datalen);
+	str->len += datalen;
+
+	/* Add '\0' to the end of the string. */
+	str->data[str->len] = '\0';
+}
+
 void appendWithTabs(
 	void*             self,
     StringInfo        buf,

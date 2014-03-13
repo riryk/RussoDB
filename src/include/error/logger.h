@@ -29,13 +29,11 @@ typedef union
 	char		      filler[PIPE_CHUNK_SIZE];
 } UPipeProtoChunk;
 
-
 typedef struct SBuffer
 {
-	int		        id;		  /* PID of source process */
-	StringInfo      data;     /* accumulated data, as a StringInfo */
+	int		        proc_id;  /* identifier of source process */
+	SStringInfo     data;     /* accumulated data, as a StringInfo */
 } SBuffer, *Buffer;
-
 
 #define PIPE_CHUNK_HEADER_SIZE  offsetof(SPipeChunkHeader, data)
 #define PIPE_CHUNK_MAX_LOAD  ((int)(PIPE_CHUNK_SIZE - PIPE_CHUNK_HEADER_SIZE))
