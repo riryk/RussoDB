@@ -2,7 +2,7 @@
 #ifndef NODES_H
 #define NODES_H
 
-typedef enum EListNodeType
+typedef enum ENodeType
 {
     T_Invalid = 0,
 
@@ -10,6 +10,14 @@ typedef enum EListNodeType
 	T_ExprContext,
 	T_ProjectionInfo,
 	T_JunkFilter
-} EListNodeType;
+} ENodeType;
+
+typedef struct SNode
+{
+	ENodeType	 type;
+} SNode, *Node;
+
+#define nodeType(node) (((Node)(node))->type)
+#define isOfType(node,_type_) (nodeTag(node) == T_##_type_)
 
 #endif 

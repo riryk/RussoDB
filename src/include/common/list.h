@@ -14,13 +14,11 @@ typedef struct SListCell
 
 typedef struct SList
 {
-	EListNodeType    type;	
-	int			     length;
-	ListCell         head;
-	ListCell         tail;
+	ENodeType      type;	
+	int			   length;
+	ListCell       head;
+	ListCell       tail;
 } SList, *List;
-
-ListCell getListHead(List list);
 
 #define list_next(lc) ((lc)->next)
 #define list_first(lc) ((lc)->data.ptr_value)
@@ -28,4 +26,8 @@ ListCell getListHead(List list);
 /* A macro to loop through the list */
 #define foreach(cell, l)	\
 	for ((cell) = getListHead(l); (cell) != NULL; (cell) = list_next(cell))
+
+#define IsPointerList(l) ((l) == (List)NULL || isOfType((l), List))
+
+
 

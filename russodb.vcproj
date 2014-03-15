@@ -287,6 +287,10 @@
 						>
 					</File>
 					<File
+						RelativePath=".\ilistmanager.h"
+						>
+					</File>
+					<File
 						RelativePath="src\include\common\latch.h"
 						>
 					</File>
@@ -296,6 +300,10 @@
 					</File>
 					<File
 						RelativePath="src\include\common\list.h"
+						>
+					</File>
+					<File
+						RelativePath=".\listmanager.h"
 						>
 					</File>
 					<File
@@ -1308,7 +1316,7 @@
 					>
 				</File>
 				<File
-					RelativePath=".\list.c"
+					RelativePath=".\listmanager.c"
 					>
 				</File>
 				<File
