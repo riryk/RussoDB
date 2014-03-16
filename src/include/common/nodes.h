@@ -9,7 +9,8 @@ typedef enum ENodeType
     T_IndexInfo = 10,
 	T_ExprContext,
 	T_ProjectionInfo,
-	T_JunkFilter
+	T_JunkFilter,
+	T_List
 } ENodeType;
 
 typedef struct SNode

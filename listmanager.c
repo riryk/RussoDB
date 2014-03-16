@@ -1,4 +1,5 @@
 #include "listmanager.h"
+#include "nodes.h"
 
 ListCell getListHead(List list)
 {
@@ -11,7 +12,7 @@ ListCell getListHead(List list)
 List createList(void* self, ENodeType type)
 { 
     IListManager   _      = (IListManager)self;
-    IMemoryManager memMan = (IMemoryManager)self;
+    IMemoryManager memMan = (IMemoryManager)_->memManager;
 
 	List	    newList;
 	ListCell    newHead;
@@ -28,6 +29,21 @@ List createList(void* self, ENodeType type)
 	return newList;
 }
 
+void addCellToTail(void* self, List list)
+{
+    IListManager   _      = (IListManager)self;
+    IMemoryManager memMan = (IMemoryManager)_->memManager;
+
+	ListCell   newItem;
+
+	newItem       = (ListCell)memMan->alloc(sizeof(newItem));
+	newItem->next = NULL;
+
+    list->tail->next = newItem;
+	list->tail       = newItem;
+	list->length++;
+}
+
 List listAppend(void* self, List list, void* data)
 {
 	IListManager _     = (IListManager)self;
@@ -37,11 +53,10 @@ List listAppend(void* self, List list, void* data)
     erlog->assertCond(isList);
 
 	if (list == (List)NULL)
-		list = new_list(T_List);
+        list = createList(_, T_List);
 	else
-		new_tail_cell(list);
+        addCellToTail(_, list);
 
-	lfirst(list->tail) = datum;
-	check_list_invariants(list);
+	list_first(list->tail) = data;
 	return list;
 }

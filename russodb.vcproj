@@ -287,7 +287,7 @@
 						>
 					</File>
 					<File
-						RelativePath=".\ilistmanager.h"
+						RelativePath="src\include\common\ilistmanager.h"
 						>
 					</File>
 					<File
@@ -303,7 +303,7 @@
 						>
 					</File>
 					<File
-						RelativePath=".\listmanager.h"
+						RelativePath="src\include\common\listmanager.h"
 						>
 					</File>
 					<File

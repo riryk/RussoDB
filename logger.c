@@ -89,9 +89,10 @@ void processLogBuffer(
     char*       buf, 
 	int*        buf_bytes)
 {
-	ILogger        _      = (ILogger)self;
-	IStringManager strman = _->stringManager;
-	IMemoryManager memman = _->memManager;
+	ILogger         _       = (ILogger)self;
+	IStringManager  strman  = _->stringManager;
+	IMemoryManager  memman  = _->memManager;
+	IListManager    listman = _->listManager;
 
     char*       cursor = buf;
 	int			count  = *buf_bytes;
@@ -103,6 +104,13 @@ void processLogBuffer(
         SPipeChunkHeader  hdr;
 		int			      chunklen;
 		Bool              isHeaderValid;
+		Bool              isChunkLast;
+
+        List              buf_list;
+		ListCell          cell;
+        Buffer            existing_buf = NULL;
+        Buffer            free_buf  = NULL;
+        StringInfo        str;
 
         /* Do we have a valid header? */
 		memcpy(&hdr, cursor, sizeof(SPipeChunkHeader));
@@ -114,65 +122,126 @@ void processLogBuffer(
 					 && hdr.pid != 0 &&
 					 (hdr.isLast == 't' || hdr.isLast == 'f' ||
 					  hdr.isLast == 'T' || hdr.isLast == 'F');
-
-		/* Process a protocal message. */
-		if (isHeaderValid)
+        
+		/* Process a non-protocol message */
+        if (!isHeaderValid)
 		{
-            List        buf_list;
-			ListCell    cell;
-            Buffer      existing_buf = NULL;
-            Buffer      free_buf  = NULL;
-            StringInfo  str;
-            
-			chunklen = PIPE_CHUNK_HEADER_SIZE + hdr.len;
-            
-			if (count < chunklen)
-				break;
-
-			buf_list = buffer_lists[hdr.pid % BUFFER_LISTS_COUNT];
-
-            foreach(cell, buf_list)
+			for (chunklen = 1; chunklen < count; chunklen++)
 			{
-                Buffer buf = (Buffer)list_first(cell);
-
-				if (buf->proc_id == hdr.pid)
-				{
-					existing_buf = buf;
+				if (cursor[chunklen] == '\0')
 					break;
-				}
-
-				if (buf->proc_id == 0 && free_buf == NULL)
-                    free_buf = buf;
 			}
 
-			/* If the buffer is not the last */
-			if (hdr.isLast == 'f' || hdr.isLast == 'F')
-			{
-				/* Save a complete non-final chunk in a per process id buffer */
-                if (existing_buf != NULL)
-				{
-                    /* Add the chunk to the preceding chunk */ 
-					str = &(existing_buf->data);
+			/* fall back on the stderr log as the destination */
+			write_message_file(cursor, hdr.len);
 
-					strman->appendStringInfoBinary(
-						      strman, 
-							  str, 
-							  cursor + PIPE_CHUNK_HEADER_SIZE,
-							  hdr.len);
-					break;
-				}
-
-                /* We have not found an existing buffer where to put a buffer.
-				 * Try to put it into a free buffer.
-				 */
-                if (free_slot == NULL)
-				{
-					free_buf     = (Buffer)memman->alloc(sizeof(SBuffer));
-                    buffer_lists = 
-				}
-			}
+			cursor += chunklen;
+			count  -= chunklen;
 		}
+
+        /* Process a protocol message */    
+		chunklen = PIPE_CHUNK_HEADER_SIZE + hdr.len;
+            
+		if (count < chunklen)
+			break;
+
+		buf_list = buffer_lists[hdr.pid % BUFFER_LISTS_COUNT];
+
+        foreach(cell, buf_list)
+		{
+            Buffer buf = (Buffer)list_first(cell);
+
+			if (buf->proc_id == hdr.pid)
+			{
+				existing_buf = buf;
+				break;
+			}
+
+			if (buf->proc_id == 0 && free_buf == NULL)
+                free_buf = buf;
+		}
+
+        isChunkLast = hdr.isLast == 'f' || hdr.isLast == 'F';
+
+		/* If the buffer is not the last */
+		if (isChunkLast)
+		{
+			/* Save a complete non-final chunk in a per process id buffer */
+            if (existing_buf != NULL)
+			{
+                /* Add the chunk to the preceding chunk */ 
+				str = &(existing_buf->data);
+
+				strman->appendStringInfoBinary(
+					      strman, 
+						  str, 
+						  cursor + PIPE_CHUNK_HEADER_SIZE,
+						  hdr.len);
+				break;
+			}
+
+            /* We have not found an existing buffer where to put a buffer.
+			 * Try to put it into a free buffer.
+			 */
+            if (free_buf == NULL)
+			{
+				free_buf     = (Buffer)memman->alloc(sizeof(SBuffer));
+                buf_list     = listman->listAppend(listman, buf_list, free_buf);
+				buffer_lists[hdr.pid % BUFFER_LISTS_COUNT] = buf_list;
+			}
+
+			free_buf->proc_id = hdr.pid;
+			str               = &(free_buf->data);
+
+			strman->initStringInfo(strman, str);
+            
+            strman->appendStringInfoBinary(
+					      strman, 
+						  str, 
+						  cursor + PIPE_CHUNK_HEADER_SIZE,
+						  hdr.len);
+
+			cursor += chunklen;
+		    count  -= chunklen;
+
+			break;
+	    }
+
+        /* Process the final chunk */
+        if (existing_buf == NULL)
+		{
+			/* The whole message was one chunk, evidently. */
+		    write_message_file(
+				cursor + PIPE_CHUNK_HEADER_SIZE, 
+				hdr.len);
+
+			break;
+		}
+
+		str = &(existing_buf->data);
+
+        strman->appendStringInfoBinary(
+				      strman, 
+					  str, 
+					  cursor + PIPE_CHUNK_HEADER_SIZE,
+					  hdr.len);
+
+		write_message_file(str->data, str->len);
+        
+		existing_buf->proc_id = 0;
+		memman->free(str->data);
+
+		cursor += chunklen;
+		count  -= chunklen;
+
+		break;
 	}
+
+    /* We don't have a full chunk, so left-align what remains in the buffer */
+	if (count > 0 && cursor != buf)
+		memmove(buf, cursor, count);
+
+	*buf_bytes = count;
 }
 
 /* This method transfers data from the pipe to the current log file. */

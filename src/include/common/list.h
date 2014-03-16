@@ -1,5 +1,6 @@
 #include "nodes.h"
 #include "string_info.h"
+#include "common.h"
 
 typedef struct SListCell
 {
