@@ -1,3 +1,7 @@
+
+#ifndef LIST_H
+#define LIST_H
+
 #include "nodes.h"
 #include "string_info.h"
 #include "common.h"
@@ -22,7 +26,7 @@ typedef struct SList
 } SList, *List;
 
 #define list_next(lc) ((lc)->next)
-#define list_first(lc) ((lc)->data.ptr_value)
+#define list_first(lc) ((lc)->data.void_value)
 
 /* A macro to loop through the list */
 #define foreach(cell, l)	\
@@ -30,5 +34,5 @@ typedef struct SList
 
 #define IsPointerList(l) ((l) == (List)NULL || isOfType((l), List))
 
-
+#endif
 

@@ -19,6 +19,6 @@ typedef struct SNode
 } SNode, *Node;
 
 #define nodeType(node) (((Node)(node))->type)
-#define isOfType(node,_type_) (nodeTag(node) == T_##_type_)
+#define isOfType(node,_type_) (nodeType(node) == T_##_type_)
 
 #endif 

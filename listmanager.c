@@ -50,7 +50,7 @@ List listAppend(void* self, List list, void* data)
     IErrorLogger erlog = _->errorLogger;
 
 	Bool isList = IsPointerList(list);
-    erlog->assertCond(isList);
+    erlog->assert(isList);
 
 	if (list == (List)NULL)
         list = createList(_, T_List);

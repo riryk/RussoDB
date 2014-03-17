@@ -18,6 +18,8 @@ typedef struct SILogger
 	void (*write_message_file)(
 	     char*               buffer, 
 	     int                 count);
+    
+	void (*logger_start)(void*  self);
 
 } SILogger, *ILogger;
 

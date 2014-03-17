@@ -9,5 +9,6 @@ extern const ILatchManager  latchManager;
 
 void initLatch(void* self, Latch latch);
 void setLatch(Latch latch);
+void resetLatch(Latch latch);
 
 #endif

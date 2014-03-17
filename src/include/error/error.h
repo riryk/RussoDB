@@ -55,6 +55,7 @@ typedef enum
 #define ERROR_CODE_MAX_ALLOC_MEM_EXCEEDED   1008
 #define ERROR_CODE_CREATE_THREAD_FAILED     1009
 #define ERROR_CODE_FILE_ACCESS              1010
+#define ERROR_CODE_CREATE_PIPE_FAILED       1011
 
 /* The structure contains complete information 
  * about an error

@@ -12,7 +12,7 @@ typedef struct SIListManager
     IMemoryManager memManager;
 
 	ListCell (*getListHead)(List list);
-    void (*listAppend)(void* self, List list, void* data);
+    List     (*listAppend)(void* self, List list, void* data);
 } SIListManager, *IListManager;
 
 #endif

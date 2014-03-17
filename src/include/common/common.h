@@ -15,11 +15,13 @@ typedef signed short   int16;
 typedef unsigned int   uint;
 typedef unsigned long  ulong;
 typedef int            Bool;
+typedef __int64        int64; 
 
 #define True         1
 #define False        0
 
 #define NAME_MAX_LENGTH     64
+#define MAX_PATH		    1024
 #define ALIGN_DEFAULT_VAL   8
 #define ALIGN_INT_VAL       4
 #define ALIGN_DOUBLE_VAL    8

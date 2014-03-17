@@ -3,8 +3,9 @@
 #define LISTMANAGER_H
 
 #include "list.h"
+#include "ilistmanager.h"
 
 ListCell getListHead(List list);
-void listAppend(void* self, List list, void* data);
+List listAppend(void* self, List list, void* data);
 
 #endif

@@ -13,6 +13,7 @@ typedef struct SILatchManager
 
 	void (*initLatch)(void* self, Latch latch);
 	void (*setLatch)(Latch latch);
+	void (*resetLatch)(Latch latch);
 } SILatchManager, *ILatchManager;
 
 #endif

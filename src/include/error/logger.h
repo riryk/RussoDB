@@ -40,6 +40,7 @@ typedef struct SBuffer
 #define BUFFER_LISTS_COUNT 256
 
 extern FILE* logFile;
+extern char* loggerDirectory;
 List* buffer_lists[BUFFER_LISTS_COUNT];
 
 void write_message_file(
@@ -47,3 +48,5 @@ void write_message_file(
 	int                 count);
 
 uint __stdcall pipeThread(void *arg);
+
+void logger_start(void*  self);

@@ -1,15 +1,19 @@
+#include <direct.h>
 #include "logger.h"
 #include "stdio.h"
 #include "osfile.h"
 #include "latch.h"
 #include "nodes.h"
 #include "ilogger.h"
+#include "snprintf.h"
 
 FILE*  logFile       = NULL;
 
 /* stderr has already been redirected for syslogger? */
-Bool              redirect_done = False;
-Latch             loggerLatch   = NULL;
+Bool              redirect_done       = False;
+Latch             loggerLatch         = NULL;
+char*             loggerDirectory     = NULL;
+int64             loggerFileTimeFirst = 0;
 
 #ifdef WIN32
 
@@ -81,7 +85,67 @@ void logger_main(void*  self)
 				  "could not create syslogger data transfer thread");
 
 #endif
+    
+    CYCLE
+	{
+		lm->resetLatch(loggerLatch);
+        break;
+	}
+}
 
+char* getLogFileName(
+    void*           self,
+	int             time)
+{
+    ILogger         _      = (ILogger)self;
+	IMemoryManager  memman = _->memManager;
+
+    char*           filename;
+
+    filename = (char*)memman->alloc(MAX_PATH);
+    snprintf(filename, MAX_PATH, "%s/%u", loggerDirectory, time);
+
+	return filename;
+}
+
+FILE* logFileOpen(
+    void*           self,
+	char*           filename,
+	char*           mode,
+	Bool            allowErrors)
+{
+    FILE*       fh;
+	mode_t		oumask;
+}
+
+void logger_start(void*  self)
+{
+	ILogger        _    = (ILogger)self;
+	IErrorLogger   elog = (IErrorLogger)_->errorLogger;
+
+	char*  filename;
+
+    /* First time we enter here we create the pipe that will
+	 * receive all information from all stderrs from all processes.
+	 */
+    if (logPipe[0] != NULL)
+	{
+        SECURITY_ATTRIBUTES sa;
+
+		memset(&sa, 0, sizeof(SECURITY_ATTRIBUTES));
+		sa.nLength = sizeof(SECURITY_ATTRIBUTES);
+		sa.bInheritHandle = TRUE;
+
+        if (!CreatePipe(&(logPipe[0]), &(logPipe[1]), &sa, 32768))
+            elog->log(LOG_ERROR, 
+		          ERROR_CODE_CREATE_PIPE_FAILED, 
+				  "could not create a logger pipe");
+	}
+
+	mkdir(loggerDirectory);
+	loggerFileTimeFirst = time(NULL);
+	filename = getLogFileName(_, loggerFileTimeFirst);
+    logFile  = logfile_open(filename, "a", false);
 }
 
 void processLogBuffer(
