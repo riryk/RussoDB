@@ -42,6 +42,10 @@ typedef __int64        int64;
 #define MAX_BLOCK_SIZE (1 << 15)
 #define MAX_PRINTED_CHARS 10
 
+#ifdef _WIN32
+typedef SOCKET socket_type;
+#endif
+
 extern Bool	IsPostmaster;
 extern Bool	IsSysLogger;
 extern int  ProcId;

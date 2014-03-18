@@ -291,6 +291,10 @@
 						>
 					</File>
 					<File
+						RelativePath=".\iprocesshelper.h"
+						>
+					</File>
+					<File
 						RelativePath="src\include\common\latch.h"
 						>
 					</File>
@@ -312,6 +316,10 @@
 					</File>
 					<File
 						RelativePath="src\include\common\nodes.h"
+						>
+					</File>
+					<File
+						RelativePath=".\processhelper.h"
 						>
 					</File>
 					<File
@@ -1321,6 +1329,10 @@
 				</File>
 				<File
 					RelativePath="src\common\lock.c"
+					>
+				</File>
+				<File
+					RelativePath=".\processhelper.c"
 					>
 				</File>
 				<File

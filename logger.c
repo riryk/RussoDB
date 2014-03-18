@@ -1,4 +1,6 @@
 #include <direct.h>
+#include <sys/types.h>
+#include <sys/stat.h>
 #include "logger.h"
 #include "stdio.h"
 #include "osfile.h"
@@ -16,6 +18,13 @@ char*             loggerDirectory     = NULL;
 int64             loggerFileTimeFirst = 0;
 
 #ifdef WIN32
+
+/*
+ * We really want line-buffered mode for logfile output, but Windows does
+ * not have it, and interprets _IOLBF as _IOFBF (bozos).  
+ * So use _IONBF instead on Windows.
+ */
+#define LOG_BUF_MODE _IONBF
 
 HANDLE		      logPipe[2]    = {0, 0};
 CRITICAL_SECTION  logSection;
@@ -111,17 +120,41 @@ char* getLogFileName(
 FILE* logFileOpen(
     void*           self,
 	char*           filename,
-	char*           mode,
-	Bool            allowErrors)
+	char*           mode)
 {
-    FILE*       fh;
-	mode_t		oumask;
+	ILogger        _    = (ILogger)self;
+	IErrorLogger   elog = (IErrorLogger)_->errorLogger;
+
+    FILE*       fhd;
+	int         savedErr;
+
+	fhd    = fopen(filename, mode);
+
+	if (fhd != NULL)
+	{
+		setvbuf(fhd, NULL, LOG_BUF_MODE, 0);
+
+#ifdef WIN32
+		_setmode(_fileno(fhd), _O_TEXT);
+#endif
+		return fhd;
+	}
+
+	savedErr = errno;
+
+	elog->log(LOG_ERROR, 
+		      ERROR_CODE_FILE_ACCESS, 
+			  "could not open log file \"%s\"", 
+			  filename);
+
+	errno = savedErr;
 }
 
 void logger_start(void*  self)
 {
 	ILogger        _    = (ILogger)self;
 	IErrorLogger   elog = (IErrorLogger)_->errorLogger;
+	IMemoryManager mm   = (IMemoryManager)_->memManager;
 
 	char*  filename;
 
@@ -145,7 +178,11 @@ void logger_start(void*  self)
 	mkdir(loggerDirectory);
 	loggerFileTimeFirst = time(NULL);
 	filename = getLogFileName(_, loggerFileTimeFirst);
-    logFile  = logfile_open(filename, "a", false);
+
+	logFile  = logFileOpen(_, filename, "a");
+	mm->free(filename);
+
+
 }
 
 void processLogBuffer(
