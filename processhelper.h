@@ -1,5 +1,6 @@
 #include "common.h"
 #include <stdlib.h>
+#include "iprocesshelper.h"
 
 #define MAX_SOCKETS	64
 

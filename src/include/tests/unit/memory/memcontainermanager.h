@@ -5,34 +5,6 @@ extern unsigned char Log2Table[256];
 extern MemoryContainer topMemCont;
 extern MemoryContainer currentMemCont;
 
-#define ASSERT(logger, condition, retval) \
-	if (!(condition)) \
-    { \
-	   (logger)->assert((condition)); \
-	   return (retval); \
-    }
-
-#define ASSERT_VOID(logger, condition) \
-	if (!(condition)) \
-    { \
-	   (logger)->assert((condition)); \
-	   return; \
-    }
-
-#define ASSERT_ARG_VOID(logger, condition) \
-	if (!(condition)) \
-    { \
-	   (logger)->assertArg((condition)); \
-	   return; \
-    }
-
-#define ASSERT_ARG(logger, condition, retval) \
-	if (!(condition)) \
-    { \
-	   (logger)->assertArg((condition)); \
-	   return (retval); \
-    }
-
 void ctorMemContMan(
     void*            self, 
 	FMalloc          funcMallocParam,

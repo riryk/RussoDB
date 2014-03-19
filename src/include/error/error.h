@@ -56,6 +56,8 @@ typedef enum
 #define ERROR_CODE_CREATE_THREAD_FAILED     1009
 #define ERROR_CODE_FILE_ACCESS              1010
 #define ERROR_CODE_CREATE_PIPE_FAILED       1011
+#define ERROR_CODE_CREATE_FILE_MAP_FAILED   1012
+#define ERROR_CODE_MAP_MEMORY_TO_FILE       1013
 
 /* The structure contains complete information 
  * about an error
@@ -97,5 +99,34 @@ typedef struct SErrorCallback
 	void   (*callback) (void* arg);
 	void*   arg;
 } SErrorCallback, *ErrorCallback;
+
+
+#define ASSERT(logger, condition, retval) \
+	if (!(condition)) \
+    { \
+	   (logger)->assert((condition)); \
+	   return (retval); \
+    }
+
+#define ASSERT_VOID(logger, condition) \
+	if (!(condition)) \
+    { \
+	   (logger)->assert((condition)); \
+	   return; \
+    }
+
+#define ASSERT_ARG_VOID(logger, condition) \
+	if (!(condition)) \
+    { \
+	   (logger)->assertArg((condition)); \
+	   return; \
+    }
+
+#define ASSERT_ARG(logger, condition, retval) \
+	if (!(condition)) \
+    { \
+	   (logger)->assertArg((condition)); \
+	   return (retval); \
+    }
 
 #endif

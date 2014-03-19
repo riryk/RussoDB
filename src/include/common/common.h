@@ -49,6 +49,7 @@ typedef SOCKET socket_type;
 extern Bool	IsPostmaster;
 extern Bool	IsSysLogger;
 extern int  ProcId;
+extern char ExecPath[MAX_PATH];
 
 typedef struct SBlockId
 {
