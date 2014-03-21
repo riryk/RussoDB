@@ -58,6 +58,8 @@ typedef enum
 #define ERROR_CODE_CREATE_PIPE_FAILED       1011
 #define ERROR_CODE_CREATE_FILE_MAP_FAILED   1012
 #define ERROR_CODE_MAP_MEMORY_TO_FILE       1013
+#define ERROR_CODE_PROC_CMD_LINE_TO_LONG    1014
+#define ERROR_CODE_CREATE_PROCESS_FAILED    1015
 
 /* The structure contains complete information 
  * about an error

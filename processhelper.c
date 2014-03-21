@@ -2,6 +2,31 @@
 
 #ifdef _WIN32
 
+void fillBackandParams(BackendParams param, HANDLE childProcess, int childPid)
+{
+	strcpy(param->dataDir, DataDir, MAX_PATH);
+	memcpy(param->listenSockets, &ListenSockets, sizeof(socket_type));
+
+	param.cancelKey = CancelKey;;
+	param.childSlot = ChildSlot;
+
+	param.segmId;
+	param.segmAddr;
+	param.processId;
+	param.startTime;
+	param.reloadTime;
+    param.loggerFileTime;
+	param.redirecDdone;
+	param.IsBinaryUpgrade;
+	param.maxSafeFileDescriptors;
+	param.masterHandle;
+	param.initPipe;
+	param.logPipe[2];
+	param.execPath[MAX_PATH];
+	param.libraryPath[MAX_PATH];
+	param.otions[MAX_PATH];
+}
+
 int startSubProcess(void* self, int argc, char* argv[])
 {
 	IProcessManager _    = (IProcessManager)self;
@@ -10,7 +35,7 @@ int startSubProcess(void* self, int argc, char* argv[])
     STARTUPINFO          si;
 	PROCESS_INFORMATION  pi;
 	SECURITY_ATTRIBUTES  sa;
-	HANDLE		         paramSm;
+	BackendParams		 paramSm;
 	char		         paramSmStr[32];
 	char                 commandLine[MAX_PATH * 2];
 	int                  cmdCharCount;
@@ -75,6 +100,34 @@ int startSubProcess(void* self, int argc, char* argv[])
 	{
         j = strlen(commandLine);
         snprintf(commandLine + j, sizeof(commandLine) - 1 - j, " \"%s\"", argv[i]);
+	}
+
+    if (commandLine[sizeof(commandLine) - 2] != '\0')
+	{
+        elog->log(LOG_ERROR, 
+		          ERROR_CODE_PROC_CMD_LINE_TO_LONG, 
+				  "subprocess command line too long");
+		return -1;
+	}
+
+    memset(&pi, 0, sizeof(pi));
+	memset(&si, 0, sizeof(si));
+	si.cb = sizeof(si);
+
+	/* Create the subprocess in a suspended state. 
+	 * This will be resumed later,
+	 * once we have written out the parameter file.
+	 */
+	if (!CreateProcess(NULL, commandLine, NULL, 
+		               NULL, TRUE, CREATE_SUSPENDED,
+					   NULL, NULL, &si, &pi))
+	{
+        elog->log(LOG_ERROR, 
+		          ERROR_CODE_CREATE_PROCESS_FAILED, 
+				  "CreateProcess call failed: (error code %lu)",
+				  GetLastError());
+
+		return -1;
 	}
 
 

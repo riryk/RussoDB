@@ -41,15 +41,20 @@ typedef __int64        int64;
 #define BLOCK_SIZE (1 << 13)
 #define MAX_BLOCK_SIZE (1 << 15)
 #define MAX_PRINTED_CHARS 10
+#define MAX_LISTEN 64
 
 #ifdef _WIN32
 typedef SOCKET socket_type;
 #endif
 
-extern Bool	IsPostmaster;
-extern Bool	IsSysLogger;
-extern int  ProcId;
-extern char ExecPath[MAX_PATH];
+extern Bool	       IsPostmaster;
+extern Bool	       IsSysLogger;
+extern int         ProcId;
+extern char        ExecPath[MAX_PATH];
+extern char*       DataDir;
+extern socket_type ListenSockets[MAX_LISTEN];
+extern long        CancelKey;
+extern int         ChildSlot;
 
 typedef struct SBlockId
 {
