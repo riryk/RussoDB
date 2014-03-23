@@ -55,6 +55,10 @@ extern char*       DataDir;
 extern socket_type ListenSockets[MAX_LISTEN];
 extern long        CancelKey;
 extern int         ChildSlot;
+extern int64       StartTime;
+extern int64       ReloadTime;
+extern int64       LoggerFileTime;
+extern Bool		   RedirectDone = False;
 
 typedef struct SBlockId
 {

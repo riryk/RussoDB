@@ -27,7 +27,7 @@ typedef struct SBackendParams
 	double        startTime;
 	double        reloadTime;
     int64	      loggerFileTime;
-	Bool		  redirecDdone;
+	Bool		  redirectDone;
 	Bool		  IsBinaryUpgrade;
 	int			  maxSafeFileDescriptors;
 

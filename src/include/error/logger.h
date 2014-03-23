@@ -39,9 +39,10 @@ typedef struct SBuffer
 #define PIPE_CHUNK_MAX_LOAD  ((int)(PIPE_CHUNK_SIZE - PIPE_CHUNK_HEADER_SIZE))
 #define BUFFER_LISTS_COUNT 256
 
-extern FILE* logFile;
-extern char* loggerDirectory;
-List* buffer_lists[BUFFER_LISTS_COUNT];
+extern FILE*  logFile;
+extern char*  loggerDirectory;
+extern List*  buffer_lists[BUFFER_LISTS_COUNT];
+extern HANDLE logPipe[2];
 
 void write_message_file(
 	char*               buffer, 
