@@ -5,6 +5,10 @@
 #include <io.h>
 #include "icommon.h"
 
+#ifdef _WIN32
+#include <windows.h>
+#endif
+
 extern const SICommon sCommonHelper;
 extern const ICommon  commonHelper;
 

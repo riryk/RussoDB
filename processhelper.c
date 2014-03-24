@@ -109,21 +109,20 @@ Bool reserveSharedMemoryRegion(
 		return False;
 	}
 
-    if (address != sharedMemAddr, )
+    if (address != sharedMemAddr)
 	{
-		/*
-		 * Should never happen - in theory if allocation granularity causes
-		 * strange effects it could, so check just in case.
-		 *
-		 * Don't use FATAL since we're running in the postmaster.
-		 */
-		elog(LOG, "reserved shared memory region got incorrect address %p, expected %p",
-			 address, UsedShmemSegAddr);
-		VirtualFreeEx(hChild, address, 0, MEM_RELEASE);
-		return false;
+		/* Incorrect memory address. Free memory. */
+        elog->log(LOG_LOG, 
+		          ERROR_CODE_RESERVE_MEMORY_FAILED, 
+				  "reserved shared memory region got incorrect address %p, expected %p", 
+                  address,
+				  sharedMemAddr);
+
+		VirtualFreeEx(childProcess, address, 0, MEM_RELEASE);
+		return False;
 	}
 
-	return true;
+	return True;
 }
 
 #endif
@@ -173,6 +172,29 @@ Bool fillBackandParams(
 	return True;
 }
 
+#ifdef _WIN32
+
+/* This code gets executed when a child process is terminated. */
+void WINAPI deadChildProcCallBack(
+	PVOID          lpParameter, 
+	BOOLEAN        timeoutHappened)
+{
+    DeadChildInfo  childInfo = (DeadChildInfo)lpParameter;
+    DWORD          exitcode;
+
+	if (timeoutHappened)  /* Timeout happened. */
+		return;
+
+	/* Unregister the wait handler. */
+	UnregisterWaitEx(childinfo->waitHandle, NULL);
+    
+	/* Retrieves the termination status of the specified process. */
+    if (!GetExitCodeProcess(childinfo->procHandle, &exitcode))
+	{
+          
+	}
+}
+
 int startSubProcess(void* self, int argc, char* argv[])
 {
 	IProcessManager _    = (IProcessManager)self;
@@ -186,6 +208,8 @@ int startSubProcess(void* self, int argc, char* argv[])
 	char                 commandLine[MAX_PATH * 2];
 	int                  cmdCharCount;
 	HANDLE               paramMap;
+	DeadChildInfo        childInfo;
+
 	int                  i, j;
 
     ASSERT(elog, argv[2] == NULL, -1); 
@@ -310,14 +334,85 @@ int startSubProcess(void* self, int argc, char* argv[])
 				  "could not close handle to backend parameter file: error code %lu",
 				  GetLastError());
 
-    /*
-	 * Reserve the memory region used by our main shared memory segment before
-	 * we resume the child process.
+    /* We must reserve the shared memory to avoid 
+	 * memory address conflicts. 
 	 */
-	if (!pgwin32_ReserveSharedMemoryRegion(pi.hProcess))
+	if (!reserveSharedMemoryRegion(_, pi.hProcess))
 	{
+        /* Delete the process */
+		if (!TerminateProcess(pi.hProcess, 255))
+            elog->log(LOG_ERROR, 
+		              ERROR_CODE_TERMINATE_PROCESS_FAILED, 
+				      "Terminate process failed: (error code %lu)",
+				      GetLastError());
 
+		CloseHandle(pi.hProcess);
+		CloseHandle(pi.hThread);
+		return -1;			
 	}
+
+    /* All variables are written out, so we can resume the thread */
+	if (ResumeThread(pi.hThread) == -1)
+	{
+        /* Delete the process */
+		if (!TerminateProcess(pi.hProcess, 255))
+		{
+            elog->log(LOG_ERROR, 
+		              ERROR_CODE_TERMINATE_PROCESS_FAILED, 
+				      "Terminate process failed: (error code %lu)",
+				      GetLastError()); 
+
+            CloseHandle(pi.hProcess);
+		    CloseHandle(pi.hThread);
+		    return -1;			
+		}
+
+        CloseHandle(pi.hProcess);
+		CloseHandle(pi.hThread);
+
+        elog->log(LOG_ERROR, 
+		          ERROR_CODE_RESUME_THREAD_FAILED, 
+				  "Terminate process failed: (error code %lu)",
+				  GetLastError());  
+		return -1;
+	}
+
+	childInfo = malloc(sizeof(SDeadChildInfo));
+	if (childInfo != NULL)
+        elog->log(LOG_FATAL, 
+		          ERROR_CODE_OUT_OF_MEMORY, 
+				  "out of memory");   
+
+    childInfo->procHandle = pi.hProcess;
+	childInfo->procId     = pi.dwProcessId;
+
+	/* Directs a wait thread in the thread pool to wait on the object. 
+	 * The wait thread queues the specified callback function to the thread pool 
+	 * when one of the following occurs:
+	 *  - The specified object is in the signaled state.
+	 *  - The time-out interval elapses.
+	 * When a process terminates, the state of the process object 
+	 * becomes signaled, releasing any threads 
+	 * that had been waiting for the process to terminate.
+	 */
+    if (!RegisterWaitForSingleObject(
+		    &childInfo->waitHandle,
+			pi.hProcess,
+			pgwin32_deadchild_callback,
+			childInfo,
+			INFINITE,
+		    WT_EXECUTEONLYONCE | WT_EXECUTEINWAITTHREAD))
+         elog->log(LOG_ERROR, 
+		         ERROR_CODE_REGISTER_WAIT_HANDLER_FAILED, 
+				 "Could not register process for wait: error code %lu",
+				 GetLastError());  
+    
+	/* Don't close pi.hProcess here - 
+	 * the wait thread needs access to it. 
+	 */
+	CloseHandle(pi.hThread);
+
+	return pi.dwProcessId;
 } 
 
 #endif

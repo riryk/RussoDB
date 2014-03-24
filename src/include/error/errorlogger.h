@@ -7,5 +7,10 @@
 void reThrowError(void* self);
 void assertCond(Bool condition);
 void emitError(void* self);
+void writeException(
+     char*    condName,
+     char*    errType,
+	 char*    fileName,
+	 int      lineNum);
 
 #endif

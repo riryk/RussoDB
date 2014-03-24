@@ -65,7 +65,8 @@ typedef enum
 #define ERROR_CODE_UNMAP_VIEW_OF_FILE       1018
 #define ERROR_CODE_CLOSE_HANDLER_FAILED     1019
 #define ERROR_CODE_RESERVE_MEMORY_FAILED    1020
-
+#define ERROR_CODE_RESUME_THREAD_FAILED     1021
+#define ERROR_CODE_REGISTER_WAIT_HANDLER_FAILED 1022
 
 /* The structure contains complete information 
  * about an error

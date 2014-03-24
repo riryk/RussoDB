@@ -2,14 +2,18 @@
 #include <stdlib.h>
 #include "iprocesshelper.h"
 
+#ifndef PROCESS_HELPER_H
+#define PROCESS_HELPER_H
+
 #define MAX_SOCKETS	64
 
-typedef struct SRelFileInfo
+typedef struct SDeadChildInfo
 {
-	int		      tblSpaceId;
-	int 	      databaseId;
-	int		      relId;		
-} SRelFileInfo, *RelFileInfo;
+	HANDLE		  waitHandle;
+	HANDLE		  procHandle;
+	DWORD		  procId;
+	void*         elogger;
+} SDeadChildInfo, *DeadChildInfo;
 
 typedef struct SBackendParams
 {
@@ -43,3 +47,5 @@ typedef struct SBackendParams
 } SBackendParams, *BackendParams;
 
 int startSubProcess(void* self, int argc, char* argv[]);
+
+#endif

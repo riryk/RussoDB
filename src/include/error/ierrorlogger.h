@@ -15,6 +15,11 @@ typedef struct SIErrorLogger
 	void (*assertArg)(Bool condition);	
 	void (*assert)(Bool condition);
 	void (*log)(int level, int code, char* message,...); 
+	void (*writeException)(
+           char*    condName,
+           char*    errType,
+	       char*    fileName,
+	       int      lineNum);
 } SIErrorLogger, *IErrorLogger;
 
 #endif
