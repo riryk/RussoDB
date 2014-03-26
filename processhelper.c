@@ -168,7 +168,7 @@ Bool fillBackandParams(
 #endif
 
 	memcpy(&param->logPipe, logPipe, sizeof(logPipe));
-    strlcpy(param->execPath, ExecPath, MAX_PATH);
+    strcpy(param->execPath, ExecPath, MAX_PATH);
 	return True;
 }
 
@@ -186,12 +186,13 @@ void WINAPI deadChildProcCallBack(
 		return;
 
 	/* Unregister the wait handler. */
-	UnregisterWaitEx(childinfo->waitHandle, NULL);
+	UnregisterWaitEx(childInfo->waitHandle, NULL);
     
 	/* Retrieves the termination status of the specified process. */
-    if (!GetExitCodeProcess(childinfo->procHandle, &exitcode))
+    if (!GetExitCodeProcess(childInfo->procHandle, &exitcode))
 	{
-          
+		fprintf(stderr, "could not read exit code for process\n");
+        exitcode = 255;
 	}
 }
 
@@ -398,7 +399,7 @@ int startSubProcess(void* self, int argc, char* argv[])
     if (!RegisterWaitForSingleObject(
 		    &childInfo->waitHandle,
 			pi.hProcess,
-			pgwin32_deadchild_callback,
+			deadChildProcCallBack,
 			childInfo,
 			INFINITE,
 		    WT_EXECUTEONLYONCE | WT_EXECUTEINWAITTHREAD))
@@ -416,3 +417,4 @@ int startSubProcess(void* self, int argc, char* argv[])
 } 
 
 #endif
+

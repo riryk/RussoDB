@@ -27,6 +27,7 @@ int		         fileMaxCount   = 32;
 FCacheEl         fileCache      = NULL;
 size_t           fileCacheCount = 0;
 int	             fileCount      = 0;
+int		         maxFileDescriptors = 0;
 
 void ctorFileMan(void* self)
 {

@@ -1,6 +1,8 @@
 #include "common.h"
 #include <stdlib.h>
 #include "iprocesshelper.h"
+#include "logger.h"
+#include "filemanager.h"
 
 #ifndef PROCESS_HELPER_H
 #define PROCESS_HELPER_H
@@ -12,7 +14,6 @@ typedef struct SDeadChildInfo
 	HANDLE		  waitHandle;
 	HANDLE		  procHandle;
 	DWORD		  procId;
-	void*         elogger;
 } SDeadChildInfo, *DeadChildInfo;
 
 typedef struct SBackendParams

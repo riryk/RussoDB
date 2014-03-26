@@ -67,6 +67,8 @@ typedef enum
 #define ERROR_CODE_RESERVE_MEMORY_FAILED    1020
 #define ERROR_CODE_RESUME_THREAD_FAILED     1021
 #define ERROR_CODE_REGISTER_WAIT_HANDLER_FAILED 1022
+#define ERROR_CODE_START_SUB_PROC_FAILED    1023
+#define ERROR_CODE_STDERR_REDIRECT_FAILED   1024
 
 /* The structure contains complete information 
  * about an error

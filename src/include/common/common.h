@@ -62,7 +62,7 @@ extern int         ChildSlot;
 extern int64       StartTime;
 extern int64       ReloadTime;
 extern int64       LoggerFileTime;
-extern Bool		   RedirectDone = False;
+extern Bool		   RedirectDone;
 
 typedef struct SBlockId
 {

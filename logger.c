@@ -29,6 +29,7 @@ int64             loggerFileTimeFirst = 0;
 HANDLE		      logPipe[2]    = {0, 0};
 CRITICAL_SECTION  logSection;
 HANDLE            threadHandle  = NULL;
+List*             buffer_lists[BUFFER_LISTS_COUNT];
 
 #endif
 
@@ -152,11 +153,14 @@ FILE* logFileOpen(
 
 void logger_start(void*  self)
 {
-	ILogger        _    = (ILogger)self;
-	IErrorLogger   elog = (IErrorLogger)_->errorLogger;
-	IMemoryManager mm   = (IMemoryManager)_->memManager;
+	ILogger          _      = (ILogger)self;
+	IErrorLogger     elog   = (IErrorLogger)_->errorLogger;
+	IMemoryManager   mm     = (IMemoryManager)_->memManager;
+	IProcessManager  prcman = (IProcessManager)_->processManager;
 
 	char*  filename;
+	int    res;
+	int	   fileDesc;
 
     /* First time we enter here we create the pipe that will
 	 * receive all information from all stderrs from all processes.
@@ -182,7 +186,31 @@ void logger_start(void*  self)
 	logFile  = logFileOpen(_, filename, "a");
 	mm->free(filename);
 
+    res = prcman->startSubProcess(prcman, 0, NULL);
+	if (res == -1)
+        elog->log(LOG_ERROR, 
+		      ERROR_CODE_START_SUB_PROC_FAILED, 
+			  "could not start a subprocess");
 
+    if (redirect_done)
+		return;
+
+	/* Do stderr redirection. */
+    fflush(stderr);
+	fileDesc = _open_osfhandle((intptr_t)syslogPipe[1], 
+		                       _O_APPEND | _O_BINARY);
+
+    if (dup2(fileDesc, _fileno(stderr)) < 0)   
+        elog->log(LOG_ERROR, 
+		      ERROR_CODE_STDERR_REDIRECT_FAILED, 
+			  "could not redirect stderr");
+
+	close(fileDesc);
+    _setmode(_fileno(stderr), _O_BINARY);
+  
+    syslogPipe[1] = 0;
+#endif
+				redirection_done = true;
 }
 
 void processLogBuffer(

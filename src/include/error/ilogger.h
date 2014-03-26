@@ -14,6 +14,7 @@ typedef struct SILogger
     IStringManager        stringManager;
     IMemoryManager        memManager;
     IListManager          listManager;
+    IProcessManager       processManager;
 
 	void (*write_message_file)(
 	     char*               buffer, 
