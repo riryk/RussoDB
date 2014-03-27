@@ -33,6 +33,11 @@ List*             buffer_lists[BUFFER_LISTS_COUNT];
 
 #endif
 
+void ctorLogger(void* self, char* logDir)
+{
+    loggerDirectory = logDir;
+}
+
 /* Writes a message directly to an opened log file */
 void write_message_file(
 	char*               buffer, 
@@ -113,7 +118,7 @@ char* getLogFileName(
     char*           filename;
 
     filename = (char*)memman->alloc(MAX_PATH);
-    snprintf(filename, MAX_PATH, "%s/%u", loggerDirectory, time);
+    snprintf(filename, MAX_PATH, "%s/%u.log", loggerDirectory, time);
 
 	return filename;
 }
@@ -151,7 +156,7 @@ FILE* logFileOpen(
 	errno = savedErr;
 }
 
-void logger_start(void*  self)
+int logger_start(void*  self)
 {
 	ILogger          _      = (ILogger)self;
 	IErrorLogger     elog   = (IErrorLogger)_->errorLogger;
@@ -161,11 +166,12 @@ void logger_start(void*  self)
 	char*  filename;
 	int    res;
 	int	   fileDesc;
+    int    mkdirres;
 
     /* First time we enter here we create the pipe that will
 	 * receive all information from all stderrs from all processes.
 	 */
-    if (logPipe[0] != NULL)
+    if (logPipe[0] == NULL)
 	{
         SECURITY_ATTRIBUTES sa;
 
@@ -173,13 +179,29 @@ void logger_start(void*  self)
 		sa.nLength = sizeof(SECURITY_ATTRIBUTES);
 		sa.bInheritHandle = TRUE;
 
+		/* Creates an anonymous pipe. 
+		 * Output parameters: 
+		 *  The first parameter is a read end of the pipe.
+		 *  The second parameter is a write end of the pipe.
+		 */
         if (!CreatePipe(&(logPipe[0]), &(logPipe[1]), &sa, 32768))
             elog->log(LOG_ERROR, 
 		          ERROR_CODE_CREATE_PIPE_FAILED, 
 				  "could not create a logger pipe");
 	}
 
-	mkdir(loggerDirectory);
+	ASSERT(elog, loggerDirectory != NULL, False);
+
+	mkdirres = mkdir(loggerDirectory);
+    if (mkdirres != 0)
+	{
+        elog->log(LOG_ERROR, 
+		      ERROR_CODE_START_SUB_PROC_FAILED, 
+			  "could not start a subprocess. Error code: %s",
+			  errno); 
+		return -1;
+	}
+
 	loggerFileTimeFirst = time(NULL);
 	filename = getLogFileName(_, loggerFileTimeFirst);
 
@@ -189,28 +211,32 @@ void logger_start(void*  self)
     res = prcman->startSubProcess(prcman, 0, NULL);
 	if (res == -1)
         elog->log(LOG_ERROR, 
-		      ERROR_CODE_START_SUB_PROC_FAILED, 
-			  "could not start a subprocess");
+		      ERROR_CODE_DIR_CREATE_FAILED, 
+			  "could not create a directory. Error code: ");
 
-    if (redirect_done)
-		return;
+    if (!redirect_done)
+	{
+		/* Do stderr redirection. */
+		fflush(stderr);
+		fileDesc = _open_osfhandle((intptr_t)logPipe[1], 
+								   _O_APPEND | _O_BINARY);
 
-	/* Do stderr redirection. */
-    fflush(stderr);
-	fileDesc = _open_osfhandle((intptr_t)syslogPipe[1], 
-		                       _O_APPEND | _O_BINARY);
+		if (dup2(fileDesc, _fileno(stderr)) < 0)   
+			elog->log(LOG_ERROR, 
+				  ERROR_CODE_STDERR_REDIRECT_FAILED, 
+				  "could not redirect stderr");
 
-    if (dup2(fileDesc, _fileno(stderr)) < 0)   
-        elog->log(LOG_ERROR, 
-		      ERROR_CODE_STDERR_REDIRECT_FAILED, 
-			  "could not redirect stderr");
+		close(fileDesc);
+		_setmode(_fileno(stderr), _O_BINARY);
+	  
+		logPipe[1] = 0;
+		redirect_done = True;
+	}
 
-	close(fileDesc);
-    _setmode(_fileno(stderr), _O_BINARY);
-  
-    syslogPipe[1] = 0;
-#endif
-				redirection_done = true;
+    /* postmaster will never write the file; close it */
+    fclose(logFile);
+	logFile = NULL;
+	return (int)res;
 }
 
 void processLogBuffer(

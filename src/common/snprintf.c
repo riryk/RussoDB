@@ -83,9 +83,9 @@ Bool doprintf(
 				num = (uint)va_arg(args, int);
 				doint(num, info);
      			break;
+			default:
+                return False;
 		}
-
-        return False;
 	}
 
 	return True;

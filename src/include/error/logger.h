@@ -44,10 +44,9 @@ extern char*  loggerDirectory;
 extern List*  buffer_lists[BUFFER_LISTS_COUNT];
 extern HANDLE logPipe[2];
 
+void ctorLogger(void* self, char* logDir);
 void write_message_file(
 	char*               buffer, 
 	int                 count);
-
 uint __stdcall pipeThread(void *arg);
-
-void logger_start(void*  self);
+int logger_start(void*  self);

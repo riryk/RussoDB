@@ -3,6 +3,7 @@
 #include "string_info.h"
 #include "imemcontainermanager.h"
 #include "ilistmanager.h"
+#include "iprocesshelper.h"
 
 #ifndef ILOGGER_H
 #define ILOGGER_H
@@ -15,6 +16,8 @@ typedef struct SILogger
     IMemoryManager        memManager;
     IListManager          listManager;
     IProcessManager       processManager;
+
+	void (*ctorLogger)(void* self, char* logDir);
 
 	void (*write_message_file)(
 	     char*               buffer, 

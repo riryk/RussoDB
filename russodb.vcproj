@@ -1310,6 +1310,26 @@
 							>
 						</File>
 					</Filter>
+					<Filter
+						Name="logger"
+						>
+						<Filter
+							Name="start"
+							>
+							<Filter
+								Name="negative"
+								>
+							</Filter>
+							<Filter
+								Name="positive"
+								>
+								<File
+									RelativePath=".\when_logger_start.c"
+									>
+								</File>
+							</Filter>
+						</Filter>
+					</Filter>
 				</Filter>
 			</Filter>
 			<Filter
