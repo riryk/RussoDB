@@ -47,6 +47,11 @@ typedef struct SBackendParams
 	char		  otions[MAX_PATH];
 } SBackendParams, *BackendParams;
 
+extern const SIProcessManager sProcessManager;
+extern const IProcessManager processManager;
+
 int startSubProcess(void* self, int argc, char* argv[]);
 
 #endif
+
+

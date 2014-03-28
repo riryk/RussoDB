@@ -4,6 +4,7 @@
 #include "memcontainermanager.h"
 #include "fakeerrorlogger.h"
 #include "logger.h"
+#include "processhelper.h"
 
 TEST_GROUP(logger_start);
 
@@ -13,10 +14,11 @@ char*    log_folder_ls = "logs";
 SETUP_DEPENDENCIES(logger_start) 
 {
     ll_ls = (ILogger)malloc(sizeof(SILogger));
-	ll_ls->errorLogger   = &sFakeErrorLogger;
-    ll_ls->memManager    = &sFakeMemManager;
-    ll_ls->ctorLogger    = ctorLogger;
-	ll_ls->logger_start  = logger_start;
+	ll_ls->errorLogger    = &sFakeErrorLogger;
+    ll_ls->memManager     = &sFakeMemManager;
+    ll_ls->processManager = &sProcessManager;
+    ll_ls->ctorLogger     = ctorLogger;
+	ll_ls->logger_start   = logger_start;
 }
 
 GIVEN(logger_start) 

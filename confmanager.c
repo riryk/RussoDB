@@ -3,6 +3,27 @@
 Bool                isPostmaster;
 OutputDestination   outputDest; 
 
+const SIErrorLoggerConfManager sErrorLoggerConfManager = 
+{ 
+	getMinLogLevel,
+    setMinLogLevel,
+    getMinClientLogLevel,
+    setMinClientLogLevel
+};
+
+const IErrorLoggerConfManager errorLoggerConfManager = &sErrorLoggerConfManager;
+
+const SIConfManager sConfManager = 
+{ 
+    &sErrorLoggerConfManager,
+    getIsPostmaster,
+    setIsPostmaster,
+    getOutputDest,
+    setOutputDest
+};
+
+const IConfManager confManager = &sConfManager;
+
 Bool getIsPostmaster()
 {
    return isPostmaster;

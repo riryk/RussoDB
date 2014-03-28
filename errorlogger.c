@@ -8,6 +8,7 @@
 #include "string_info.h"
 #include "errorlogger.h"
 #include "imemcontainermanager.h"
+#include "confmanager.h"
 
 jmp_buf*          exceptionStack = NULL;
 int	              stackDepth     = -1;
@@ -17,6 +18,23 @@ ErrorCallback*    errorStack     = NULL;
 
 char  str_start_time[TIME_STRING_LEN];
 char  str_log_time[TIME_STRING_LEN];
+
+
+const SIErrorLogger sErrorLogger = 
+{ 
+	&sConfManager,
+	&sStringManager,
+    NULL,
+	NULL,
+	assertArg,
+	assert,
+	log,
+	writeException
+};
+
+const IErrorLogger errorManager = &sErrorLogger;
+
+
 
 /* checks if errorLevel is logically more 
  * than min error level or not. 
@@ -447,6 +465,15 @@ void writeException(
 }
 
 void assertCond(Bool condition)
+{ }
+
+void assertArg(Bool condition)
+{ }
+
+void assert(Bool condition)
+{ }
+
+void log(int level, int code, char* message,...)
 { }
 
 void reThrowError(void*  self, int minLogLevel)

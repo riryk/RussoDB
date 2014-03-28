@@ -2,6 +2,20 @@
 #include "string_info.h"
 #include "ierrorlogger.h"
 #include "memcontainermanager.h"
+#include "string_info.h"
+
+const SIStringManager sStringManager = 
+{ 
+    &sTrackMemManager,
+	NULL,
+    initStringInfo,
+    appendStringInfo,
+    appendWithTabs,
+    appendStringInfoChar,
+    appendStringInfoBinary
+};
+
+const IStringManager strManager = &sStringManager;
 
 void initStringInfo(
 	void*             self,

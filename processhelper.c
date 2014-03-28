@@ -1,8 +1,18 @@
 #include "processhelper.h"
+#include "errorlogger.h"
 
 HANDLE		  sharedMemID       = 0;
 void*         sharedMemAddr     = NULL;
 size_t        sharedMemSegmSize = 0;
+
+const SIProcessManager sProcessManager = 
+{ 
+	&sErrorLogger,
+	startSubProcess
+};
+
+const IProcessManager processManager = &sProcessManager;
+
 
 #ifdef _WIN32
 
