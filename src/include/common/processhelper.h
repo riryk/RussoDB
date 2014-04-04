@@ -51,6 +51,7 @@ extern const SIProcessManager sProcessManager;
 extern const IProcessManager processManager;
 
 int startSubProcess(void* self, int argc, char* argv[]);
+int subProcessMain(void* self, int argc, char* argv[]);
 
 #endif
 

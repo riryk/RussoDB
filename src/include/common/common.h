@@ -222,6 +222,7 @@ typedef struct SName
 int nextPowerOf2(long num);
 void setExecFold(char* fold);
 char* getExecFold();
+void fillCommonParams(int argc, char* argv[]);
 
 /* Generate assempler code by writing ANCI C program
  * gcc -Wall -S -masm=intel -m32 sub.c

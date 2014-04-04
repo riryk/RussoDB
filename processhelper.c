@@ -170,7 +170,7 @@ Bool fillBackandParams(
 
     if (!getDuplicatedHandle(
 		    self,
-			param->initPipe, 
+			&(param->initPipe), 
 	        signListener, 
 	        childProcess))
 		return False;
@@ -220,6 +220,7 @@ int startSubProcess(void* self, int argc, char* argv[])
 	int                  cmdCharCount;
 	HANDLE               paramMap;
 	DeadChildInfo        childInfo;
+    TCHAR                sharMemName[] = TEXT("Global\\ProcMem");
 
 	int                  i, j;
 
@@ -431,3 +432,17 @@ int startSubProcess(void* self, int argc, char* argv[])
 
 #endif
 
+#ifdef _WIN32
+
+int subProcessMain(void* self, int argc, char* argv[])
+{
+    char           str[80];
+    BackendParams  paramSm;
+
+    printf("Enter a string: ");
+    fgets(str, 10, stdin);
+
+	paramSm = (BackendParams)(DWORD)argv[2];
+}
+
+#endif

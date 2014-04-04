@@ -8,7 +8,7 @@
 TEST_GROUP(sub_proc_start);
 
 IProcessManager  pm_ssc;
-char*            pm_args[3];
+char*            pm_args[4];
 
 SETUP_DEPENDENCIES(sub_proc_start) 
 {
@@ -19,9 +19,10 @@ SETUP_DEPENDENCIES(sub_proc_start)
 
 GIVEN(sub_proc_start) 
 {
-    pm_args[0] = "test";
-    pm_args[1] = "test";
+    pm_args[0] = "---";
+    pm_args[1] = "subproc";
     pm_args[2] = NULL;
+    pm_args[3] = NULL;
 }
 
 WHEN(sub_proc_start)

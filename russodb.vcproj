@@ -291,7 +291,7 @@
 						>
 					</File>
 					<File
-						RelativePath=".\iprocesshelper.h"
+						RelativePath="src\include\common\iprocesshelper.h"
 						>
 					</File>
 					<File
@@ -319,7 +319,7 @@
 						>
 					</File>
 					<File
-						RelativePath=".\processhelper.h"
+						RelativePath="src\include\common\processhelper.h"
 						>
 					</File>
 					<File
