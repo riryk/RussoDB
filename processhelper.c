@@ -1,6 +1,10 @@
 #include "processhelper.h"
 #include "errorlogger.h"
 
+#ifdef _WIN32
+#include "TlHelp32.h"
+#endif
+
 HANDLE		  sharedMemID       = 0;
 void*         sharedMemAddr     = NULL;
 size_t        sharedMemSegmSize = 0;
@@ -109,12 +113,14 @@ Bool reserveSharedMemoryRegion(
 
 	if (address == NULL)
 	{   
+		DWORD lastErr = GetLastError();
+
         elog->log(LOG_ERROR, 
 		          ERROR_CODE_RESERVE_MEMORY_FAILED, 
 				  "could not reserve shared memory region (addr=%p) for child %p: error code %lu", 
                   sharedMemAddr, 
                   childProcess,
-				  GetLastError());
+				  lastErr);
 
 		return False;
 	}
@@ -258,6 +264,9 @@ int startSubProcess(void* self, int argc, char* argv[])
 		return -1;
 	}
     
+	sharedMemID       = paramMap;
+    sharedMemSegmSize = sizeof(SBackendParams);
+
 	/* Maps a view of a file mapping into the address space of a calling process. */
 	paramSm = MapViewOfFile(paramMap, FILE_MAP_WRITE, 0, 0, sizeof(SBackendParams));
 	if (!paramSm)
@@ -302,6 +311,11 @@ int startSubProcess(void* self, int argc, char* argv[])
 	/* Create the subprocess in a suspended state. 
 	 * This will be resumed later,
 	 * once we have written out the parameter file.
+     * If this parameter TRUE, each inheritable handle 
+	 * in the calling process is inherited by the new process. 
+	 * If the parameter is FALSE, the handles are not inherited. 
+	 * Note that inherited handles have the same value 
+	 * and access rights as the original handles.
 	 */
 	if (!CreateProcess(NULL, commandLine, NULL, 
 		               NULL, TRUE, CREATE_SUSPENDED,
@@ -348,23 +362,6 @@ int startSubProcess(void* self, int argc, char* argv[])
 		          ERROR_CODE_CLOSE_HANDLER_FAILED, 
 				  "could not close handle to backend parameter file: error code %lu",
 				  GetLastError());
-
-    /* We must reserve the shared memory to avoid 
-	 * memory address conflicts. 
-	 */
-	if (!reserveSharedMemoryRegion(_, pi.hProcess))
-	{
-        /* Delete the process */
-		if (!TerminateProcess(pi.hProcess, 255))
-            elog->log(LOG_ERROR, 
-		              ERROR_CODE_TERMINATE_PROCESS_FAILED, 
-				      "Terminate process failed: (error code %lu)",
-				      GetLastError());
-
-		CloseHandle(pi.hProcess);
-		CloseHandle(pi.hThread);
-		return -1;			
-	}
 
     /* All variables are written out, so we can resume the thread */
 	if (ResumeThread(pi.hThread) == -1)
@@ -443,6 +440,22 @@ int subProcessMain(void* self, int argc, char* argv[])
     fgets(str, 10, stdin);
 
 	paramSm = (BackendParams)(DWORD)argv[2];
+}
+
+#endif
+
+#ifdef _WIN32
+
+// http://stackoverflow.com/questions/1173342/terminate-a-process-tree-c-for-windows
+void killAllSubProcesses()
+{
+    PROCESSENTRY32 pe;
+    DWORD procId = GetCurrentProcessId();    
+
+    memset(&pe, 0, sizeof(PROCESSENTRY32));
+    pe.dwSize = sizeof(PROCESSENTRY32);
+
+    HANDLE hSnap = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
 }
 
 #endif
