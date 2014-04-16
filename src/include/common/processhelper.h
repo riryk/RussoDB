@@ -52,6 +52,7 @@ extern const IProcessManager processManager;
 
 int startSubProcess(void* self, int argc, char* argv[]);
 int subProcessMain(void* self, int argc, char* argv[]);
+void killAllSubProcesses();
 
 #endif
 

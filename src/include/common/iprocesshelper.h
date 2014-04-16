@@ -9,6 +9,7 @@ typedef struct SIProcessManager
 
 	int (*startSubProcess)(void* self, int argc, char* argv[]);
 	int (*subProcessMain)(void* self, int argc, char* argv[]);
+	void (*killAllSubProcesses)();
 } SIProcessManager, *IProcessManager;
 
 #endif

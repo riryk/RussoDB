@@ -13,8 +13,9 @@ char*            pm_args[4];
 SETUP_DEPENDENCIES(sub_proc_start) 
 {
     pm_ssc = (IProcessManager)malloc(sizeof(SIProcessManager));
-	pm_ssc->errorLogger     = &sFakeErrorLogger;
-	pm_ssc->startSubProcess = startSubProcess;
+	pm_ssc->errorLogger         = &sFakeErrorLogger;
+	pm_ssc->startSubProcess     = startSubProcess;
+	pm_ssc->killAllSubProcesses = killAllSubProcesses;
 }
 
 GIVEN(sub_proc_start) 
@@ -30,7 +31,10 @@ WHEN(sub_proc_start)
 	pm_ssc->startSubProcess(pm_ssc, 0, pm_args);
 }
 
-TEST_TEAR_DOWN(sub_proc_start) { }
+TEST_TEAR_DOWN(sub_proc_start) 
+{
+    pm_ssc->killAllSubProcesses();
+}
 
 TEST(sub_proc_start, then_test)
 {
