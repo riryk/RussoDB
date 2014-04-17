@@ -229,8 +229,9 @@ BOOL SetPrivilege(
 	IProcessManager  _    = (IProcessManager)self;
 	IErrorLogger     elog = _->errorLogger;
 
-    TOKEN_PRIVILEGES tp;
+    TOKEN_PRIVILEGES tp, prevstate;
     LUID             luid;
+	DWORD            retlen;
 
 	/* lookup privilege on local system */
     if (!LookupPrivilegeValue( 
@@ -260,23 +261,15 @@ BOOL SetPrivilege(
             FALSE, 
             &tp, 
             sizeof(TOKEN_PRIVILEGES), 
-            (PTOKEN_PRIVILEGES)NULL, 
-            (PDWORD)NULL))
+            &prevstate, 
+            &retlen))
     { 
+		int error = GetLastError();
+
         elog->log(LOG_ERROR, 
 		          ERROR_CODE_ADJUST_PRIVILEGE_FAILED, 
 				  "adjust privilege value error: error code %lu", 
-				  GetLastError());
-
-        return FALSE; 
-    } 
-
-    if (GetLastError() == ERROR_NOT_ALL_ASSIGNED)
-    {
-		elog->log(LOG_ERROR, 
-		          ERROR_CODE_TOCKEN_NOT_ENOUGH_PRIVILEDGES, 
-				  "The token does not have the specified privilege: error code %lu", 
-				  GetLastError());
+				  error);
 
         return FALSE; 
     } 
@@ -300,7 +293,7 @@ int startSubProcess(void* self, int argc, char* argv[])
 	int                  cmdCharCount;
 	HANDLE               paramMap;
 	DeadChildInfo        childInfo;
-    PHANDLE              tokenHandle;
+    HANDLE               tokenHandle = NULL;
 
 	int                  i, j;
 
@@ -316,8 +309,8 @@ int startSubProcess(void* self, int argc, char* argv[])
 
     if (!OpenProcessToken(
 		   GetCurrentProcess(), 
-		   TOKEN_ADJUST_PRIVILEGES, 
-		   tokenHandle))
+		   TOKEN_ALL_ACCESS, 
+		   &tokenHandle))
 	{
         elog->log(LOG_ERROR, 
 		          ERROR_CODE_OPEN_PROCESS_TOKEN, 

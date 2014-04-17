@@ -295,6 +295,10 @@
 						>
 					</File>
 					<File
+						RelativePath=".\isharedmemmanager.h"
+						>
+					</File>
+					<File
 						RelativePath="src\include\common\latch.h"
 						>
 					</File>
@@ -320,6 +324,14 @@
 					</File>
 					<File
 						RelativePath="src\include\common\processhelper.h"
+						>
+					</File>
+					<File
+						RelativePath=".\sharedmem.h"
+						>
+					</File>
+					<File
+						RelativePath=".\sharedmemmanager.h"
 						>
 					</File>
 					<File
@@ -1373,6 +1385,10 @@
 				</File>
 				<File
 					RelativePath=".\processhelper.c"
+					>
+				</File>
+				<File
+					RelativePath=".\sharedmemmanager.c"
 					>
 				</File>
 				<File
