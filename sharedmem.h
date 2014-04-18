@@ -1,20 +1,28 @@
 
+#include "common.h"
+
 #ifndef SHARED_MEM_H
 #define SHARED_MEM_H
 
-#ifndef PG_SHMEM_H
-#define PG_SHMEM_H
-
-typedef struct PGShmemHeader	/* standard header for all Postgres shmem */
+typedef struct SSharMemHeader	
 {
-	int32		magic;			/* magic # to identify Postgres segments */
-#define PGShmemMagic  679834894
-	pid_t		creatorPID;		/* PID of creating process */
-	Size		totalsize;		/* total size of segment */
-	Size		freeoffset;		/* offset to first free space */
-	void	   *index;			/* pointer to ShmemIndex table */
-#ifndef WIN32					/* Windows doesn't have useful inode#s */
-	dev_t		device;			/* device data directory is on */
-	ino_t		inode;			/* inode number of data directory */
+	int		    hdrId;			
+	int		    procId;	
+	size_t		totalSize;		/* total size of header */
+	size_t		freeoffset;		/* offset to first free space */
+	void*       index;			
+} SSharMemHeader, *SharMemHeader;
+
+#define SHAR_MEM_KEY_SIZE (48)
+
+/* this is a hash bucket in the shmem index table */
+typedef struct SSharMemItem
+{
+	char		key[SHAR_MEM_KEY_SIZE];	    /* string name */
+	void*       location;		            /* location in shared mem */
+	size_t		size;			            /* bytes allocated for the structure */
+} SSharMemItem, *SharMemItem;
+
+#define SHAR_MEM_NAME "Global\\PostgreSQL:"
+
 #endif
-} PGShmemHeader;

@@ -390,6 +390,34 @@
 							>
 						</File>
 					</Filter>
+					<Filter
+						Name="signal"
+						>
+						<File
+							RelativePath=".\mainprocsignal.h"
+							>
+						</File>
+					</Filter>
+					<Filter
+						Name="lock"
+						>
+						<File
+							RelativePath=".\ilightlockmanager.h"
+							>
+						</File>
+						<File
+							RelativePath=".\ispinlockmanager.h"
+							>
+						</File>
+						<File
+							RelativePath=".\lightlockmanager.h"
+							>
+						</File>
+						<File
+							RelativePath=".\spinlockmanager.h"
+							>
+						</File>
+					</Filter>
 				</Filter>
 				<Filter
 					Name="lib"
@@ -1424,6 +1452,26 @@
 					</File>
 					<File
 						RelativePath=".\errorconfmanager.c"
+						>
+					</File>
+				</Filter>
+				<Filter
+					Name="signal"
+					>
+					<File
+						RelativePath=".\mainprocsignal.c"
+						>
+					</File>
+				</Filter>
+				<Filter
+					Name="lock"
+					>
+					<File
+						RelativePath=".\lightlockmanager.c"
+						>
+					</File>
+					<File
+						RelativePath=".\spinlockmanager.c"
 						>
 					</File>
 				</Filter>
