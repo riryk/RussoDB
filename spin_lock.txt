@@ -1,0 +1,64 @@
+
+1. Algorithm of work. 
+
+First of all we loop tightly without sleep for a while
+and then if we wait too long, we need to sleep for a while.
+We guess that 100 iterations of spinning would be good.
+On a one-processor machine spinning is a complete waste of 
+resources. On a multi-processor machine it is better to 
+spin a little before sleep. It is because context-switching 
+takes too much time. So that we examine the current situation
+and adapt our spinning algorithm to single-processor or
+multi-processor CPU.
+
+2. Why the start iterations count is 100 and not 1?
+
+There are some processors where the first several 
+calls to InterlockedComparedExchange return 0. So that 
+we need to do at least 100 calls.
+
+3. Why do we need to sleep at random time?
+
+The problem is that windows thread scheduler can set up
+thread priorities and the threads with the lowest priority
+should wait until someone from more prioritized threads
+finishes its execution. When we use 1 msec as sleep time
+there is a real possibility of starvation. 
+ 
+4. How do we adapt to multi-processor CPU 
+   or to sigle-processor CPU?
+   
+First of all we spin 100 times and then if we have not 
+acquired a lock, we sleep for the first time for 1 msec
+and then apply for the lock once more. If it fails we 
+continue spinning 100 times and 
+fall asleep once more but increase sleep time. 
+So that we act as the rule:
+The more we sleep the larger is sleep time. It continues 
+until we reach max sleep time. When we reach max sleep 
+count we report an error.
+ 
+5. Why is volatile keyword necessary for spin lock?
+
+First of all because InterlockedExchange requires 
+a lock variable to be volatile.
+Secondly to generate assembly code that will not use 
+a processor's cache, but will always pull data from memory.
+So without volatile keywoed we may get an infinite loop:
+Infinite loop: 
+  while (!lock) {}
+  
+  mov reg, mem
+  loop 
+    read register value  
+  
+ In this case the register variable will never be changed
+ and we have got an infinite loop.
+ When we use volatile keyword we always pull data from memory
+  
+ loop 
+   mov reg, mem 
+   read register value  
+
+
+ 

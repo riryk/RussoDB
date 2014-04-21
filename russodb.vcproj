@@ -1471,6 +1471,10 @@
 						>
 					</File>
 					<File
+						RelativePath=".\spin_lock.txt"
+						>
+					</File>
+					<File
 						RelativePath=".\spinlockmanager.c"
 						>
 					</File>
