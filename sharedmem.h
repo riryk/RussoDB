@@ -23,6 +23,7 @@ typedef struct SSharMemItem
 	size_t		size;			            /* bytes allocated for the structure */
 } SSharMemItem, *SharMemItem;
 
+
 #define SHAR_MEM_NAME "Global\\PostgreSQL:"
 
 #endif

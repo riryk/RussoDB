@@ -8,6 +8,7 @@
 #define PROCESS_HELPER_H
 
 #define MAX_SOCKETS	64
+#define NUM_AUXILIARY_PROCS		4
 
 typedef struct SDeadChildInfo
 {
@@ -47,8 +48,25 @@ typedef struct SBackendParams
 	char		  otions[MAX_PATH];
 } SBackendParams, *BackendParams;
 
+typedef struct SProcBackData
+{  
+	/* backend's process ID */
+    int			procId;			 
+	int			procNo; 
+    int         backendId;
+	uint        databaseId;
+	uint        roleId;
+    /* true if the process is  waiting for an LW lock */
+	Bool		waitingForLightLock; 
+	/* the light lock mode being waited for */
+	uint8		waitingMode;
+    /* next waiter for same light weight lock */
+	struct SProcBackData* lightLockNext;
+} SProcBackData, *ProcBackData;
+
 extern const SIProcessManager sProcessManager;
-extern const IProcessManager processManager;
+extern const IProcessManager  processManager;
+extern ProcBackData           backendProc;
 
 int startSubProcess(void* self, int argc, char* argv[]);
 int subProcessMain(void* self, int argc, char* argv[]);

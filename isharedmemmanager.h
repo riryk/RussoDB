@@ -7,7 +7,8 @@
 
 typedef struct SISharedMemManager
 {
-	IErrorLogger  errorLogger;
+	IErrorLogger      errorLogger;
+    ISpinLockManager  spinLockMan; 
 
 	SharMemHeader (*sharMemCreate)(
 	           void*         self,
@@ -16,6 +17,20 @@ typedef struct SISharedMemManager
 	           int           port);
 
 	void (*initSharMemAccess)(void* sharMem);
+
+	void* (*allocSharedMem)(
+	           void*       self,
+	           size_t      size);
+
+	size_t (*sizeMultiply)(
+	           void*         self,
+	           size_t        s1, 
+	           size_t        s2);
+
+	size_t (*addSize)(
+               void*         self,
+               size_t        s1, 
+	           size_t        s2);
 
 } SISharedMemManager, *ISharedMemManager;
 

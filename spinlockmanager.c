@@ -8,7 +8,6 @@
 
 int spinsAllowedCount = SPINS_DEFAULT_NUM;
 
-
 int spinLockAcquire(
 	void*             self,
 	volatile long*    lock, 
@@ -147,10 +146,13 @@ int spinLockAcquire(
 	 * as small as possible. And we decrease spins allowed count 
 	 * for 1 point if we do not exceed spins min count.
 	 */
+	if (spinsAllowedCount > SPINS_MIN_NUM)
+        spinsAllowedCount = Max(spinsAllowedCount - 1, SPINS_MIN_NUM);
 
-		if (spinsAllowedCount > SPINS_MIN_NUM)
-            spinsAllowedCount = 
-			    (spinsAllowedCount - 1 > SPINS_MIN_NUM)
-				? spinsAllowedCount - 1
-				: SPINS_MIN_NUM;
+	return sleepsCount;
+}
+
+void spinLockRelease(volatile long* lock)
+{
+    *lock = 0;
 }

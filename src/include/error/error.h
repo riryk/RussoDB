@@ -77,6 +77,9 @@ typedef enum
 #define ERROR_CODE_OPEN_PROCESS_TOKEN       1030
 #define ERROR_CODE_SET_PRIVILEDGE_FAILED    1031
 #define ERROR_CODE_SPIN_LOCK_TIMEOUT        1032
+#define ERROR_CODE_TYPE_OVERFLOW            1033
+#define ERROR_CODE_TOO_MANY_LOCKS_TAKEN     1034
+#define ERROR_CODE_BACKEND_PROC_NULL        1035
 
 /* The structure contains complete information 
  * about an error

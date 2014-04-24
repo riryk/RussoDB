@@ -20,7 +20,7 @@ extern const IBufferManager  bufferManager;
 extern BufFreeListState  freeBufferState;
 extern BufferInfo        bufInfos;
 extern char*             bufBlocks;
-
+extern int			     bufNum;
 
 void ctorBufMan(void* self);
 

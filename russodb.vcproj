@@ -1408,10 +1408,6 @@
 					>
 				</File>
 				<File
-					RelativePath="src\common\lock.c"
-					>
-				</File>
-				<File
 					RelativePath=".\processhelper.c"
 					>
 				</File>

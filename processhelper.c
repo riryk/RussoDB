@@ -13,6 +13,8 @@ void*         sharedMemAddr         = NULL;
 size_t        sharedMemSegmSize     = 0;
 TCHAR         sharedMemParamsName[] = TEXT("Global\\SharedMemParams");
 
+ProcBackData  backendProc = NULL;
+
 const SIProcessManager sProcessManager = 
 { 
 	&sErrorLogger,

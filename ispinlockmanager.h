@@ -15,6 +15,8 @@ typedef struct SISpinLockManager
 	     char*             file, 
 	     int               line);
 
+	void (*spinLockRelease)(volatile long* lock);
+
 } SISpinLockManager, *ISpinLockManager;
 
 #endif

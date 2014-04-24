@@ -1,13 +1,39 @@
 
 #include "sharedmemmanager.h"
+#include "ispinlockmanager.h"
 
 void*   sharMemSegAddr = NULL;
 int     sharMemSegSize = 0;
 HANDLE  sharMemSegId   = 0;
 
-void*         sharMemStart;			
-void*         sharMemEnd;			
-SharMemHeader sharMemHdr;
+void*           sharMemStart;			
+void*           sharMemEnd;			
+SharMemHeader   sharMemHdr;
+SpinLockType*   sharMemLock;
+
+void sharMemCtor(
+	void*           self)
+{
+	ISharedMemManager _    = (ISharedMemManager)self;
+    IErrorLogger      elog = _->errorLogger;
+
+    SharMemHeader     smHdr = sharMemHdr;
+    
+	ASSERT(elog, smHdr != NULL);
+
+	/* Allocate space for spinlock. 
+	 * Take memory from the shared segment.
+	 */
+	sharMemLock = (SpinLockType*)(((char*)smHdr) + smHdr->freeoffset);
+    
+	/* Update free memory pointer. */
+    smHdr->freeoffset += ALIGN_DEFAULT(sizeof(slock_t));
+
+    /* Assert that we have not exceeded the totalsize. */
+    ASSERT(elog, smHdr->freeoffset <= smHdr->totalSize);
+    
+    sharMemLock = 0;
+}
 
 #ifdef _WIN32
 
@@ -163,5 +189,125 @@ void* ShmemInitStruct(
     SharMemItem     result;
 	void*           structPtr; 
 
-
+    
 } 
+
+/* Allocates max-aligned chunk from shared memory. */
+void* allocSharedMem(
+	void*       self,
+	size_t      size)
+{
+	ISharedMemManager  smm  = (ISharedMemManager)self;
+	ISpinLockManager   slm  = (ISpinLockManager)smm->spinLockMan;
+	IErrorLogger       elog = (IErrorLogger)smm->errorLogger;
+
+	size_t		 newStart;
+	size_t		 newFree;
+	void*        newSpace;
+
+	/* We use only volatile pointer to shared memory.
+	 * This method can be called simultaneously by
+	 * several backends. We protect code by spin lock
+	 * acquire and spin lock release. But it is not enough.
+	 * Compiler optimizer can rearrange some code or 
+	 * use processor registers as cache. First of all
+	 * we read freeoffset property of smHdr. It is read to 
+	 * some register. Then some modifications are made and 
+	 * a modified value is set to freeoffset piece of memory.
+	 * But without volatile keyword the register variable will be changed
+	 * not memory. Probably it will be syncronized with memory later
+	 * after spin lock releasing, which is inapropriate. When we mark 
+	 * smHdr with volatile keyword it guarantees that when smHdr is
+	 * set it is immediately set to memory before the spin lock is
+	 * released.
+	 */
+    volatile SharMemHeader smHdr = sharMemHdr;
+
+	/* First of all we align size */
+    size = ALIGN_DEFAULT(size);
+
+	/* Assert if shared memory header is not null. */
+	ASSERT(elog, smHdr != NULL, NULL); 
+
+	/* All modifications of shared memory header 
+	 * must be protected by spin lock.
+	 */
+	SPIN_LOCK_ACQUIRE(slm, sharMemLock);
+
+	newStart = smHdr->freeoffset;
+
+	/* If size is larger than the buffer size, we 
+	 * assume that a large buffer is requested and 
+	 * we buffer align the size.
+	 */
+	if (size >= BLOCK_SIZE)
+		newStart = ALIGN_BUFFER(newStart);
+
+    newFree  = newStart + size;
+    newSpace = NULL; 
+
+	/* If we have not exceeded the header's total size,
+	 * we have to compute new space and update the 
+	 * free space. 
+	 */
+	if (newFree <= smHdr->totalSize)
+	{
+		newSpace = (void*)((char*)sharMemStart + newStart);
+		smHdr->freeoffset = newFree;
+	}
+
+	SPIN_LOCK_RELEASE(slm, sharMemLock);
+
+	if (newSpace != NULL)
+        elog->log(LOG_WARNING, 
+		          ERROR_CODE_OUT_OF_MEMORY, 
+				  "out of shared memory");        
+
+	return newSpace;
+}
+
+/* Multiple two sizes and check for overflow. */
+size_t addSize(
+    void*       self,
+    size_t      s1, 
+	size_t      s2)
+{
+	ISharedMemManager  _    = (ISharedMemManager)self;
+	IErrorLogger       elog = _->errorLogger;
+
+	size_t		       res;
+
+	res = s1 + s2;
+
+	if (res < s1 || res < s2)
+        elog->log(LOG_ERROR, 
+		          ERROR_CODE_TYPE_OVERFLOW, 
+				  "requested shared memory size overflows size_t"); 
+
+	return res;
+}
+
+/* Multiple two sizes and check for overflow */
+size_t sizeMultiply(
+	void*        self,
+	size_t       s1, 
+	size_t       s2)
+{
+	ISharedMemManager  _    = (ISharedMemManager)self;
+	IErrorLogger       elog = _->errorLogger;
+
+	size_t		       res;
+
+	if (s1 == 0 || s2 == 0)
+		return 0;
+
+	res = s1 * s2;
+
+	/* We are assuming Size is an unsigned type here... */
+	if (res / s2 != s1)
+        elog->log(LOG_ERROR, 
+		          ERROR_CODE_TYPE_OVERFLOW, 
+				  "requested shared memory size overflows size_t"); 
+
+	return res;
+}
