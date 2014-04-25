@@ -394,7 +394,15 @@
 						Name="signal"
 						>
 						<File
+							RelativePath=".\isignalmanager.h"
+							>
+						</File>
+						<File
 							RelativePath=".\mainprocsignal.h"
+							>
+						</File>
+						<File
+							RelativePath=".\signalmanager.h"
 							>
 						</File>
 					</Filter>
@@ -406,11 +414,19 @@
 							>
 						</File>
 						<File
+							RelativePath=".\isemaphorelockmanager.h"
+							>
+						</File>
+						<File
 							RelativePath=".\ispinlockmanager.h"
 							>
 						</File>
 						<File
 							RelativePath=".\lightlockmanager.h"
+							>
+						</File>
+						<File
+							RelativePath=".\semaphorelockmanager.h"
 							>
 						</File>
 						<File
@@ -1458,12 +1474,20 @@
 						RelativePath=".\mainprocsignal.c"
 						>
 					</File>
+					<File
+						RelativePath=".\signalmanager.c"
+						>
+					</File>
 				</Filter>
 				<Filter
 					Name="lock"
 					>
 					<File
 						RelativePath=".\lightlockmanager.c"
+						>
+					</File>
+					<File
+						RelativePath=".\semaphorelockmanager.c"
 						>
 					</File>
 					<File
