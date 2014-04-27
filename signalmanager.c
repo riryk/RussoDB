@@ -4,6 +4,7 @@
 #ifdef _WIN32
 
 HANDLE	          signalEvent;
+HANDLE		      signalPipe = INVALID_HANDLE_VALUE;
 CRITICAL_SECTION  signalCritSec;
 
 signalFunc        signalArray[SIGNAL_COUNT];
@@ -12,10 +13,15 @@ signalFunc        signalDefaults[SIGNAL_COUNT];
 volatile int      signalQueue;
 int			      signalMask;
 
-void signalCtor()
+DWORD __stdcall signalThread(LPVOID param);
+
+void signalCtor(void* self)
 {
-    int			i;
-	HANDLE		signalThread;
+	ISignalManager  _    = (ISignalManager)self;
+    IErrorLogger    elog = _->errorLogger;
+
+    int			    i;
+	HANDLE		    signalThread;
 
 	InitializeCriticalSection(&signalCritSec);
 
@@ -30,9 +36,31 @@ void signalCtor()
     
 	/* Create the global event handle used to flag signals */
 	signalEvent = CreateEvent(NULL, TRUE, FALSE, NULL);
-	if (pgwin32_signal_event == NULL)
-		ereport(FATAL,
-				(errmsg_internal("could not create signal event: error code %lu", GetLastError())));
+	if (signalEvent == NULL)
+        elog->log(LOG_FATAL, 
+		          ERROR_CODE_CREATE_EVENT_FAILED, 
+				  "Could not create signal event: error code %lu",
+				  GetLastError());
+
+	/* Create thread for handling signals */
+	signalThread = CreateThread(NULL, 0, signalThread, NULL, 0, NULL);
+	if (signalThread == NULL)
+        elog->log(LOG_FATAL, 
+		          ERROR_CODE_CREATE_THREAD_FAILED, 
+				  "Could not create signal handler thread: error code %lu",
+				  GetLastError());
+
+}
+
+/* Signal handling thread */
+DWORD __stdcall signalThread(LPVOID param)
+{
+    char		pipeName[128];
+	HANDLE		pipe = signalPipe;
+
+	snprintf(pipeName, sizeof(pipename), "\\\\.\\pipe\\signal_%lu", GetCurrentProcessId());
+
+
 }
 
 #endif

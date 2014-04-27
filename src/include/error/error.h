@@ -80,6 +80,7 @@ typedef enum
 #define ERROR_CODE_TYPE_OVERFLOW            1033
 #define ERROR_CODE_TOO_MANY_LOCKS_TAKEN     1034
 #define ERROR_CODE_BACKEND_PROC_NULL        1035
+#define ERROR_CODE_CREATE_EVENT_FAILED      1036
 
 /* The structure contains complete information 
  * about an error
