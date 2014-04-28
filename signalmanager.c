@@ -60,7 +60,60 @@ DWORD __stdcall signalThread(LPVOID param)
 
 	snprintf(pipeName, sizeof(pipename), "\\\\.\\pipe\\signal_%lu", GetCurrentProcessId());
 
+    
+}
 
+/* Dispatch all queued signals. */
+void dispatchQueuedSignals()
+{
+    int			i;
+
+	EnterCriticalSection(&signalCritSec);
+
+	while (QUEUE_LEFT())
+	{
+        /* Get queue mask that represent queued signals. */
+		int	   mask = QUEUE_LEFT();   
+
+		for (i = 0; i < SIGNAL_COUNT; i++)
+		{
+			/* If i-th element of the mask is set to true,
+			 * we retrieve i-th signal message and process it. 
+			 */
+            if (!(mask & SIGNAL_MASK(i)))
+				continue;
+			
+            signalFunc   signl = signalArray[i];
+            
+			/* Set up the default function. */
+			if (signl == SIGNAL_DEFAULT)
+                signl = signalDefaults[i];
+
+			/* Clear i-th bit in mask bit array. */
+            signalQueue &= ~SIGNAL_MASK(i);
+
+			if (signl != SIGNAL_ERROR 
+		     && signl != SIGNAL_IGNORE 
+			 && signl != SIGNAL_DEFAULT)
+			{
+                LeaveCriticalSection(&signalCritSec);
+				signl(i);
+				EnterCriticalSection(&signalCritSec);
+				break;
+				/* Before executing a signal handler we leave 
+				 * the critical section and launch the handler.
+				 * Inside the signal handler the signal queue can 
+				 * be modified. Also another thread can modify it.
+				 * we break the current loop and start the outer loop
+				 * again. 
+				 */
+			}
+		}
+	}
+
+	/* Set the signal event to unsignalled state. */
+	ResetEvent(signalEvent);
+    LeaveCriticalSection(&signalCritSec);
 }
 
 #endif

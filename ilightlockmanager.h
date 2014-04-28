@@ -8,9 +8,10 @@
 
 typedef struct SILightLockManager
 {
-	IErrorLogger       errorLogger;
-	ISharedMemManager  sharedMemManager; 
-	ISpinLockManager   spinLockManager;
+	IErrorLogger           errorLogger;
+	ISharedMemManager      sharedMemManager; 
+	ISpinLockManager       spinLockManager;
+	ISemaphoreLockManager  semLockManager;
 
 	void (*lightLockAcquire)(
 		void*               self,

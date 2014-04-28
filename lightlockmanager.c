@@ -79,14 +79,15 @@ void initLightLockArray(
 }
 
 void lightLockAcquire(
-    void*                self,
-	ELightLockType       type, 
-	ELightLockMode       mode)
+    void*                 self,
+	ELightLockType        type, 
+	ELightLockMode        mode)
 {
-    ILightLockManager    llm   = (ILightLockManager)self;
-	ISharedMemManager    smm   = (ISharedMemManager)llm->sharedMemManager; 
-	IErrorLogger         elog  = (IErrorLogger)llm->errorLogger;
-    ISpinLockManager     slm   = (ISpinLockManager)llm->spinLockManager;
+    ILightLockManager     llm   = (ILightLockManager)self;
+	ISharedMemManager     smm   = (ISharedMemManager)llm->sharedMemManager; 
+	IErrorLogger          elog  = (IErrorLogger)llm->errorLogger;
+    ISpinLockManager      slm   = (ISpinLockManager)llm->spinLockManager;
+	ISemaphoreLockManager semm  = (ISemaphoreLockManager)llm->semLockManager;
 
     volatile LightLock   lock  = &(lightLockArray[type].lock);
     Bool                 retry = False;
@@ -177,7 +178,19 @@ void lightLockAcquire(
 
         SPIN_LOCK_RELEASE(slm, &lock->mutex);
 
+		/* Wait for the semaphore to get signalled. */
+		CYCLE
+		{
+			semm->lockSemaphore(self, proc->sem);
 
+			/* lockSemaphore can return because of interrupt reason.
+			 * For example it waits for the signal event, and this event
+			 * becomes signalled, but not the semaphore.
+			 */
+			if (!proc->waitingForLightLock)
+				break;
+			extraWaits++;
+		}
 	}
 
 	SPIN_LOCK_RELEASE(slm, &lock->mutex);

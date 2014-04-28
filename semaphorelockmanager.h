@@ -10,4 +10,8 @@ typedef HANDLE* TSemaphore;
 
 #endif
 
+void lockSemaphore(
+    void*          self,
+	TSemaphore     sem);
+
 #endif

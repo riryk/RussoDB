@@ -81,6 +81,9 @@ typedef enum
 #define ERROR_CODE_TOO_MANY_LOCKS_TAKEN     1034
 #define ERROR_CODE_BACKEND_PROC_NULL        1035
 #define ERROR_CODE_CREATE_EVENT_FAILED      1036
+#define ERROR_CODE_LOCK_SEMAPHORE_FAILED    1037
+#define ERROR_CODE_TOO_MANY_SEMAPHORES      1038
+#define ERROR_CODE_COULD_NOT_CREATE_SEMAPHORE 1039
 
 /* The structure contains complete information 
  * about an error

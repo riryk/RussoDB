@@ -3,6 +3,7 @@
 #include "iprocesshelper.h"
 #include "logger.h"
 #include "filemanager.h"
+#include "semaphorelockmanager.h"
 
 #ifndef PROCESS_HELPER_H
 #define PROCESS_HELPER_H
@@ -50,6 +51,8 @@ typedef struct SBackendParams
 
 typedef struct SProcBackData
 {  
+	/* A semaphore to sleep on */
+	TSemaphore  sem;	
 	/* backend's process ID */
     int			procId;			 
 	int			procNo; 

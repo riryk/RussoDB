@@ -10,6 +10,7 @@ typedef struct SISignalManager
 	IErrorLogger       errorLogger;
 
 	void (*signalCtor)(void* self);
+	void (*dispatchQueuedSignals)();
 
 } SISignalManager, *ISignalManager;
 
