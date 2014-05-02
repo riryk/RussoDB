@@ -122,3 +122,20 @@ void lockSemaphore(
 
 #endif
 
+#ifdef _WIN32
+
+void unlockSemaphore(
+    void*          self,
+	TSemaphore     sem)
+{
+    ISemaphoreLockManager _       = (ISemaphoreLockManager)self;
+    IErrorLogger          elog    = _->errorLogger;
+
+	if (!ReleaseSemaphore(*sema, 1, NULL))
+        elog->log(LOG_FATAL, 
+           ERROR_CODE_RELEASE_SEMAPHORE_FAILED, 
+		   "Could not release semaphore: error code %lu",
+		   GetLastError());        
+}
+
+#endif

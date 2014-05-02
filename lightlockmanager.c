@@ -5,6 +5,12 @@
 ULightLockPadded* lightLockArray = NULL;
 int	              heldLocksNum   = 0;
 
+/* Array of held locks. Since light locks are applied 
+ * only for a short period of time, it is not likely 
+ * that there will be too many locks held simultaneously.
+ */
+ELightLockMode    heldLightLocks[MAX_SIMULTANEOUS_LOCKS];
+
 /* Calculate number of light locks needed */
 int lightLocksNumber()
 { 
@@ -89,15 +95,22 @@ void lightLockAcquire(
     ISpinLockManager      slm   = (ISpinLockManager)llm->spinLockManager;
 	ISemaphoreLockManager semm  = (ISemaphoreLockManager)llm->semLockManager;
 
-    volatile LightLock   lock  = &(lightLockArray[type].lock);
-    Bool                 retry = False;
-	ProcBackData         proc  = backendProc;
+    volatile LightLock   lock     = &(lightLockArray[type].lock);
+    Bool                 retry    = False;
+	ProcBackData         proc     = backendProc;
+	int			         addWaits = 0;
 
 	if (heldLocksNum >= MAX_SIMULTANEOUS_LOCKS)
         elog->log(LOG_ERROR, 
 		          ERROR_CODE_TOO_MANY_LOCKS_TAKEN, 
 				  "too many light locks taken");        
 
+	/* The loop here is needed. From the start we figure out 
+	 * if we need to wait or not. If we do not have to wait 
+	 * we just acquire the lock. How do we acquire the lock?
+	 * First of all we take the lock from the light lock array 
+	 * and 
+	 */
 	CYCLE
 	{
 		Bool    mustWait;
@@ -147,7 +160,7 @@ void lightLockAcquire(
 		{
             if (lock->exclHoldersNum == 0)
 			{
-                lock->exclHoldersNum++;
+                lock->sharedHoldersNum++;
                 mustWait = False;
 			}
 		}
@@ -181,19 +194,34 @@ void lightLockAcquire(
 		/* Wait for the semaphore to get signalled. */
 		CYCLE
 		{
-			semm->lockSemaphore(self, proc->sem);
+			semm->lockSemaphore(semm, proc->sem);
 
 			/* lockSemaphore can return because of interrupt reason.
 			 * For example it waits for the signal event, and this event
-			 * becomes signalled, but not the semaphore.
+			 * becomes signalled, but not the semaphore. In this case we
+             * try to acquire the semaphore lock once more.
 			 */
 			if (!proc->waitingForLightLock)
 				break;
-			extraWaits++;
+
+			/* Calculate how many additional waits we need to do. */
+			addWaits++;
 		}
+
+		retry = True;
 	}
 
 	SPIN_LOCK_RELEASE(slm, &lock->mutex);
+
+	heldLightLocks[heldLocksNum++] = type;
+
+	/* If there have been extra waits, we need to fix 
+	 * the semaphore's count. Unlock semaphore method 
+	 * internally calls release semaphore and it decrements 
+	 * the semaphore's usage count.
+	 */
+	while (addWaits-- > 0)
+       semm->unlockSemaphore(semm, proc->sem);
 }
 
 

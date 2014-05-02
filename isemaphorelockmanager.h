@@ -11,8 +11,14 @@ typedef struct SISemaphoreLockManager
     ISignalManager     signalManager; 
 
 	void (*signalCtor)(void* self);
+
 	void (*dispatchQueuedSignals)();
+
 	void (*lockSemaphore)(
+        void*          self,
+	    TSemaphore     sem);
+
+	void (*unlockSemaphore)(
         void*          self,
 	    TSemaphore     sem);
 
