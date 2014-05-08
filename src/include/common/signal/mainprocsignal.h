@@ -18,7 +18,7 @@ typedef enum
 	SIGNALS_NUM
 } PMSignalReason;
 
-struct SMainSignalData
+typedef struct SSignalData
 {
 	/* array of flags */
 	int    flags[SIGNALS_NUM];
@@ -26,6 +26,6 @@ struct SMainSignalData
 	int	   flagsNum;	 
 	int	   nextFlag;	  
 	int    childFlags[1];
-} SMainSignalData, *MainSignalData;
+} SSignalData, *SignalData;
 
 #endif

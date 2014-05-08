@@ -1,6 +1,7 @@
 
 #include "common.h"
-#include "signalmanager.h"
+#include "isignalmanager.h"
+#include "ierrorlogger.h"
 
 #ifndef ISEMAPHORELOCKMANAGER_H
 #define ISEMAPHORELOCKMANAGER_H

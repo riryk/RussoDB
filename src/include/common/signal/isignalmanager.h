@@ -1,6 +1,6 @@
 
 #include "common.h"
-#include "ierrormanager.h"
+#include "ierrorlogger.h"
 
 #ifndef ISIGNALMANAGER_H
 #define ISIGNALMANAGER_H

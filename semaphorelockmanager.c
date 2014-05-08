@@ -1,17 +1,25 @@
 
 #include "semaphorelockmanager.h"
 #include "signalmanager.h"
+#include "semaphore.h"
+#include "errno.h"
 
 #ifdef _WIN32
 HANDLE*  semaphoresSet;		/* IDs of semaphore sets acquired so far */
 #endif
 
-int  semaphoresNum = 0;         /* Number of semaphore sets acquired so far */
+int  semaphoresNum = 0;     /* Number of semaphore sets acquired so far */
 int  semaphoresMax;         /* Max number of semaphores */
 
-void semaphoresCtor(int semasMax, int port)
+void semaphoresCtor(
+	void*                 self,
+	int                   semasMax, 
+	int                   port)
 {
-	semaphoresSet = (HANDLE*)malloc(maxSemas * sizeof(HANDLE));
+    ISemaphoreLockManager _       = (ISemaphoreLockManager)self;
+    IErrorLogger          elog    = _->errorLogger;
+
+	semaphoresSet = (HANDLE*)malloc(semasMax * sizeof(HANDLE));
 	if (semaphoresSet == NULL)
         elog->log(LOG_FATAL, 
            ERROR_CODE_OUT_OF_MEMORY, 
@@ -33,12 +41,12 @@ void semaphoreCreate(
     HANDLE		          curHandle;
 	SECURITY_ATTRIBUTES   secAttrs; 
 
-    if (semaphoresNum >= maxSems)
+    if (semaphoresNum >= semaphoresMax)
         elog->log(LOG_FATAL, 
            ERROR_CODE_TOO_MANY_SEMAPHORES, 
 		   "too many semaphores created");
     
-	memset(secAttrs, 0, sizeof(secAttrs));
+	memset(&secAttrs, 0, sizeof(secAttrs));
 	secAttrs.nLength              = sizeof(secAttrs);
 	secAttrs.lpSecurityDescriptor = NULL;
 	secAttrs.bInheritHandle       = TRUE;
@@ -85,8 +93,8 @@ void lockSemaphore(
     DWORD		   ret;
 	HANDLE		   waitHandles[2];
 
-	wh[0] = signalEvent;
-	wh[1] = *sem;
+	waitHandles[0] = signalEvent;
+	waitHandles[1] = *sem;
 
 	do
 	{
@@ -131,7 +139,7 @@ void unlockSemaphore(
     ISemaphoreLockManager _       = (ISemaphoreLockManager)self;
     IErrorLogger          elog    = _->errorLogger;
 
-	if (!ReleaseSemaphore(*sema, 1, NULL))
+	if (!ReleaseSemaphore(*sem, 1, NULL))
         elog->log(LOG_FATAL, 
            ERROR_CODE_RELEASE_SEMAPHORE_FAILED, 
 		   "Could not release semaphore: error code %lu",

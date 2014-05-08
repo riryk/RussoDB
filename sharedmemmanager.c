@@ -1,6 +1,8 @@
 
 #include "sharedmemmanager.h"
-#include "ispinlockmanager.h"
+#include "spinlockmanager.h"
+#include "sharedmem.h"
+#include "spin.h"
 
 void*   sharMemSegAddr = NULL;
 int     sharMemSegSize = 0;
@@ -9,7 +11,7 @@ HANDLE  sharMemSegId   = 0;
 void*           sharMemStart;			
 void*           sharMemEnd;			
 SharMemHeader   sharMemHdr;
-SpinLockType*   sharMemLock;
+TSpinLock*      sharMemLock;
 
 void sharMemCtor(
 	void*           self)
@@ -19,18 +21,18 @@ void sharMemCtor(
 
     SharMemHeader     smHdr = sharMemHdr;
     
-	ASSERT(elog, smHdr != NULL);
+	ASSERT_VOID(elog, smHdr != NULL);
 
 	/* Allocate space for spinlock. 
 	 * Take memory from the shared segment.
 	 */
-	sharMemLock = (SpinLockType*)(((char*)smHdr) + smHdr->freeoffset);
+	sharMemLock = (TSpinLock*)(((char*)smHdr) + smHdr->freeoffset);
     
 	/* Update free memory pointer. */
-    smHdr->freeoffset += ALIGN_DEFAULT(sizeof(slock_t));
+    smHdr->freeoffset += ALIGN_DEFAULT(sizeof(TSpinLock));
 
     /* Assert that we have not exceeded the totalsize. */
-    ASSERT(elog, smHdr->freeoffset <= smHdr->totalSize);
+    ASSERT_VOID(elog, smHdr->freeoffset <= smHdr->totalSize);
     
     sharMemLock = 0;
 }

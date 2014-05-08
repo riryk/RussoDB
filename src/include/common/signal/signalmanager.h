@@ -1,5 +1,6 @@
 
 #include "common.h"
+#include "isignalmanager.h"
 
 #ifndef SIGNALMANAGER_H
 #define SIGNALMANAGER_H
@@ -16,7 +17,7 @@
 #define SIGNAL_MASK(signal) (1 << ((signal)-1))
 
 extern HANDLE  signalEvent;
-extern int     signalQueue;
+extern volatile int signalQueue;
 extern int	   signalMask;
 
 typedef void (*signalFunc)(int);

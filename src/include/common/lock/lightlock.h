@@ -1,9 +1,9 @@
+#include "common.h"
+#include "spin.h"
+#include "proc.h"
 
-#include "ilightlockmanager.h"
-#include "spinlockmanager.h"
-
-#ifndef LIGHTLOCKMANAGER_H
-#define LIGHTLOCKMANAGER_H
+#ifndef LIGHTLOCK_H
+#define LIGHTLOCK_H
 
 typedef enum ELightLockType
 {
@@ -27,7 +27,7 @@ typedef enum ELightLockMode
 
 typedef struct SLightLock
 {
-	SpinLockType   mutex;			   /* Protects LWLock and queue of PGPROCs */
+	TSpinLock      mutex;			   /* Protects LWLock and queue of PGPROCs */
 	Bool		   releaseOK;		   /* T if ok to release waiters */
 	char		   exclHoldersNum;	   /* Number of exclusive holders (0 or 1) */
 	int			   sharedHoldersNum;   /* Number of shared holders (0..MaxBackends) */

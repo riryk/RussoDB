@@ -44,7 +44,7 @@
 				Name="VCCLCompilerTool"
 				AdditionalOptions="/MP"
 				Optimization="0"
-				AdditionalIncludeDirectories="src/include/file;src/include/error;src/include/common;src/include/os/file;src/include/commands;src/include/commands/relation;src/include/memory;src/include/lib/unity;src/include/tests/unit;src/include/common/hashtable;src/include/tests/unit/memory;src/include/tests/unit/common/hashtable;src/include/commands/relation/row;src/include/tests/unit/commands/relation/row;src/include/commands/relation/buffer;src/include/tests/unit/file/file_manager;src/include/common/config;src/include/tests/unit/error;"
+				AdditionalIncludeDirectories="src/include/file;src/include/error;src/include/common;src/include/os/file;src/include/commands;src/include/commands/relation;src/include/memory;src/include/lib/unity;src/include/tests/unit;src/include/common/hashtable;src/include/tests/unit/memory;src/include/tests/unit/common/hashtable;src/include/commands/relation/row;src/include/tests/unit/commands/relation/row;src/include/commands/relation/buffer;src/include/tests/unit/file/file_manager;src/include/common/config;src/include/tests/unit/error;src/include/common/signal;src/include/common/lock;"
 				StringPooling="false"
 				RuntimeLibrary="3"
 				AssemblerOutput="0"
@@ -295,7 +295,11 @@
 						>
 					</File>
 					<File
-						RelativePath=".\isharedmemmanager.h"
+						RelativePath="src\include\common\isharedmemmanager.h"
+						>
+					</File>
+					<File
+						RelativePath="src\include\common\ithreadhelper.h"
 						>
 					</File>
 					<File
@@ -323,15 +327,19 @@
 						>
 					</File>
 					<File
+						RelativePath="src\include\common\proc.h"
+						>
+					</File>
+					<File
 						RelativePath="src\include\common\processhelper.h"
 						>
 					</File>
 					<File
-						RelativePath=".\sharedmem.h"
+						RelativePath="src\include\common\sharedmem.h"
 						>
 					</File>
 					<File
-						RelativePath=".\sharedmemmanager.h"
+						RelativePath="src\include\common\sharedmemmanager.h"
 						>
 					</File>
 					<File
@@ -340,6 +348,14 @@
 					</File>
 					<File
 						RelativePath="src\include\common\string_info.h"
+						>
+					</File>
+					<File
+						RelativePath="src\include\common\thread.h"
+						>
+					</File>
+					<File
+						RelativePath="src\include\common\threadhelper.h"
 						>
 					</File>
 					<File
@@ -394,15 +410,15 @@
 						Name="signal"
 						>
 						<File
-							RelativePath=".\isignalmanager.h"
+							RelativePath="src\include\common\signal\isignalmanager.h"
 							>
 						</File>
 						<File
-							RelativePath=".\mainprocsignal.h"
+							RelativePath="src\include\common\signal\mainprocsignal.h"
 							>
 						</File>
 						<File
-							RelativePath=".\signalmanager.h"
+							RelativePath="src\include\common\signal\signalmanager.h"
 							>
 						</File>
 					</Filter>
@@ -410,27 +426,39 @@
 						Name="lock"
 						>
 						<File
-							RelativePath=".\ilightlockmanager.h"
+							RelativePath="src\include\common\lock\ilightlockmanager.h"
 							>
 						</File>
 						<File
-							RelativePath=".\isemaphorelockmanager.h"
+							RelativePath="src\include\common\lock\isemaphorelockmanager.h"
 							>
 						</File>
 						<File
-							RelativePath=".\ispinlockmanager.h"
+							RelativePath="src\include\common\lock\ispinlockmanager.h"
 							>
 						</File>
 						<File
-							RelativePath=".\lightlockmanager.h"
+							RelativePath="src\include\common\lock\lightlock.h"
 							>
 						</File>
 						<File
-							RelativePath=".\semaphorelockmanager.h"
+							RelativePath="src\include\common\lock\lightlockmanager.h"
 							>
 						</File>
 						<File
-							RelativePath=".\spinlockmanager.h"
+							RelativePath="src\include\common\lock\semaphore.h"
+							>
+						</File>
+						<File
+							RelativePath="src\include\common\lock\semaphorelockmanager.h"
+							>
+						</File>
+						<File
+							RelativePath="src\include\common\lock\spin.h"
+							>
+						</File>
+						<File
+							RelativePath="src\include\common\lock\spinlockmanager.h"
 							>
 						</File>
 					</Filter>
@@ -961,6 +989,14 @@
 								>
 							</File>
 						</Filter>
+						<Filter
+							Name="spinlock"
+							>
+							<File
+								RelativePath=".\when_spin_lock_acquire_without_contention.c"
+								>
+							</File>
+						</Filter>
 					</Filter>
 					<Filter
 						Name="memory"
@@ -1437,6 +1473,10 @@
 				</File>
 				<File
 					RelativePath=".\string_info.c"
+					>
+				</File>
+				<File
+					RelativePath=".\threadhelper.c"
 					>
 				</File>
 				<Filter

@@ -4,14 +4,8 @@
 #ifndef SPINLOCKMANAGER_H
 #define SPINLOCKMANAGER_H
 
-typedef unsigned int SpinLockType;
-
-#define SPIN_LOCK_ACQUIRE(manager, lock) \
-    (manager)->spinLockAcquire( \
-	           (manager), \
-	           (lock), \ 
-	           __FILE__, \ 
-	           __LINE__); \    
+#define SPIN_LOCK_ACQUIRE(man, lock) \
+    (man)->spinLockAcquire((man), (lock), __FILE__, __LINE__);   
 
 #define SPIN_LOCK_RELEASE(manager, lock) \
 	(manager)->spinLockRelease(lock); \

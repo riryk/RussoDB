@@ -3,8 +3,12 @@
 
 #define SPINS_DEFAULT_NUM   100
 #define SLEEPS_MAX_COUNT	1000
+#define SLEEP_MIN           1
 #define SLEEP_MAX           1000
 #define MAX_RANDOM_VALUE    (0x7FFFFFFF)
+
+#define SPINS_MIN_NUM       10
+#define SPINS_MAX_NUM       1000
 
 int spinsAllowedCount = SPINS_DEFAULT_NUM;
 
@@ -96,7 +100,7 @@ int spinLockAcquire(
 			* minimum sleep milliseconds.
 		    */
 		   if (sleep == 0)
-			   sleep = MIN_SLEEP_MSEC;
+			   sleep = SLEEP_MIN;
 
 		   /* Sleep for sleep milliseconds. */
 		   Sleep(sleep * 1000L);

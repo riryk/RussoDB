@@ -1,5 +1,6 @@
 
 #include "signalmanager.h"
+#include "error.h"
 
 #ifdef _WIN32
 
@@ -10,7 +11,7 @@ CRITICAL_SECTION  signalCritSec;
 signalFunc        signalArray[SIGNAL_COUNT];
 signalFunc        signalDefaults[SIGNAL_COUNT];
 
-volatile int      signalQueue;
+volatile int      signalQueue = 0;
 int			      signalMask;
 
 DWORD __stdcall signalThread(LPVOID param);
@@ -58,9 +59,7 @@ DWORD __stdcall signalThread(LPVOID param)
     char		pipeName[128];
 	HANDLE		pipe = signalPipe;
 
-	snprintf(pipeName, sizeof(pipename), "\\\\.\\pipe\\signal_%lu", GetCurrentProcessId());
-
-    
+	snprintf(pipeName, sizeof(pipeName), "\\\\.\\pipe\\signal_%lu", GetCurrentProcessId());
 }
 
 /* Dispatch all queued signals. */
@@ -70,20 +69,22 @@ void dispatchQueuedSignals()
 
 	EnterCriticalSection(&signalCritSec);
 
-	while (QUEUE_LEFT())
+	while (QUEUE_LEFT)
 	{
         /* Get queue mask that represent queued signals. */
-		int	   mask = QUEUE_LEFT();   
+		int	   mask = QUEUE_LEFT;   
 
 		for (i = 0; i < SIGNAL_COUNT; i++)
 		{
+			signalFunc   signl;
+
 			/* If i-th element of the mask is set to true,
 			 * we retrieve i-th signal message and process it. 
 			 */
             if (!(mask & SIGNAL_MASK(i)))
 				continue;
 			
-            signalFunc   signl = signalArray[i];
+            signl = signalArray[i];
             
 			/* Set up the default function. */
 			if (signl == SIGNAL_DEFAULT)

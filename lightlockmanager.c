@@ -1,5 +1,8 @@
 
 #include "sharedmemmanager.h"
+#include "lightlockmanager.h"
+#include "buffermanager.h"
+#include "processhelper.h"
 
 /* Array of all light locks in the shared memory. */
 ULightLockPadded* lightLockArray = NULL;
@@ -24,7 +27,7 @@ int lightLocksNumber()
 
 	locksNum += MaxBackends + NUM_AUXILIARY_PROCS;
 
-	return numLocks;  
+	return locksNum;  
 }
 
 size_t lightLocksSize(
@@ -54,7 +57,7 @@ void initLightLockArray(
     int                numLocks  = lightLocksNumber();
     size_t             sizeLocks = lightLocksSize(self);
 	char*              memPointer; 
-	ULightLockPadded   lock;
+	ULightLockPadded*  lock;
 	int*               lockCounter;
 	int                i;
 
@@ -69,9 +72,10 @@ void initLightLockArray(
 
     lightLockArray = (ULightLockPadded*)memPointer;  
 
-	for (i = 0, lock = lightLockArray; i < numLocks; i++, lock++)
+	for (i = 0; i < numLocks; i++)
 	{
-		lock->lock.mutex            = 0;
+        lock = &(lightLockArray[i]);
+        lock->lock.mutex            = 0;
 		lock->lock.releaseOK        = True;
 		lock->lock.exclHoldersNum   = 0;
 		lock->lock.sharedHoldersNum = 0;
@@ -109,7 +113,16 @@ void lightLockAcquire(
 	 * if we need to wait or not. If we do not have to wait 
 	 * we just acquire the lock. How do we acquire the lock?
 	 * First of all we take the lock from the light lock array 
-	 * and 
+	 * and spin lock it and then read information about the number of shared lock
+	 * and the number of exclusive lock holders. If we find out that the 
+	 * number of exclusive or shared locks is 0, we increase this number
+	 * so that another thread will know that the lock is held.
+	 * When the number of shared or exclusive locks is not 0, we need to wait
+	 * We wait for a semaphore to get released. Then the thread which has
+	 * been holding the lock releases it, the semaphore becomes signalled
+	 * and our thread awakes. Then we loop back and try to increment 
+	 * the exclusive or shared waiters count. Another thread can 
+	 * intervene at that moment and acquire the lock.
 	 */
 	CYCLE
 	{
@@ -180,7 +193,7 @@ void lightLockAcquire(
 		 * waiting for the lock. We add our current process information
 		 * to the tail of the queue list.
 		 */
-        proc->waitingForLightLock = true;
+        proc->waitingForLightLock = True;
 		proc->waitingMode         = mode;
 		proc->lightLockNext       = NULL;              
 
@@ -225,4 +238,91 @@ void lightLockAcquire(
 }
 
 
+void lightLockRelease(
+    void*                 self,
+	ELightLockType        type)
+{
+	ILightLockManager     llm   = (ILightLockManager)self;
+	ISpinLockManager      slm   = (ISpinLockManager)llm->spinLockManager;
+	ISemaphoreLockManager semm  = (ISemaphoreLockManager)llm->semLockManager;
+	IErrorLogger          elog  = (IErrorLogger)llm->errorLogger;
+
+	volatile LightLock lock = &(lightLockArray[type].lock);
+
+	ProcBackData	   head;
+	ProcBackData       proc;
+	int			       i;
+
+	/* Remove the requested lock from the heldLocksArray. */
+	for (i = heldLocksNum; --i >= 0;)
+	{
+		if (type == heldLightLocks[i])
+			break;
+	}
+
+	if (i < 0)
+        elog->log(LOG_PANIC, 
+		          ERROR_CODE_LOCK_NOT_HELD, 
+	  			  "Lock %d is not held", 
+				  (int)type);            
+
+	heldLocksNum--;
+	for (; i < heldLocksNum; i++)
+		heldLightLocks[i] = heldLightLocks[i + 1];
+ 
+    SPIN_LOCK_ACQUIRE(slm, &lock->mutex);    
+
+	/* Release my hold on lock.
+	 * There can be only one thread holding an exclusive lock.
+	 * if number of exclusive locks is 0, we decrement the 
+	 * shared locks number.
+	 */
+	if (lock->exclHoldersNum > 0)
+		lock->exclHoldersNum--;
+	else
+	{
+		ASSERT_VOID(elog, lock->sharedHoldersNum > 0);
+		lock->sharedHoldersNum--;
+	}
+
+	head = lock->head;
+	if (head != NULL)
+	{
+        if (!(lock->exclHoldersNum == 0 
+		   && lock->sharedHoldersNum == 0 
+		   && lock->releaseOK))
+		{
+            head = NULL;
+		}
+		else
+		{
+            proc = head;
+
+			/* Remove all shared locks from queue. */
+			if (proc->waitingMode == LL_Shared)
+			{
+				while (proc->lightLockNext != NULL &&
+					   proc->lightLockNext->waitingMode != LL_Exclusive)
+				{
+					proc = proc->lightLockNext;
+				}
+			}
+			
+			lock->head = proc->lightLockNext;
+			proc->lightLockNext = NULL;
+		}
+	}
+
+    SPIN_LOCK_RELEASE(slm, &lock->mutex);
+
+	/* Awaken waiters */
+	while (head != NULL)
+	{
+		proc = head;
+		head = proc->lightLockNext;
+		proc->lightLockNext = NULL;
+		proc->waitingForLightLock = False;
+		semm->unlockSemaphore(semm, proc->sem);
+	}
+}
  

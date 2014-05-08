@@ -1,6 +1,7 @@
 
 #include "sharedmem.h"
 #include "ierrorlogger.h"
+#include "ispinlockmanager.h"
 
 #ifndef ISHAREDMEM_H
 #define ISHAREDMEM_H

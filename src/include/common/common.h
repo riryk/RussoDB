@@ -30,7 +30,7 @@ typedef __int64        int64;
 #define ALIGN_INT_VAL       4
 #define ALIGN_DOUBLE_VAL    8
 #define ALIGN_SHORT_VAL     2
-#define ALIGN_BUFFER	    32
+#define ALIGN_BUFFER_VAL	32
 
 #define CYCLE for(;;) 
 #define Max(x, y)		((x) > (y) ? (x) : (y))
@@ -154,7 +154,7 @@ typedef struct SName
 #define ALIGN_INT(LEN)          ALIGN(ALIGN_INT_VAL, (LEN)) 
 #define ALIGN_DOUBLE(LEN)       ALIGN(ALIGN_DOUBLE_VAL, (LEN)) 
 #define ALIGN_SHORT(LEN)        ALIGN(ALIGN_SHORT_VAL, (LEN)) 
-#define ALIGN_BUFFER(LEN)		ALIGN(ALIGN_BUFFER, (LEN))
+#define ALIGN_BUFFER(LEN)		ALIGN(ALIGN_BUFFER_VAL, (LEN))
 
 #define ALIGN_DOWN_DEFAULT(LEN) ALIGN_DOWN(ALIGN_DEFAULT_VAL, (LEN))
 
