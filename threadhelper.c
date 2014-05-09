@@ -1,14 +1,22 @@
 
 #include "threadhelper.h"
 
-typedef struct SIThreadHelper
+sleepFunc  slpFunc = NULL; 
+
+void threadHelpCtor(
+    void*            self,
+    sleepFunc        slpFuncParam)
 {
-	IErrorLogger   errorLogger;
-} SIThreadHelper, *IThreadHelper;
+    IThreadHelper    _    = (IThreadHelper)self;
+	IErrorLogger     elog = _->errorLogger;
+
+    slpFunc = slpFuncParam;
+    ASSERT_VOID(elog, slpFunc != NULL);
+}
 
 TThread startThread(
     void*            self,
-	ThreadFunc       func, 
+	THREAD_FUNC      func, 
 	void*            param, 
 	TThreadId        threadid)
 {
@@ -31,3 +39,7 @@ TThread startThread(
 
 	return threadHandle;
 }
+
+
+
+

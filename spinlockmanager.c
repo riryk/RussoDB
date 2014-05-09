@@ -1,16 +1,20 @@
 
 #include "spinlockmanager.h"
+#include "thread.h"
 
-#define SPINS_DEFAULT_NUM   100
-#define SLEEPS_MAX_COUNT	1000
-#define SLEEP_MIN           1
-#define SLEEP_MAX           1000
-#define MAX_RANDOM_VALUE    (0x7FFFFFFF)
+int        spinsAllowedCount = SPINS_DEFAULT_NUM;
+sleepFunc  slpSpinFunc       = NULL; 
 
-#define SPINS_MIN_NUM       10
-#define SPINS_MAX_NUM       1000
+void spinLockCtor(
+    void*            self,
+    sleepFunc        slpFuncParam)
+{
+    ISpinLockManager _    = (ISpinLockManager)self;
+	IErrorLogger     elog = _->errorLogger;
 
-int spinsAllowedCount = SPINS_DEFAULT_NUM;
+    slpSpinFunc = slpFuncParam;
+    ASSERT_VOID(elog, slpSpinFunc != NULL);
+}
 
 int spinLockAcquire(
 	void*             self,
@@ -21,9 +25,12 @@ int spinLockAcquire(
 	ISpinLockManager slm  = (ISpinLockManager)self;
 	IErrorLogger     elog = slm->errorLogger;
 
-    int			spinCount = 0;
+    int			spinCount   = 0;
 	int			sleepsCount = 0;
-	int			sleep = 0;
+	int			sleep       = 0;
+	double      increaseDelta; 
+
+	ASSERT(elog, slpSpinFunc != NULL, -1);
 
 	/* This function compares lock variable with
 	 * the latest parameter 0 and if it is equal to 0 it is set to 1.
@@ -103,12 +110,13 @@ int spinLockAcquire(
 			   sleep = SLEEP_MIN;
 
 		   /* Sleep for sleep milliseconds. */
-		   Sleep(sleep * 1000L);
+		   slpSpinFunc(sleep);
+
+		   increaseDelta = (double)rand() / (double)MAX_RANDOM_VALUE;
 
 		   /* How we increase the sleep timeout? 
 		    * we increase it from [1.5 to 2] */
-		   sleep += (int) (sleep *
-					  ((double)rand() / (double)MAX_RANDOM_VALUE) + 0.5);
+		   sleep += (int)(sleep * (increaseDelta + 0.5));
 
 		   /* We have exceeded maximum sleep count. 
 		    * Return it to the maximum allowed 

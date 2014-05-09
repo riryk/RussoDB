@@ -32,7 +32,7 @@ WHEN(spin_lock_manager_acquire_without_contention)
 
 TEST_TEAR_DOWN(spin_lock_manager_acquire_without_contention)
 {
-	SPIN_LOCK_RELEASE(m_slmawc, slock_slmawc)
+	SPIN_LOCK_RELEASE(m_slmawc, &slock_slmawc)
 
 	m_slmawc->memManager->freeAll();
 

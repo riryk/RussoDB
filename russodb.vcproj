@@ -996,6 +996,10 @@
 								RelativePath=".\when_spin_lock_acquire_without_contention.c"
 								>
 							</File>
+							<File
+								RelativePath=".\when_spin_lock_for_short_time.c"
+								>
+							</File>
 						</Filter>
 					</Filter>
 					<Filter

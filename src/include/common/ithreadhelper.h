@@ -8,10 +8,12 @@
 typedef struct SIThreadHelper
 {
 	IErrorLogger   errorLogger;
+    
+	void (*threadHelpCtor)(sleepFunc slpFuncParam);
 
 	TThread (*startThread)(
          void*            self,
-	     ThreadFunc       func, 
+	     THREAD_FUNC      func, 
 	     void*            param, 
 	     TThreadId        threadid);
 
