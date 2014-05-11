@@ -1000,6 +1000,10 @@
 								RelativePath=".\when_spin_lock_for_short_time.c"
 								>
 							</File>
+							<File
+								RelativePath=".\when_spin_locks_are_applied_sequentially.c"
+								>
+							</File>
 						</Filter>
 					</Filter>
 					<Filter

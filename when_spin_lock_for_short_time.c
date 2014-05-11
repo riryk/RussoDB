@@ -16,6 +16,7 @@ TThreadId          thread_id_slfst;
 int                thread_2_sleep_time_slfst;
 int                sleeps_slfst[1000];       
 int                sleeps_count_slfst = 0;
+TThread            threadHandle_slfst;
 
 void sleepAndTrack(int sleepMilliseconds)
 {
@@ -53,14 +54,12 @@ DWORD WINAPI spinLockFunc_slfst(LPVOID lpParam)
 
 GIVEN(spin_lock_for_short_time) 
 {
-	TThread threadHandle;
-
     slock_slfst               = 0;
 	thread_2_sleep_time_slfst = 20;
 
 	m_slfst->spinLockCtor(m_slfst, sleepAndTrack);
 
-	threadHandle 
+	threadHandle_slfst 
 		= th_slfst->startThread(
 		     th_slfst, 
 			 spinLockFunc_slfst, 
@@ -84,8 +83,8 @@ TEST_TEAR_DOWN(spin_lock_for_short_time)
 	SPIN_LOCK_RELEASE(m_slfst, &slock_slfst)
 
 #ifdef _WIN32
-    TerminateThread(threadHandle, 
-    CloseHandle(threadHandle);
+    TerminateThread(threadHandle_slfst, 0); 
+    CloseHandle(threadHandle_slfst);
 #endif
     
 	m_slfst->memManager->freeAll();
@@ -123,7 +122,7 @@ TEST(spin_lock_for_short_time, then_total_sleep_times_must_be_in_increasing_orde
         prev = sleeps_slfst[i - 1];
 		curr = sleeps_slfst[i];
 
-        TEST_ASSERT_TRUE(curr > prev);
+        TEST_ASSERT_TRUE(curr >= (int)(prev * 1.5));
 	}
 }
 
