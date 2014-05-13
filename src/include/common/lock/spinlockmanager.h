@@ -19,7 +19,10 @@
 #define SPIN_LOCK_RELEASE(manager, lock) \
 	(manager)->spinLockRelease(lock); \
 
+extern int        spinsAllowedCount;
 extern sleepFunc  slpSpinFunc; 
+extern int        spinsMinNum;
+extern int        spinsMaxNum;
 
 void spinLockCtor(
       void*             self,

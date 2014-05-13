@@ -12,6 +12,7 @@ typedef void (*sleepFunc)(int milliseconds);
 
 typedef LPDWORD TThreadId; 
 typedef HANDLE TThread;
+typedef HANDLE TEvent;
 
 #endif
 

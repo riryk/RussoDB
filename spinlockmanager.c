@@ -4,6 +4,8 @@
 
 int        spinsAllowedCount = SPINS_DEFAULT_NUM;
 sleepFunc  slpSpinFunc       = NULL; 
+int        spinsMinNum       = SPINS_MIN_NUM;
+int        spinsMaxNum       = SPINS_MAX_NUM;
 
 void spinLockCtor(
     void*            self,
@@ -25,9 +27,10 @@ int spinLockAcquire(
 	ISpinLockManager slm  = (ISpinLockManager)self;
 	IErrorLogger     elog = slm->errorLogger;
 
-    int			spinCount   = 0;
-	int			sleepsCount = 0;
-	int			sleep       = 0;
+    int			spinCount     = 0;
+	int			sleepsCount   = 0;
+	int			sleep         = 0;
+	Bool        wasContention = False;
 	double      increaseDelta; 
 
 	ASSERT(elog, slpSpinFunc != NULL, -1);
@@ -63,6 +66,12 @@ int spinLockAcquire(
 	 */ 
     while (InterlockedCompareExchange(lock, 1, 0))
 	{
+        /* If we need to do at least one spin, that means we have 
+		 * contention and someone has acquired the lock. We need to
+		 * spin for a while and then to sleep is needed.
+		 */
+		wasContention = True;
+
         /* CPU-specific delay each time through the loop 
 		 * Explanation from documentation
 		 * Improves the performance of spin-wait loops. 
@@ -128,6 +137,13 @@ int spinLockAcquire(
 		   spinCount = 0;
 		}
 	}
+
+	/* If the lock has been acquired without spinning and waiting,
+	 * it is not necessary to readjust spins allowed count.
+	 */
+	if (!wasContention)
+		return 0;
+
     /* If sleeps count is 0, we can say that we are on a multiprocessor machine.
 	 * If sleeps count is not 0, we are on uniprocessor machine.
 	 * This is only an assumption. Due to context switching on 
@@ -147,8 +163,8 @@ int spinLockAcquire(
 		 * the maximum allowed spins count we increase 
 		 * spinsAllowedCount for 100 points.
 		 */
-		if (spinsAllowedCount < SPINS_MAX_NUM)
-			spinsAllowedCount = Min(spinsAllowedCount + 100, SPINS_MAX_NUM);
+		if (spinsAllowedCount < spinsMaxNum)
+			spinsAllowedCount = Min(spinsAllowedCount + 100, spinsMaxNum);
 
 		return sleepsCount;
 	}
@@ -158,8 +174,8 @@ int spinLockAcquire(
 	 * as small as possible. And we decrease spins allowed count 
 	 * for 1 point if we do not exceed spins min count.
 	 */
-	if (spinsAllowedCount > SPINS_MIN_NUM)
-        spinsAllowedCount = Max(spinsAllowedCount - 1, SPINS_MIN_NUM);
+	if (spinsAllowedCount > spinsMinNum)
+        spinsAllowedCount = Max(spinsAllowedCount - 1, spinsMinNum);
 
 	return sleepsCount;
 }
