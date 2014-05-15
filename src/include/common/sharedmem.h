@@ -4,13 +4,16 @@
 #ifndef SHARED_MEM_H
 #define SHARED_MEM_H
 
+typedef HANDLE TSharMemHandler;
+
 typedef struct SSharMemHeader	
 {
-	int		    hdrId;			
-	int		    procId;	
-	size_t		totalSize;		/* total size of header */
-	size_t		freeoffset;		/* offset to first free space */
-	void*       index;			
+	int		         hdrId;			
+	int		         procId;	
+	size_t		     totalSize;		/* total size of header */
+	size_t		     freeoffset;		/* offset to first free space */
+	void*            index;			
+    TSharMemHandler  handle;  
 } SSharMemHeader, *SharMemHeader;
 
 #define SHAR_MEM_KEY_SIZE (48)
@@ -23,7 +26,6 @@ typedef struct SSharMemItem
 	size_t		size;			            /* bytes allocated for the structure */
 } SSharMemItem, *SharMemItem;
 
-
-#define SHAR_MEM_NAME "Global\\PostgreSQL:"
+#define SHAR_MEM_NAME "Global\\RussoDB"
 
 #endif

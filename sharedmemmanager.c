@@ -39,28 +39,28 @@ void sharMemCtor(
 
 #ifdef _WIN32
 
-SharMemHeader SharMemCreate(
+SharMemHeader sharMemCreate(
 	void*           self,
-	size_t          size, 
-	Bool            makePrivate, 
-	int             port)
+	size_t          size)
 {
-	ISharedMemManager _    = (ISharedMemManager)self;
-	IErrorLogger      elog = _->errorLogger;
+	ISharedMemManager   _    = (ISharedMemManager)self;
+	IErrorLogger        elog = _->errorLogger;
 
-	void*             mem;
-	SharMemHeader     hdr;
-	HANDLE		      hmap,
-				      hmap2;
+	void*               mem;
+	SharMemHeader       sharMemHdr;
+	SECURITY_ATTRIBUTES sa;
+	TSharMemHandler		sharMemMap,
+				        sharMemMapCpy;
 
-	char*             szSharMem;
-	int			      i;
-	DWORD		      sizeHigh;
-	DWORD		      sizeLow;
+	char*               szSharMem;
+	int			        i;
+	DWORD		        sizeHigh;
+	DWORD		        sizeLow;
+	DWORD               lastError;
 
 	ASSERT(elog, size > ALIGN_DEFAULT(sizeof(SSharMemHeader)), False);
 
-	szSharMem     = SHAR_MEM_NAME;
+	szSharMem      = SHAR_MEM_NAME;
 	sharMemSegAddr = NULL;
 
 #ifdef _WIN64
@@ -68,7 +68,12 @@ SharMemHeader SharMemCreate(
 #else
 	sizeHigh = 0;
 #endif
-	sizeHigh = (DWORD)size;
+	sizeLow  = (DWORD)size;
+
+	  /* Set up shared memory for parameter passing */
+	ZeroMemory(&sa, sizeof(sa));
+	sa.nLength        = sizeof(sa);
+	sa.bInheritHandle = TRUE;
 
 	/* When we create a file mapping and want to recycle
 	 * the previous file we may get an error that the file 
@@ -80,7 +85,7 @@ SharMemHeader SharMemCreate(
 		/* Clear the previous error code. */
 		SetLastError(0);
 
-		hmap = CreateFileMapping(
+		sharMemMap = CreateFileMapping(
 			       INVALID_HANDLE_VALUE,	/* Use the pagefile */
 				   NULL,	                /* Default security attrs */
 				   PAGE_READWRITE,		    /* Memory is Read/Write */
@@ -88,13 +93,19 @@ SharMemHeader SharMemCreate(
 				   sizeLow,	        	    /* Size Lower 32 bits */
 				   szSharMem);
 
-		if (hmap == NULL)
+		if (sharMemMap == NULL)
+		{
+			lastError = GetLastError();
+
 			elog->log(LOG_ERROR, 
 		          ERROR_CODE_CREATE_FILE_MAP_FAILED, 
 				  "could not create file mapping: error code %lu (CreateFileMapping(size=%lu, name=%s))", 
-				  GetLastError(),
+				  lastError,
 				  size,
                   szSharMem);
+
+			return NULL;
+		}
 
 		/* If the segment already existed, CreateFileMapping() 
 		 * will return a handle to the existing one 
@@ -105,9 +116,9 @@ SharMemHeader SharMemCreate(
 			/* Close the handle, since we got a valid one 
 			 * to the previous segment.
 			 */
-			CloseHandle(hmap);	
+			CloseHandle(sharMemMap);	
 								
-			hmap = NULL;
+			sharMemMap = NULL;
 			Sleep(1000);
 			continue;
 		}
@@ -118,21 +129,23 @@ SharMemHeader SharMemCreate(
 	 * It means that the shared memory exists and is in use.
 	 * In this case we just report an error.
 	 */
-	if (hmap == NULL)
+	if (sharMemMap == NULL)
+	{
         elog->log(LOG_ERROR, 
 		          ERROR_CODE_CREATE_FILE_MAP_FAILED, 
 				  "Previous shared memory block still exists. Check if there are any other old processes and terminate them.");
 
-	free(szSharMem);
+		return NULL;
+	}
 
 	/* duplicate the shared memory handler and create another one
 	 * which is inheritable.
 	 */
 	if (!DuplicateHandle(
 		   GetCurrentProcess(), 
-		   hmap, 
+		   sharMemMap, 
 		   GetCurrentProcess(), 
-		   &hmap2, 
+		   &sharMemMapCpy, 
 		   0, 
 		   TRUE, 
 		   DUPLICATE_SAME_ACCESS))
@@ -143,31 +156,60 @@ SharMemHeader SharMemCreate(
 	/* Close and old non-inheritable handler. We do not 
 	 * need it anymore so we can witout any doubts delete it.
 	 */
-	if (!CloseHandle(hmap))
+	if (!CloseHandle(sharMemMap))
         elog->log(LOG_ERROR, 
 		          ERROR_CODE_CLOSE_HANDLER_FAILED, 
 				  "could not close handle to backend parameter file: error code %lu",
 				  GetLastError());
 
 	/* Map the new memory to a local variable. */
-	mem = MapViewOfFileEx(hmap2, FILE_MAP_WRITE | FILE_MAP_READ, 0, 0, 0, NULL);
+	mem = MapViewOfFileEx(sharMemMapCpy, FILE_MAP_WRITE | FILE_MAP_READ, 0, 0, 0, NULL);
 	if (mem == NULL)
         elog->log(LOG_ERROR, 
 		          ERROR_CODE_MAP_MEMORY_TO_FILE, 
 				  "could not map backend parameter memory: error code %lu", 
 				  GetLastError());
 
-	hdr = (SharMemHeader)mem;
-	hdr->procId     = GetProcessId(GetCurrentProcess());
-	hdr->hdrId      = 0;
-	hdr->totalSize  = size;
-	hdr->freeoffset = ALIGN_DEFAULT(sizeof(SSharMemHeader));
+	sharMemHdr = (SharMemHeader)mem;
+	sharMemHdr->procId     = GetProcessId(GetCurrentProcess());
+	sharMemHdr->hdrId      = 0;
+	sharMemHdr->totalSize  = size;
+	sharMemHdr->freeoffset = ALIGN_DEFAULT(sizeof(SSharMemHeader));
+	sharMemHdr->handle     = sharMemMapCpy;
 
 	sharMemSegAddr = mem;
     sharMemSegSize = size;
-    sharMemSegId   = hmap2;
+    sharMemSegId   = sharMemHdr;
 
-	return hdr;
+	return sharMemHdr;
+}
+
+#endif
+
+#ifdef _WIN32
+
+void deleteSharedMemory(
+	void*           self,
+	void*           sharMem,
+	TSharMemHandler sharMemHandle)
+{
+    ISharedMemManager   _    = (ISharedMemManager)self;
+	IErrorLogger        elog = _->errorLogger;
+
+    if (sharMem == NULL)
+	    return;
+  
+    if (!UnmapViewOfFile(sharMem))
+        elog->log(LOG_ERROR, 
+		          ERROR_CODE_UNMAP_VIEW_OF_FILE_FAILED, 
+				  "could not unmap view of file: error code %lu",
+				  GetLastError());  
+
+    if (!CloseHandle(sharMemHandle))
+        elog->log(LOG_ERROR, 
+		          ERROR_CODE_CLOSE_HANDLER_FAILED, 
+				  "could not close handle to backend parameter file: error code %lu",
+				  GetLastError());
 }
 
 #endif
@@ -191,7 +233,7 @@ void* ShmemInitStruct(
     SharMemItem     result;
 	void*           structPtr; 
 
-    
+     
 } 
 
 /* Allocates max-aligned chunk from shared memory. */
@@ -266,6 +308,40 @@ void* allocSharedMem(
 				  "out of shared memory");        
 
 	return newSpace;
+}
+
+/* This functions tries to open an existing shared memory segment.
+ * If this segment does not exists and reportError is set to true,
+ * we report ar error and the process stops working.
+ * If we do not pass the shared memory name, the function will open
+ * the general shared memory segment 
+ */
+TSharMemHandler openSharedMemSegment(
+    void*       self,
+	char*       name,
+	Bool        reportError)
+{
+    ISharedMemManager  _    = (ISharedMemManager)self;
+	IErrorLogger       elog = _->errorLogger;
+
+	TSharMemHandler    hMapFile;
+	int                logSeverity = reportError ? LOG_ERROR : LOG_LOG;
+    
+	if (name == NULL)
+		name = SHAR_MEM_NAME;
+
+    hMapFile = OpenFileMapping(
+		           FILE_MAP_ALL_ACCESS, 
+				   FALSE,
+                   name);
+
+    if (hMapFile == NULL)
+        elog->log(logSeverity, 
+		          ERROR_CODE_FILE_OPEN_MAPPING_FAILED, 
+				  "could not open file mapping object: error code %lu",
+				  GetLastError());
+
+	return hMapFile;
 }
 
 /* Multiple two sizes and check for overflow. */

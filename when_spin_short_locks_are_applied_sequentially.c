@@ -154,14 +154,19 @@ TEST_TEAR_DOWN(spin_short_locks_are_applied_sequentially)
 	free(th_sslaas);
 }
 
-TEST(spin_short_locks_are_applied_sequentially, then_test)
+TEST(spin_short_locks_are_applied_sequentially, then_spins_allowed_max_count_must_increase)
 {
     TEST_ASSERT_NOT_NULL(m_sslaas);
+
+    TEST_ASSERT_EQUAL_UINT32(spinsAllowedCount_sslaas_1, 100000 + 100);
+    TEST_ASSERT_EQUAL_UINT32(spinsAllowedCount_sslaas_2, 100000 + 200);
+    TEST_ASSERT_EQUAL_UINT32(spinsAllowedCount_sslaas_3, 100000 + 300);
+    TEST_ASSERT_EQUAL_UINT32(spinsAllowedCount_sslaas_4, 100000 + 400);
 }
 
 TEST_GROUP_RUNNER(spin_short_locks_are_applied_sequentially)
 {
-    RUN_TEST_CASE(spin_short_locks_are_applied_sequentially, then_test);
+    RUN_TEST_CASE(spin_short_locks_are_applied_sequentially, then_spins_allowed_max_count_must_increase);
 }
 
 

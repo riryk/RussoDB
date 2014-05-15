@@ -88,6 +88,7 @@ typedef enum
 #define ERROR_CODE_LOCK_NOT_HELD            1041
 #define ERROR_CODE_CREATE_THREAD_FAILED     1042
 #define ERROR_CODE_WAIT_FOR_SINGLE_OBJECT_FAILED 1043
+#define ERROR_CODE_UNMAP_VIEW_OF_FILE_FAILED 1044
 
 /* The structure contains complete information 
  * about an error

@@ -1009,6 +1009,22 @@
 								>
 							</File>
 						</Filter>
+						<Filter
+							Name="sharedmem"
+							>
+							<Filter
+								Name="create"
+								>
+								<File
+									RelativePath=".\when_shared_mem_create.c"
+									>
+								</File>
+								<File
+									RelativePath=".\when_shared_mem_create_several_times.c"
+									>
+								</File>
+							</Filter>
+						</Filter>
 					</Filter>
 					<Filter
 						Name="memory"
