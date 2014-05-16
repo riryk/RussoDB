@@ -628,6 +628,14 @@
 									>
 								</File>
 							</Filter>
+							<Filter
+								Name="sharedmem"
+								>
+								<File
+									RelativePath=".\sharedmem_helper.h"
+									>
+								</File>
+							</Filter>
 						</Filter>
 						<Filter
 							Name="file"
@@ -1021,6 +1029,14 @@
 								</File>
 								<File
 									RelativePath=".\when_shared_mem_create_several_times.c"
+									>
+								</File>
+							</Filter>
+							<Filter
+								Name="reattach"
+								>
+								<File
+									RelativePath=".\when_shared_mem_reattach.c"
 									>
 								</File>
 							</Filter>

@@ -97,59 +97,6 @@ HANDLE createSignalListener(void* self, int pid)
 
 #endif
 
-#ifdef _WIN32
-
-Bool reserveSharedMemoryRegion(
-    void*            self,
-	HANDLE           childProcess)
-{
-    IProcessManager  _    = (IProcessManager)self;
-	IErrorLogger     elog = _->errorLogger;
-
-    void*            address;
-
-	ASSERT(elog, sharedMemAddr != NULL, -1);
-    ASSERT(elog, sharedMemSegmSize != 0, -1);
-
-	address = VirtualAllocEx(
-		         childProcess, 
-				 sharedMemAddr, 
-				 sharedMemSegmSize,
-				 MEM_RESERVE, 
-				 PAGE_READWRITE);
-
-	if (address == NULL)
-	{   
-		DWORD lastErr = GetLastError();
-
-        elog->log(LOG_ERROR, 
-		          ERROR_CODE_RESERVE_MEMORY_FAILED, 
-				  "could not reserve shared memory region (addr=%p) for child %p: error code %lu", 
-                  sharedMemAddr, 
-                  childProcess,
-				  lastErr);
-
-		return False;
-	}
-
-    if (address != sharedMemAddr)
-	{
-		/* Incorrect memory address. Free memory. */
-        elog->log(LOG_LOG, 
-		          ERROR_CODE_RESERVE_MEMORY_FAILED, 
-				  "reserved shared memory region got incorrect address %p, expected %p", 
-                  address,
-				  sharedMemAddr);
-
-		VirtualFreeEx(childProcess, address, 0, MEM_RELEASE);
-		return False;
-	}
-
-	return True;
-}
-
-#endif
-
 Bool fillBackandParams(
     void*            self,
 	BackendParams    param, 

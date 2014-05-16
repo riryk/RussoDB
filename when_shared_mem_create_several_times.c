@@ -43,6 +43,8 @@ WHEN(shared_mem_create_several_times)
 
 TEST_TEAR_DOWN(shared_mem_create_several_times)
 {
+	errorMessages = 0;
+
 	smm_smcst->deleteSharedMemory(
 	      smm_smcst, 
 		  (void*)shar_mem_hdr_smcst1,  
@@ -53,15 +55,22 @@ TEST_TEAR_DOWN(shared_mem_create_several_times)
 	free(smm_smcst);
 }
 
-TEST(shared_mem_create_several_times, then_shar_mem_create_should_return_0)
+TEST(shared_mem_create_several_times, then_shar_mem_create_should_return_null)
 {
     TEST_ASSERT_NOT_NULL(smm_smcst);
+    TEST_ASSERT_NOT_NULL(shar_mem_hdr_smcst1);
+
+    TEST_ASSERT_NULL(shar_mem_hdr_smcst2);
+    TEST_ASSERT_NULL(shar_mem_hdr_smcst3);
+}
+
+TEST(shared_mem_create_several_times, then_an_error_should_be_written)
+{
+    TEST_ASSERT_EQUAL_UINT32(errorMessages, 2);
 }
 
 TEST_GROUP_RUNNER(shared_mem_create_several_times)
 {
-    RUN_TEST_CASE(shared_mem_create_several_times, then_test);
+    RUN_TEST_CASE(shared_mem_create_several_times, then_shar_mem_create_should_return_null);
+    RUN_TEST_CASE(shared_mem_create_several_times, then_an_error_should_be_written);
 }
-
-
-errorMessages

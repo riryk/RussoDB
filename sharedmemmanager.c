@@ -4,9 +4,9 @@
 #include "sharedmem.h"
 #include "spin.h"
 
-void*   sharMemSegAddr = NULL;
-int     sharMemSegSize = 0;
-HANDLE  sharMemSegId   = 0;
+void*           sharMemSegAddr = NULL;
+int             sharMemSegSize = 0;
+TSharMemHandler sharMemSegId   = 0;
 
 void*           sharMemStart;			
 void*           sharMemEnd;			
@@ -188,6 +188,23 @@ SharMemHeader sharMemCreate(
 
 #ifdef _WIN32
 
+void detachSharedMemory(
+	void*           self,
+	void*           sharMem)
+{
+    ISharedMemManager   _    = (ISharedMemManager)self;
+	IErrorLogger        elog = _->errorLogger;
+
+    if (sharMem == NULL)
+	    return;
+
+	if (!UnmapViewOfFile(sharMem))
+        elog->log(LOG_ERROR, 
+		          ERROR_CODE_UNMAP_VIEW_OF_FILE_FAILED, 
+				  "could not unmap view of file: error code %lu",
+				  GetLastError());  
+}
+
 void deleteSharedMemory(
 	void*           self,
 	void*           sharMem,
@@ -196,14 +213,7 @@ void deleteSharedMemory(
     ISharedMemManager   _    = (ISharedMemManager)self;
 	IErrorLogger        elog = _->errorLogger;
 
-    if (sharMem == NULL)
-	    return;
-  
-    if (!UnmapViewOfFile(sharMem))
-        elog->log(LOG_ERROR, 
-		          ERROR_CODE_UNMAP_VIEW_OF_FILE_FAILED, 
-				  "could not unmap view of file: error code %lu",
-				  GetLastError());  
+	_->detachSharedMemory(_, sharMem);
 
     if (!CloseHandle(sharMemHandle))
         elog->log(LOG_ERROR, 
@@ -343,6 +353,104 @@ TSharMemHandler openSharedMemSegment(
 
 	return hMapFile;
 }
+
+SharMemHeader sharedMemoryReAttach(
+    void*           self,
+	void*           mem,
+	TSharMemHandler segId)
+{
+	ISharedMemManager  _    = (ISharedMemManager)self;
+	IErrorLogger       elog = _->errorLogger;
+    
+	SharMemHeader      hdr;
+    void*              originalMemAddr = mem;
+
+    ASSERT(elog, mem != NULL, NULL);
+    ASSERT(elog, segId != NULL, NULL);
+
+	/* Relsee memory */
+    if (VirtualFree(mem, 0, MEM_RELEASE) == 0)
+	{
+		int lastError = GetLastError();
+
+        elog->log(LOG_FATAL, 
+		          ERROR_CODE_VIRTUAL_FREE_FAILED, 
+				  "failed to release reserved memory region (addr=%p): error code %lu",
+                  mem,
+				  lastError);            
+
+		return NULL;
+	}
+
+   	/* Map the new memory to a local variable. */
+	hdr = (SharMemHeader)MapViewOfFileEx(segId, FILE_MAP_WRITE | FILE_MAP_READ, 0, 0, 0, mem);
+	if (hdr == NULL)
+        elog->log(LOG_FATAL, 
+		          ERROR_CODE_MAP_MEMORY_TO_FILE, 
+				  "could not reattach to shared memory (key=%p, addr=%p): error code %lu", 
+                  segId,
+                  mem,
+				  GetLastError()); 
+
+	if (hdr != originalMemAddr)
+        elog->log(LOG_FATAL, 
+		          ERROR_CODE_REATTACH_MEMORY_FAILED, 
+				  "reattaching to shared memory returned unexpected address (got %p, expected %p)", 
+                  hdr,
+                  originalMemAddr);     
+}
+
+#ifdef _WIN32
+
+Bool reserveSharedMemoryRegion(
+    void*            self,
+	TSharMemHandler  segmId)
+{
+    ISharedMemManager  _    = (ISharedMemManager)self;
+	IErrorLogger       elog = _->errorLogger;
+
+	void* address;
+
+    ASSERT(elog, sharMemSegAddr != NULL, False);
+    ASSERT(elog, sharMemSegSize != 0, False); 
+
+	/* Reserve shared memory */
+    address = VirtualAllocEx(
+		        segmId, 
+				sharMemSegAddr, 
+				sharMemSegSize,
+			    MEM_RESERVE, 
+				PAGE_READWRITE); 
+
+	if (address == NULL)
+	{
+        elog->log(LOG_LOG, 
+		          ERROR_CODE_RESERVE_MEMORY_FAILED, 
+				  "could not reserve shared memory region (addr=%p) for child %p: error code %lu", 
+                  sharMemSegAddr,
+                  segmId,
+				  GetLastError()); 
+
+        return False;   
+	}
+
+    if (address != sharMemSegAddr)
+	{
+        elog->log(LOG_LOG, 
+		          ERROR_CODE_RESERVE_MEMORY_FAILED, 
+				  "reserved shared memory region got incorrect address %p, expected %p", 
+                  address,
+                  sharMemSegAddr); 
+        
+        VirtualFreeEx(segmId, address, 0, MEM_RELEASE);
+
+		return False;
+	}
+
+	return True;
+} 
+
+#endif
 
 /* Multiple two sizes and check for overflow. */
 size_t addSize(

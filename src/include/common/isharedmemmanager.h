@@ -24,6 +24,19 @@ typedef struct SISharedMemManager
 	           char*         name,
 	           Bool          reportError);
     
+	Bool (*reserveSharedMemoryRegion)(
+               void*           self,
+	           TSharMemHandler segmId);
+
+	SharMemHeader (*sharedMemoryReAttach)(
+               void*           self,
+	           void*           mem,
+	           TSharMemHandler segId);
+
+	void (*detachSharedMemory)(
+	           void*           self,
+	           void*           sharMem);
+
 	void (*deleteSharedMemory)(
 	           void*           self,
 	           void*           sharMem,
