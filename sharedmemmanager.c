@@ -33,8 +33,6 @@ void sharMemCtor(
 
     /* Assert that we have not exceeded the totalsize. */
     ASSERT_VOID(elog, smHdr->freeoffset <= smHdr->totalSize);
-    
-    sharMemLock = 0;
 }
 
 #ifdef _WIN32
@@ -47,7 +45,7 @@ SharMemHeader sharMemCreate(
 	IErrorLogger        elog = _->errorLogger;
 
 	void*               mem;
-	SharMemHeader       sharMemHdr;
+	SharMemHeader       sharMemHdrLocal;
 	SECURITY_ATTRIBUTES sa;
 	TSharMemHandler		sharMemMap,
 				        sharMemMapCpy;
@@ -170,16 +168,17 @@ SharMemHeader sharMemCreate(
 				  "could not map backend parameter memory: error code %lu", 
 				  GetLastError());
 
-	sharMemHdr = (SharMemHeader)mem;
-	sharMemHdr->procId     = GetProcessId(GetCurrentProcess());
-	sharMemHdr->hdrId      = 0;
-	sharMemHdr->totalSize  = size;
-	sharMemHdr->freeoffset = ALIGN_DEFAULT(sizeof(SSharMemHeader));
-	sharMemHdr->handle     = sharMemMapCpy;
+	sharMemHdrLocal = (SharMemHeader)mem;
+	sharMemHdrLocal->procId     = GetProcessId(GetCurrentProcess());
+	sharMemHdrLocal->hdrId      = 0;
+	sharMemHdrLocal->totalSize  = size;
+	sharMemHdrLocal->freeoffset = ALIGN_DEFAULT(sizeof(SSharMemHeader));
+	sharMemHdrLocal->handle     = sharMemMapCpy;
 
 	sharMemSegAddr = mem;
     sharMemSegSize = size;
-    sharMemSegId   = sharMemHdr;
+    sharMemSegId   = sharMemHdrLocal;
+    sharMemHdr     = sharMemHdrLocal;
 
 	return sharMemHdr;
 }
@@ -282,6 +281,7 @@ void* allocSharedMem(
 
 	/* Assert if shared memory header is not null. */
 	ASSERT(elog, smHdr != NULL, NULL); 
+	ASSERT(elog, sharMemLock != NULL, NULL); 
 
 	/* All modifications of shared memory header 
 	 * must be protected by spin lock.

@@ -2,7 +2,7 @@
 
 typedef struct SSharMemTest
 {
-	uint       listId;	    
-	uint	   count;
-	float      deviation;
+	uint       field1;	    
+	uint	   field2;	    
+	uint       field3;	    
 } SSharMemTest, *SharMemTest;

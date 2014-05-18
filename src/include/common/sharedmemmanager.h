@@ -1,5 +1,8 @@
 #include "isharedmemmanager.h"
 
+void sharMemCtor(
+	void*           self);
+
 SharMemHeader sharMemCreate(
 	void*           self,
 	size_t          size);

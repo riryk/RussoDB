@@ -44,7 +44,7 @@
 				Name="VCCLCompilerTool"
 				AdditionalOptions="/MP"
 				Optimization="0"
-				AdditionalIncludeDirectories="src/include/file;src/include/error;src/include/common;src/include/os/file;src/include/commands;src/include/commands/relation;src/include/memory;src/include/lib/unity;src/include/tests/unit;src/include/common/hashtable;src/include/tests/unit/memory;src/include/tests/unit/common/hashtable;src/include/commands/relation/row;src/include/tests/unit/commands/relation/row;src/include/commands/relation/buffer;src/include/tests/unit/file/file_manager;src/include/common/config;src/include/tests/unit/error;src/include/common/signal;src/include/common/lock;"
+				AdditionalIncludeDirectories="src/include/file;src/include/error;src/include/common;src/include/os/file;src/include/commands;src/include/commands/relation;src/include/memory;src/include/lib/unity;src/include/tests/unit;src/include/common/hashtable;src/include/tests/unit/memory;src/include/tests/unit/common/hashtable;src/include/commands/relation/row;src/include/tests/unit/commands/relation/row;src/include/commands/relation/buffer;src/include/tests/unit/file/file_manager;src/include/common/config;src/include/tests/unit/error;src/include/common/signal;src/include/common/lock;src/include/tests/unit/common/sharedmem;"
 				StringPooling="false"
 				RuntimeLibrary="3"
 				AssemblerOutput="0"
@@ -632,7 +632,7 @@
 								Name="sharedmem"
 								>
 								<File
-									RelativePath=".\sharedmem_helper.h"
+									RelativePath="src\include\tests\unit\common\sharedmem\sharedmem_helper.h"
 									>
 								</File>
 							</Filter>
@@ -1037,6 +1037,14 @@
 								>
 								<File
 									RelativePath=".\when_shared_mem_reattach.c"
+									>
+								</File>
+							</Filter>
+							<Filter
+								Name="allocate"
+								>
+								<File
+									RelativePath=".\when_shared_mem_allocate.c"
 									>
 								</File>
 							</Filter>

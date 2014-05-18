@@ -12,6 +12,9 @@ typedef struct SISharedMemManager
 	IErrorLogger      errorLogger;
 	IMemoryManager    memManager;
     ISpinLockManager  spinLockMan; 
+    
+	void (*sharMemCtor)(
+	           void*           self);
 
 	SharMemHeader (*sharMemCreate)(
 	           void*         self,
