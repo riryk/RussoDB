@@ -586,6 +586,10 @@
 						Name="unit"
 						>
 						<File
+							RelativePath=".\process_functions.h"
+							>
+						</File>
+						<File
 							RelativePath="src\include\tests\unit\unittestsrunner.h"
 							>
 						</File>
@@ -1025,6 +1029,10 @@
 								>
 								<File
 									RelativePath=".\when_shared_mem_create.c"
+									>
+								</File>
+								<File
+									RelativePath=".\when_shared_mem_create_in_another_process.c"
 									>
 								</File>
 								<File
