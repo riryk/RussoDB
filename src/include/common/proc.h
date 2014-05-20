@@ -7,6 +7,8 @@
 #define MAX_SOCKETS	64
 #define NUM_AUXILIARY_PROCS 4
 
+typedef HANDLE TProcess;
+
 typedef struct SDeadChildInfo
 {
 	HANDLE		  waitHandle;

@@ -22,10 +22,11 @@ typedef struct SISharedMemManager
 
 	void (*initSharMemAccess)(void* sharMem);
 
-	TSharMemHandler (*openSharedMemSegment)(
+	SharMemHeader (*openSharedMemSegment)(
                void*         self,
 	           char*         name,
-	           Bool          reportError);
+	           Bool          reportError,
+			   size_t        size);
     
 	Bool (*reserveSharedMemoryRegion)(
                void*           self,

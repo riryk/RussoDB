@@ -22,8 +22,6 @@
 extern const SISpinLockManager sSpinLockManager;
 extern const ISpinLockManager  spinLockManager;
 
-SISpinLockManager, *ISpinLockManager;
-
 extern int        spinsAllowedCount;
 extern sleepFunc  slpSpinFunc; 
 extern int        spinsMinNum;

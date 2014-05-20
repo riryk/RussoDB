@@ -13,7 +13,7 @@ extern const SIProcessManager sProcessManager;
 extern const IProcessManager  processManager;
 extern ProcBackData           backendProc;
 
-int startSubProcess(void* self, int argc, char* argv[]);
+TProcess startSubProcess(void* self, int argc, char* argv[]);
 int subProcessMain(void* self, int argc, char* argv[]);
 void killAllSubProcesses();
 

@@ -586,7 +586,7 @@
 						Name="unit"
 						>
 						<File
-							RelativePath=".\process_functions.h"
+							RelativePath="src\include\tests\unit\process_functions.h"
 							>
 						</File>
 						<File
@@ -786,6 +786,10 @@
 				<Filter
 					Name="unit"
 					>
+					<File
+						RelativePath=".\process_functions.c"
+						>
+					</File>
 					<File
 						RelativePath="src\tests\unit\unittestsrunner.c"
 						>

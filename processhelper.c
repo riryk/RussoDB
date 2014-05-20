@@ -228,7 +228,7 @@ BOOL SetPrivilege(
 
 #endif
 
-int startSubProcess(void* self, int argc, char* argv[])
+TProcess startSubProcess(void* self, int argc, char* argv[])
 {
 	IProcessManager _    = (IProcessManager)self;
 	IErrorLogger    elog = _->errorLogger;
@@ -469,7 +469,7 @@ int startSubProcess(void* self, int argc, char* argv[])
 	 */
 	CloseHandle(pi.hThread);
 
-	return pi.dwProcessId;
+	return pi.hProcess;
 } 
 
 #endif

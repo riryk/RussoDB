@@ -326,17 +326,20 @@ void* allocSharedMem(
  * If we do not pass the shared memory name, the function will open
  * the general shared memory segment 
  */
-TSharMemHandler openSharedMemSegment(
+SharMemHeader openSharedMemSegment(
     void*       self,
 	char*       name,
-	Bool        reportError)
+	Bool        reportError,
+	size_t      size)
 {
     ISharedMemManager  _    = (ISharedMemManager)self;
 	IErrorLogger       elog = _->errorLogger;
 
-	TSharMemHandler    hMapFile;
+	SharMemHeader      sharMemHdr;
+	TSharMemHandler    hMapFile    = NULL;
 	int                logSeverity = reportError ? LOG_ERROR : LOG_LOG;
-    
+    void*              mem         = NULL;
+
 	if (name == NULL)
 		name = SHAR_MEM_NAME;
 
@@ -351,7 +354,21 @@ TSharMemHandler openSharedMemSegment(
 				  "could not open file mapping object: error code %lu",
 				  GetLastError());
 
-	return hMapFile;
+	mem = MapViewOfFileEx(hMapFile, FILE_MAP_WRITE | FILE_MAP_READ, 0, 0, 0, NULL);
+	if (mem == NULL)
+        elog->log(LOG_ERROR, 
+		          ERROR_CODE_MAP_MEMORY_TO_FILE, 
+				  "could not map backend parameter memory: error code %lu", 
+    			  GetLastError());
+    
+    sharMemHdr = (SharMemHeader)mem;
+	sharMemHdr->procId     = GetProcessId(GetCurrentProcess());
+	sharMemHdr->hdrId      = 0;
+	sharMemHdr->totalSize  = size;
+	sharMemHdr->freeoffset = ALIGN_DEFAULT(sizeof(SSharMemHeader));
+	sharMemHdr->handle     = mem;
+    
+	return sharMemHdr;
 }
 
 SharMemHeader sharedMemoryReAttach(
