@@ -1059,6 +1059,10 @@
 									RelativePath=".\when_shared_mem_allocate.c"
 									>
 								</File>
+								<File
+									RelativePath=".\when_shared_mem_allocate_in_another_process.c"
+									>
+								</File>
 							</Filter>
 						</Filter>
 					</Filter>

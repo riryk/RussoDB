@@ -42,6 +42,7 @@ void proc_func_smciap()
 {
 	size_t        freeOffset;
 	void*         memToSet;
+	char*         memToSetChar;
     HANDLE        notifyEvent = OpenEvent(
 		                          EVENT_ALL_ACCESS, 
 								  False, 
@@ -55,10 +56,19 @@ void proc_func_smciap()
 	size_smciap         = 1024 * 16;
     shar_mem_hdr_smciap = smm_smciap->sharMemCreate(smm_smciap, size_smciap); 
 
-	freeOffset = shar_mem_hdr_smciap->freeoffset;
-    memToSet   = shar_mem_hdr_smciap + freeOffset;
+	freeOffset   = shar_mem_hdr_smciap->freeoffset;
+    memToSet     = shar_mem_hdr_smciap + freeOffset;
+    memToSetChar = memToSet;
 
-	memset(memToSet, 7, 1000); 
+	memset(memToSetChar, 1, 100); 
+    memToSetChar   += 100;
+
+    memset(memToSetChar, 2, 100); 
+    memToSetChar   += 100;
+
+	memset(memToSetChar, 3, 100); 
+	memToSetChar   += 100;
+
 	SetEvent(notifyEvent);
 	Sleep(1000000);
 }
@@ -113,23 +123,33 @@ WHEN(shared_mem_create_in_another_process)
 
 TEST_TEAR_DOWN(shared_mem_create_in_another_process)
 {
-	smm_smciap->deleteSharedMemory(
-	      smm_smciap, 
-		  (void*)shar_mem_hdr_smciap,  
-		  shar_mem_hdr_smciap->handle);
+	pm_smciap->killAllSubProcesses();
 
 	smm_smciap->memManager->freeAll();
-
+    
 	free(smm_smciap);
 }
 
-TEST(shared_mem_create_in_another_process, then_test)
+TEST(shared_mem_create_in_another_process, then_we_should_read_the_shared_memory)
 {
+	int       i;
+	size_t    freeOffset = shar_mem_hdr_smciap_1->freeoffset;
+
+	char*     mem1 = (char*)(shar_mem_hdr_smciap_1 + freeOffset);
+    char*     mem2 = mem1 + 100;
+    char*     mem3 = mem2 + 100;
+
+	for (i = 0; i < 100; i++)
+	{
+		TEST_ASSERT_EQUAL_INT32((int)mem1[i], 1);
+        TEST_ASSERT_EQUAL_INT32((int)mem2[i], 2);
+        TEST_ASSERT_EQUAL_INT32((int)mem3[i], 3);
+	}
 }
 
 TEST_GROUP_RUNNER(shared_mem_create_in_another_process)
 {
-    RUN_TEST_CASE(shared_mem_create_in_another_process, then_test);
+    RUN_TEST_CASE(shared_mem_create_in_another_process, then_we_should_read_the_shared_memory);
 }
 
 
