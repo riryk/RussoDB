@@ -1,11 +1,23 @@
 
 #include "spinlockmanager.h"
 #include "thread.h"
+#include "errorlogger.h"
 
 int        spinsAllowedCount = SPINS_DEFAULT_NUM;
 sleepFunc  slpSpinFunc       = NULL; 
 int        spinsMinNum       = SPINS_MIN_NUM;
 int        spinsMaxNum       = SPINS_MAX_NUM;
+
+const SISpinLockManager sSpinLockManager = 
+{ 
+	&errorManager,
+	&sErrorLogger,
+	spinLockCtor,
+	spinLockAcquire,
+	spinLockRelease
+};
+
+const ISpinLockManager spinLockManager = &sSpinLockManager;
 
 void spinLockCtor(
     void*            self,

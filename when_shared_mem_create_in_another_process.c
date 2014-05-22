@@ -28,7 +28,6 @@ void create_shar_mem_manager_smciap()
 	smm_smciap->errorLogger          = &sFakeErrorLogger;
 	smm_smciap->memManager           = &sFakeMemManager;
     smm_smciap->sharMemCreate        = sharMemCreate;
-    smm_smciap->initSharMemAccess    = initSharMemAccess;
     smm_smciap->allocSharedMem       = allocSharedMem;
 	smm_smciap->openSharedMemSegment = openSharedMemSegment;
     smm_smciap->sizeMultiply         = sizeMultiply;

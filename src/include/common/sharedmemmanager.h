@@ -11,8 +11,6 @@ void detachSharedMemory(
 	void*           self,
 	void*           sharMem);
 
-void initSharMemAccess(void* sharMem);
-
 void* allocSharedMem(
 	void*        self,
 	size_t       size);

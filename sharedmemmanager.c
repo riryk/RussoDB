@@ -180,6 +180,9 @@ SharMemHeader sharMemCreate(
     sharMemSegId   = sharMemHdrLocal;
     sharMemHdr     = sharMemHdrLocal;
 
+    sharMemStart = (void*)sharMemHdr;			
+	sharMemEnd   = (char*)sharMemStart + sharMemHdr->totalSize;
+
 	return sharMemHdr;
 }
 
@@ -222,16 +225,6 @@ void deleteSharedMemory(
 }
 
 #endif
-
-/* Set up basic pointers to shared memory. */
-void initSharMemAccess(void* sharMem)
-{
-    SharMemHeader hdr = (SharMemHeader)sharMem;
-
-    sharMemHdr   = hdr;
-    sharMemStart = (void*)hdr;			
-	sharMemEnd   = (char*)sharMemStart + hdr->totalSize;
-}
 
 void* ShmemInitStruct(
     void*        self,
@@ -312,7 +305,7 @@ void* allocSharedMem(
 
 	SPIN_LOCK_RELEASE(slm, sharMemLock);
 
-	if (newSpace != NULL)
+	if (newSpace == NULL)
         elog->log(LOG_WARNING, 
 		          ERROR_CODE_OUT_OF_MEMORY, 
 				  "out of shared memory");        
@@ -362,12 +355,7 @@ SharMemHeader openSharedMemSegment(
     			  GetLastError());
     
     sharMemHdr = (SharMemHeader)mem;
-	sharMemHdr->procId     = GetProcessId(GetCurrentProcess());
-	sharMemHdr->hdrId      = 0;
-	sharMemHdr->totalSize  = size;
-	sharMemHdr->freeoffset = ALIGN_DEFAULT(sizeof(SSharMemHeader));
-	sharMemHdr->handle     = mem;
-    
+
 	return sharMemHdr;
 }
 

@@ -20,7 +20,6 @@ SETUP_DEPENDENCIES(shared_mem_reattach)
 	smm_smr->errorLogger          = &sFakeErrorLogger;
 	smm_smr->memManager           = &sFakeMemManager;
     smm_smr->sharMemCreate        = sharMemCreate;
-    smm_smr->initSharMemAccess    = initSharMemAccess;
     smm_smr->allocSharedMem       = allocSharedMem;
 	smm_smr->openSharedMemSegment = openSharedMemSegment;
     smm_smr->sizeMultiply         = sizeMultiply;

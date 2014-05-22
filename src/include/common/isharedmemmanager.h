@@ -20,8 +20,6 @@ typedef struct SISharedMemManager
 	           void*         self,
 	           size_t        size);
 
-	void (*initSharMemAccess)(void* sharMem);
-
 	SharMemHeader (*openSharedMemSegment)(
                void*         self,
 	           char*         name,

@@ -19,7 +19,6 @@ SETUP_DEPENDENCIES(shared_mem_create)
 	smm_smc->errorLogger          = &sFakeErrorLogger;
 	smm_smc->memManager           = &sFakeMemManager;
     smm_smc->sharMemCreate        = sharMemCreate;
-    smm_smc->initSharMemAccess    = initSharMemAccess;
     smm_smc->allocSharedMem       = allocSharedMem;
 	smm_smc->openSharedMemSegment = openSharedMemSegment;
     smm_smc->sizeMultiply         = sizeMultiply;

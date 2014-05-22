@@ -28,13 +28,14 @@ void create_shar_mem_manager_smaiap()
     smm_smaiap = (ISharedMemManager)malloc(sizeof(SISharedMemManager));
 	smm_smaiap->errorLogger          = &sFakeErrorLogger;
 	smm_smaiap->memManager           = &sFakeMemManager;
+	smm_smaiap->spinLockMan          = spinLockManager;
     smm_smaiap->sharMemCreate        = sharMemCreate;
-    smm_smaiap->initSharMemAccess    = initSharMemAccess;
     smm_smaiap->allocSharedMem       = allocSharedMem;
 	smm_smaiap->openSharedMemSegment = openSharedMemSegment;
     smm_smaiap->sizeMultiply         = sizeMultiply;
     smm_smaiap->addSize              = addSize;
 	smm_smaiap->deleteSharedMemory   = deleteSharedMemory;
+    smm_smaiap->sharMemCtor          = sharMemCtor;
 }
 
 #ifdef _WIN32
@@ -43,6 +44,7 @@ void proc_func_smaiap()
 {
 	size_t        freeOffset;
 	void*         memToSet;
+	SharMemTest   testObj; 
 	char*         memToSetChar;
     HANDLE        notifyEvent = OpenEvent(
 		                          EVENT_ALL_ACCESS, 
@@ -55,9 +57,16 @@ void proc_func_smaiap()
 	create_shar_mem_manager_smaiap();
 
 	size_smaiap         = 1024 * 16;
-    shar_mem_hdr_smaiap = smm_smaiap->sharMemCreate(smm_smaiap, size_smaiap); 
 
-	 smm_smaiap->allocSharedMem(smm_smaiap, sizeof(SSharMemTest));
+    shar_mem_hdr_smaiap = smm_smaiap->sharMemCreate(smm_smaiap, size_smaiap); 
+	smm_smaiap->sharMemCtor(smm_smaiap);
+	testObj             = (SharMemTest)smm_smaiap->allocSharedMem(
+		                                 smm_smaiap, 
+										 sizeof(SSharMemTest));
+
+	testObj->field1 = 123;
+    testObj->field2 = 334;
+	testObj->field3 = 434;
 
 	SetEvent(notifyEvent);
 	Sleep(1000000);
@@ -65,7 +74,7 @@ void proc_func_smaiap()
 
 #endif
 
-SETUP_DEPENDENCIES(shared_mem_create_in_another_process) 
+SETUP_DEPENDENCIES(shared_mem_allocate_in_another_process) 
 {
     create_shar_mem_manager_smaiap();
 
@@ -82,7 +91,7 @@ SETUP_DEPENDENCIES(shared_mem_create_in_another_process)
     th_smaiap->waitForEvent        = waitForEvent;
 }
 
-GIVEN(shared_mem_create_in_another_process) 
+GIVEN(shared_mem_allocate_in_another_process) 
 {
     size_smaiap = 1024 * 16;
 
@@ -100,7 +109,7 @@ GIVEN(shared_mem_create_in_another_process)
     TEST_ASSERT_NOT_NULL(event_smaiap);
 }
 
-WHEN(shared_mem_create_in_another_process)
+WHEN(shared_mem_allocate_in_another_process)
 {
 	proc_smaiap = pm_smaiap->startSubProcess(pm_smaiap, 0, pm_args_smaiap);
 
@@ -111,7 +120,7 @@ WHEN(shared_mem_create_in_another_process)
 	shar_mem_hdr_smaiap_1 = smm_smaiap->openSharedMemSegment(smm_smaiap, NULL, True, size_smaiap);
 }
 
-TEST_TEAR_DOWN(shared_mem_create_in_another_process)
+TEST_TEAR_DOWN(shared_mem_allocate_in_another_process)
 {
 	pm_smaiap->killAllSubProcesses();
 
@@ -120,14 +129,22 @@ TEST_TEAR_DOWN(shared_mem_create_in_another_process)
 	free(smm_smaiap);
 }
 
-TEST(shared_mem_create_in_another_process, then_test)
+TEST(shared_mem_allocate_in_another_process, then_the_object_should_be_read)
 {
+	void*       mem     = (void*)((char*)shar_mem_hdr_smaiap_1 
+		                        + shar_mem_hdr_smaiap_1->freeoffset
+						        - ALIGN_DEFAULT(sizeof(SSharMemTest)));
 
+    SharMemTest testObj = (SharMemTest)mem; 
+
+	TEST_ASSERT_EQUAL_UINT32(testObj->field1, 123);
+	TEST_ASSERT_EQUAL_UINT32(testObj->field2, 334);
+	TEST_ASSERT_EQUAL_UINT32(testObj->field3, 434);
 }
 
-TEST_GROUP_RUNNER(shared_mem_create_in_another_process)
+TEST_GROUP_RUNNER(shared_mem_allocate_in_another_process)
 {
-    RUN_TEST_CASE(shared_mem_create_in_another_process, then_test);
+    RUN_TEST_CASE(shared_mem_allocate_in_another_process, then_the_object_should_be_read);
 }
 
 

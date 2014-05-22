@@ -1024,6 +1024,14 @@
 								RelativePath=".\when_spin_short_locks_are_applied_sequentially.c"
 								>
 							</File>
+							<Filter
+								Name="inter_process"
+								>
+								<File
+									RelativePath=".\when_spin_lock_for_short_time_inter_process.c"
+									>
+								</File>
+							</Filter>
 						</Filter>
 						<Filter
 							Name="sharedmem"
