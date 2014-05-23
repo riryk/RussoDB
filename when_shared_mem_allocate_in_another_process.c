@@ -1,14 +1,17 @@
+
 #include "unity_fixture.h"
 #include "fakeerrorlogger.h"
-#include "sharedmemmanager.h"
+#include "spinlockmanager.h"
 #include "fakememmanager.h"
 #include <windows.h>
-#include "sharedmem.h"
-#include "spinlockmanager.h"
+#include "spin.h"
+#include "threadhelper.h"
+#include "sharedmemmanager.h"
 #include "process_functions.h"
 #include "processhelper.h"
-#include "threadhelper.h"
+#include "sharedmem.h"
 #include "sharedmem_helper.h"
+
 
 TEST_GROUP(shared_mem_allocate_in_another_process);
 

@@ -6,7 +6,7 @@
 #include "spin.h"
 #include "threadhelper.h"
 
-TEST_GROUP(spin_lock_for_short_time_inter_process);
+TEST_GROUP(spin_lock_for_short_time);
 
 ISpinLockManager   m_slfst;
 IThreadHelper      th_slfst;
