@@ -13,6 +13,9 @@ ISpinLockManager   m_slfstip;
 IProcessManager    pm_slfstip;
 TSpinLock          slock_slfstip;
 
+SharMemHeader      shar_mem_hdr_slfstip; 
+SharMemHeader      shar_mem_hdr_slfstip_1; 
+
 char*              pm_args_slfstip[4];
 int                sleeps_count_slfstip;
 TThreadId          thread_id_slfstip;
@@ -91,16 +94,29 @@ void proc_func_slfstip()
         return;
     
 	create_spin_lock_manager_slfstip();
-    
 
+	shar_mem_hdr_slfstip_1 = smm_slfstip->openSharedMemSegment(
+		                                     smm_slfstip, 
+											 NULL, 
+											 True, 
+    										 size_slfstip);
+
+
+    SPIN_LOCK_ACQUIRE(m_slfstip, &slock_slfstip);
+
+    SetEvent(notifyEvent);
+
+	Sleep(3 * 1000L);
+
+	SPIN_LOCK_RELEASE(m_slfstip, &slock_slfstip);
 }
 
 GIVEN(spin_lock_for_short_time_inter_process) 
 {
-	shar_mem_hdr_smaiap = smm_smaiap->sharMemCreate(smm_smaiap, size_smaiap); 
-	smm_smaiap->sharMemCtor(smm_smaiap);
-	slock_slfstip       = (TSpinLock)smm_smaiap->allocSharedMem(
-		                                 smm_smaiap, 
+	shar_mem_hdr_slfstip = smm_slfstip->sharMemCreate(smm_slfstip, size_slfstip); 
+	smm_slfstip->sharMemCtor(smm_slfstip);
+	slock_slfstip       = (TSpinLock)smm_slfstip->allocSharedMem(
+		                                 smm_slfstip, 
 										 sizeof(SSharMemTest));
     slock_slfstip       = 0;
     
