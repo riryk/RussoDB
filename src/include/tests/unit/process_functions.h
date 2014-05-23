@@ -6,5 +6,6 @@
 void process_func_request(char* funcName);
 void proc_func_smciap();
 void proc_func_smaiap();
+void proc_func_slfstip();
 
 #endif

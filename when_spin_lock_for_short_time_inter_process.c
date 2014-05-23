@@ -10,18 +10,21 @@ TEST_GROUP(spin_lock_for_short_time_inter_process);
 
 ISharedMemManager  smm_slfstip;
 ISpinLockManager   m_slfstip;
+IProcessManager    pm_slfstip;
 TSpinLock          slock_slfstip;
 
-int                sleeps_count_slfst;
-TThreadId          thread_id_slfst;
-int                thread_2_sleep_time_slfst;
-int                sleeps_slfst[1000];       
-int                sleeps_count_slfst = 0;
-TThread            threadHandle_slfst;
+char*              pm_args_slfstip[4];
+int                sleeps_count_slfstip;
+TThreadId          thread_id_slfstip;
+int                thread_2_sleep_time_slfstip;
+int                sleeps_slfstip[1000];       
+int                sleeps_count_slfstip = 0;
+TThread            threadHandle_slfstip;
+TEvent             event_slfstip;
 
-void sleepAndTrack(int sleepMilliseconds)
+void sleep_slfstip(int sleepMilliseconds)
 {
-	sleeps_slfst[sleeps_count_slfst++] = sleepMilliseconds;
+	sleeps_slfstip[sleeps_count_slfstip++] = sleepMilliseconds;
 	Sleep(sleepMilliseconds);
 }
 
@@ -55,10 +58,17 @@ SETUP_DEPENDENCIES(spin_lock_for_short_time_inter_process)
 	create_spin_lock_manager_slfstip();
     create_shar_mem_manager_slfstip();
 
+	pm_slfstip = (IProcessManager)malloc(sizeof(SIProcessManager));
+	pm_slfstip->errorLogger         = &sFakeErrorLogger;
+	pm_slfstip->startSubProcess     = startSubProcess;
+	pm_slfstip->killAllSubProcesses = killAllSubProcesses;
+
 	th_slfstip = (IThreadHelper)malloc(sizeof(SIThreadHelper));
-	th_slfstip->threadHelpCtor = &threadHelpCtor;
+	th_slfstip->threadHelpCtor = threadHelpCtor;
     th_slfstip->errorLogger    = &sFakeErrorLogger;
     th_slfstip->startThread    = startThread;
+    th_slfstip->spinWait       = spinWait;
+    th_slfstip->waitForEvent   = waitForEvent;
 }
 
 DWORD WINAPI spinLockFunc_slfst(LPVOID lpParam) 
@@ -81,6 +91,7 @@ void proc_func_slfstip()
         return;
     
 	create_spin_lock_manager_slfstip();
+    
 
 }
 
@@ -92,23 +103,27 @@ GIVEN(spin_lock_for_short_time_inter_process)
 		                                 smm_smaiap, 
 										 sizeof(SSharMemTest));
     slock_slfstip       = 0;
+    
+	pm_args_slfstip[0] = "---";
+    pm_args_slfstip[1] = "func";
+    pm_args_slfstip[2] = NULL;
+    pm_args_slfstip[3] = "proc_func_slfstip";
 
-	m_slfstip->spinLockCtor(m_slfstip, sleepAndTrack);
+	m_slfstip->spinLockCtor(m_slfstip, sleep_slfstip);
 
-	m_slfst->spinLockCtor(m_slfst, sleepAndTrack);
+    event_slfstip = CreateEvent(
+		              NULL, 
+					  False, 
+					  False, 
+					  TEXT("Global\\NotifyEvent"));
 
-	threadHandle_slfst 
-		= th_slfst->startThread(
-		     th_slfst, 
-			 spinLockFunc_slfst, 
-			 NULL, 
-			 thread_id_slfst);
+    TEST_ASSERT_NOT_NULL(event_slfstip);
 
-	/* We need to sleep for 2 seconds 
-	 * and wait until the thread launchs and  
-	 * acquires the lock.
-	 */
-    Sleep(2 * 1000L);
+	proc_slfstip = pm_slfstip->startSubProcess(pm_slfstip, 0, pm_args_slfstip);
+
+	TEST_ASSERT_NOT_NULL(proc_slfstip);
+
+	th_slfstip->waitForEvent(th_slfstip, event_slfstip);
 }
 
 WHEN(spin_lock_for_short_time_inter_process)

@@ -8,4 +8,7 @@ void process_func_request(char* funcName)
 
     if (strcmp(funcName, "proc_func_smaiap") == 0) 
 		proc_func_smaiap(); 
+
+    if (strcmp(funcName, "proc_func_slfstip") == 0) 
+		proc_func_slfstip(); 
 }
