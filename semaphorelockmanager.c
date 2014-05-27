@@ -11,6 +11,32 @@ HANDLE*  semaphoresSet;		/* IDs of semaphore sets acquired so far */
 int  semaphoresNum = 0;     /* Number of semaphore sets acquired so far */
 int  semaphoresMax;         /* Max number of semaphores */
 
+const SISemaphoreLockManager sSemaphoreLockManager = 
+{ 
+	IErrorLogger       errorLogger;
+    ISignalManager     signalManager; 
+
+	nextPowerOf2,
+    setExecFold,
+    getExecFold,
+	fillCommonParams
+};
+
+
+    IErrorLogger       errorLogger;
+    ISignalManager     signalManager; 
+
+	signalCtor,
+	dispatchQueuedSignals,
+	semaphoreCreate,
+	semaphoresCtor,
+	lockSemaphore,
+	unlockSemaphore,
+	releaseSemaphores
+
+
+const ISemaphoreLockManager semaphoreLockManager = &sSemaphoreLockManager;
+
 void semaphoresCtor(
 	void*                 self,
 	int                   semasMax, 
