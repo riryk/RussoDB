@@ -4,6 +4,7 @@
 #include "fakememmanager.h"
 #include <windows.h>
 #include "spin.h"
+#include "spinlockstrategy.h"
 
 TEST_GROUP(spin_lock_manager_acquire_without_contention);
 
@@ -16,6 +17,7 @@ SETUP_DEPENDENCIES(spin_lock_manager_acquire_without_contention)
     m_slmawc = (ISpinLockManager)malloc(sizeof(SISpinLockManager));
     m_slmawc->errorLogger     = &sFakeErrorLogger;
 	m_slmawc->memManager      = &sFakeMemManager;
+	m_slmawc->slockStrategy   = &sSpinLockStrategy;
     m_slmawc->spinLockAcquire = spinLockAcquire;
     m_slmawc->spinLockRelease = spinLockRelease;
 }

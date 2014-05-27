@@ -2,6 +2,7 @@
 #include "spinlockmanager.h"
 #include "thread.h"
 #include "errorlogger.h"
+#include "spinlockstrategy.h"
 
 int        spinsAllowedCount = SPINS_DEFAULT_NUM;
 sleepFunc  slpSpinFunc       = NULL; 
@@ -12,6 +13,7 @@ const SISpinLockManager sSpinLockManager =
 { 
 	&errorManager,
 	&sErrorLogger,
+	&sSpinLockStrategy,
 	spinLockCtor,
 	spinLockAcquire,
 	spinLockRelease
@@ -36,8 +38,9 @@ int spinLockAcquire(
 	char*             file, 
 	int               line)
 {
-	ISpinLockManager slm  = (ISpinLockManager)self;
-	IErrorLogger     elog = slm->errorLogger;
+	ISpinLockManager  slm   = (ISpinLockManager)self;
+	IErrorLogger      elog  = slm->errorLogger;
+	ISpinLockStrategy slstr = slm->slockStrategy;
 
     int			spinCount     = 0;
 	int			sleepsCount   = 0;
@@ -76,7 +79,7 @@ int spinLockAcquire(
 	 * Then the first thread set it to 1. After that the second thread reads it
 	 * and goes to while loop
 	 */ 
-    while (InterlockedCompareExchange(lock, 1, 0))
+    while (slstr->tryLock(lock))
 	{
         /* If we need to do at least one spin, that means we have 
 		 * contention and someone has acquired the lock. We need to
@@ -97,7 +100,7 @@ int spinLockAcquire(
 		 * For this reason, it is recommended that 
 		 * a PAUSE instruction be placed in all spin-wait loops.
 		 */
-		__asm rep nop;
+		slstr->delay();
 
 		/* From the start we do some count of simple spins before 
 		 * suspending the thread. It can be very efficient 
@@ -192,7 +195,12 @@ int spinLockAcquire(
 	return sleepsCount;
 }
 
-void spinLockRelease(volatile long* lock)
+void spinLockRelease(
+    void*              self,
+    volatile long*     lock)
 {
-    *lock = 0;
+    ISpinLockManager  slm   = (ISpinLockManager)self;
+	ISpinLockStrategy slstr = slm->slockStrategy;
+
+	slstr->unlock(lock);
 }

@@ -5,6 +5,7 @@
 #include <windows.h>
 #include "spin.h"
 #include "threadhelper.h"
+#include "spinlockstrategy.h"
 
 TEST_GROUP(spin_short_locks_are_applied_sequentially);
 
@@ -53,6 +54,7 @@ SETUP_DEPENDENCIES(spin_short_locks_are_applied_sequentially)
     m_sslaas->spinLockCtor    = &spinLockCtor;
     m_sslaas->errorLogger     = &sFakeErrorLogger;
 	m_sslaas->memManager      = &sFakeMemManager;
+	m_sslaas->slockStrategy   = &sSpinLockStrategy;
     m_sslaas->spinLockAcquire = spinLockAcquire;
     m_sslaas->spinLockRelease = spinLockRelease;
 

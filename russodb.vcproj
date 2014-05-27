@@ -438,6 +438,10 @@
 							>
 						</File>
 						<File
+							RelativePath="src\include\common\lock\ispinlockstrategy.h"
+							>
+						</File>
+						<File
 							RelativePath="src\include\common\lock\lightlock.h"
 							>
 						</File>
@@ -459,6 +463,10 @@
 						</File>
 						<File
 							RelativePath="src\include\common\lock\spinlockmanager.h"
+							>
+						</File>
+						<File
+							RelativePath="src\include\common\lock\spinlockstrategy.h"
 							>
 						</File>
 					</Filter>
@@ -1612,6 +1620,14 @@
 					</File>
 					<File
 						RelativePath=".\spinlockmanager.c"
+						>
+					</File>
+					<File
+						RelativePath=".\spinlocksemaphorestrategy.c"
+						>
+					</File>
+					<File
+						RelativePath=".\spinlockstrategy.c"
 						>
 					</File>
 				</Filter>

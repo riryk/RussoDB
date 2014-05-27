@@ -5,6 +5,7 @@
 #include <windows.h>
 #include "spin.h"
 #include "threadhelper.h"
+#include "spinlockstrategy.h"
 
 TEST_GROUP(spin_lock_for_short_time);
 
@@ -29,6 +30,7 @@ SETUP_DEPENDENCIES(spin_lock_for_short_time)
     m_slfst = (ISpinLockManager)malloc(sizeof(SISpinLockManager));
     m_slfst->errorLogger     = &sFakeErrorLogger;
 	m_slfst->memManager      = &sFakeMemManager;
+	m_slfst->slockStrategy   = &sSpinLockStrategy;
 	m_slfst->spinLockCtor    = &spinLockCtor;
     m_slfst->spinLockAcquire = spinLockAcquire;
     m_slfst->spinLockRelease = spinLockRelease;

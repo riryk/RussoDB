@@ -10,6 +10,7 @@
 #include "processhelper.h"
 #include "sharedmem.h"
 #include "sharedmem_helper.h"
+#include "spinlockstrategy.h"
 
 TEST_GROUP(spin_lock_for_short_time_inter_process);
 
@@ -34,6 +35,9 @@ TThread            threadHandle_slfstip;
 TEvent             event_slfstip;
 TProcess           proc_slfstip;
 
+int                aux_proc_slp_slfstip;
+int                aux_proc_slfstip;
+
 void sleep_slfstip(int sleepMilliseconds)
 {
 	sleeps_slfstip[sleeps_count_slfstip++] = sleepMilliseconds;
@@ -45,6 +49,7 @@ void create_spin_lock_manager_slfstip()
     m_slfstip = (ISpinLockManager)malloc(sizeof(SISpinLockManager));
     m_slfstip->errorLogger     = &sFakeErrorLogger;
 	m_slfstip->memManager      = &sFakeMemManager;
+	m_slfstip->slockStrategy   = &sSpinLockStrategy;
 	m_slfstip->spinLockCtor    = &spinLockCtor;
     m_slfstip->spinLockAcquire = spinLockAcquire;
     m_slfstip->spinLockRelease = spinLockRelease;
@@ -86,6 +91,7 @@ SETUP_DEPENDENCIES(spin_lock_for_short_time_inter_process)
 void proc_func_slfstip()
 {
 	TSpinLock*  spinLock;
+	void*       memSpinLock;
     HANDLE      notifyEvent = OpenEvent(
 		                     EVENT_ALL_ACCESS, 
 						     False, 
@@ -94,8 +100,12 @@ void proc_func_slfstip()
     if (notifyEvent == NULL)
         return;
     
+	aux_proc_slp_slfstip  = 20;
+
 	create_spin_lock_manager_slfstip();
     create_shar_mem_manager_slfstip();
+
+    m_slfstip->spinLockCtor(m_slfstip, sleep_slfstip);
 
 	shar_mem_hdr_slfstip_1  = smm_slfstip->openSharedMemSegment(
 		                                     smm_slfstip, 
@@ -103,28 +113,38 @@ void proc_func_slfstip()
 											 True, 
     										 SIZE_SLFSTIP);
     
-	void*       memSpinLock = (void*)((char*)shar_mem_hdr_smaiap_1 
-		                        + shar_mem_hdr_smaiap_1->freeoffset
+	memSpinLock = (void*)((char*)shar_mem_hdr_slfstip_1 
+		                        + shar_mem_hdr_slfstip_1->freeoffset
 						        - ALIGN_DEFAULT(sizeof(TSpinLock)));
     
-    spinLock = (int*)memSpinLock;
+	slock_slfstip = (TSpinLock*)memSpinLock;
 
-    SPIN_LOCK_ACQUIRE(m_slfstip, &slock_slfstip);
+    SPIN_LOCK_ACQUIRE(m_slfstip, slock_slfstip);
 
     SetEvent(notifyEvent);
 
-	Sleep(3 * 1000L);
+	Sleep(aux_proc_slp_slfstip * 1000L);
 
-	SPIN_LOCK_RELEASE(m_slfstip, &slock_slfstip);
+	SPIN_LOCK_RELEASE(m_slfstip, slock_slfstip);
 }
 
 GIVEN(spin_lock_for_short_time_inter_process) 
 {
+	void*         sLockMem;
+	TSpinLock*    sLock;
+
+    aux_proc_slfstip      = 20;
+
 	shar_mem_hdr_slfstip = smm_slfstip->sharMemCreate(smm_slfstip, SIZE_SLFSTIP); 
 	smm_slfstip->sharMemCtor(smm_slfstip);
-	slock_slfstip        = (TSpinLock*)smm_slfstip->allocSharedMem(
-		                                 smm_slfstip, 
-										 sizeof(TSpinLock));
+
+    sLockMem  = smm_slfstip->allocSharedMem(
+		                    smm_slfstip, 
+						    sizeof(TSpinLock));
+
+    sLock     = (TSpinLock*)sLockMem;
+
+	slock_slfstip        = sLock;
     *slock_slfstip       = 0;
     
 	pm_args_slfstip[0] = "---";
@@ -151,18 +171,15 @@ GIVEN(spin_lock_for_short_time_inter_process)
 
 WHEN(spin_lock_for_short_time_inter_process)
 {
-    sleeps_count_slfstip = SPIN_LOCK_ACQUIRE(m_slfstip, &slock_slfstip);
+    sleeps_count_slfstip = SPIN_LOCK_ACQUIRE(m_slfstip, slock_slfstip);
 }
 
 TEST_TEAR_DOWN(spin_lock_for_short_time_inter_process)
 {
-	SPIN_LOCK_RELEASE(m_slfstip, &slock_slfstip)
+	SPIN_LOCK_RELEASE(m_slfstip, slock_slfstip);
 
-#ifdef _WIN32
-    TerminateThread(threadHandle_slfstip, 0); 
-    CloseHandle(threadHandle_slfstip);
-#endif
-    
+	pm_slfstip->killAllSubProcesses();
+
 	m_slfstip->memManager->freeAll();
      
 	free(m_slfstip);
@@ -182,7 +199,7 @@ TEST(spin_lock_for_short_time_inter_process, then_total_sleep_time_must_be_enoug
         sleeps_time_total += sleeps_slfstip[i];       
 	}
 
-	TEST_ASSERT_TRUE(sleeps_time_total >= thread_2_sleep_time_slfstip * 1000L)
+	TEST_ASSERT_TRUE(sleeps_time_total >= aux_proc_slfstip * 1000L)
 }
 
 TEST(spin_lock_for_short_time_inter_process, then_total_sleep_times_must_be_in_increasing_order)

@@ -17,7 +17,7 @@
     (man)->spinLockAcquire((man), (lock), __FILE__, __LINE__);   
 
 #define SPIN_LOCK_RELEASE(manager, lock) \
-	(manager)->spinLockRelease(lock); \
+	(manager)->spinLockRelease((manager), (lock)); \
 
 extern const SISpinLockManager sSpinLockManager;
 extern const ISpinLockManager  spinLockManager;
@@ -37,6 +37,8 @@ int spinLockAcquire(
 	  char*             file, 
 	  int               line);
 
-void spinLockRelease(volatile long* lock);
+void spinLockRelease(
+      void*             self,
+      volatile long*    lock);
 
 #endif
