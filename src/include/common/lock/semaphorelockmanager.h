@@ -35,4 +35,8 @@ void unlockSemaphore(
     void*          self,
 	TSemaphore     sem);
 
+Bool tryLockSemaphore(
+    void*          self,
+    TSemaphore     sem);
+
 #endif

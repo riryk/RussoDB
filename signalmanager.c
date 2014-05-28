@@ -1,6 +1,7 @@
 
 #include "signalmanager.h"
 #include "error.h"
+#include "errorlogger.h"
 
 #ifdef _WIN32
 
@@ -13,6 +14,15 @@ signalFunc        signalDefaults[SIGNAL_COUNT];
 
 volatile int      signalQueue = 0;
 int			      signalMask;
+
+const SISignalManager sSignalManager = 
+{
+    &sErrorLogger,
+	signalCtor,
+	dispatchQueuedSignals
+};
+
+const ISignalManager  signalManager  = &sSignalManager;
 
 DWORD __stdcall signalThread(LPVOID param);
 

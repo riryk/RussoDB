@@ -34,6 +34,10 @@ typedef struct SISemaphoreLockManager
 
 	void (*releaseSemaphores)();
 
+	Bool (*tryLockSemaphore)(
+        void*          self,
+        TSemaphore     sem);
+
 } SISemaphoreLockManager, *ISemaphoreLockManager;
 
 #endif

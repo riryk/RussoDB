@@ -92,6 +92,8 @@ typedef enum
 #define ERROR_CODE_VIRTUAL_FREE_FAILED      1045
 #define ERROR_CODE_REATTACH_MEMORY_FAILED   1046
 #define ERROR_CODE_RESERVE_MEMORY_FAILED    1047
+#define ERROR_CODE_WAIT_FOR_TIMEOUT         1048
+#define ERROR_CODE_TRY_SEMAPHORE_LOCK_FAILED 1049
 
 /* The structure contains complete information 
  * about an error

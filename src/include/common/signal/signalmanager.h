@@ -20,8 +20,12 @@ extern HANDLE  signalEvent;
 extern volatile int signalQueue;
 extern int	   signalMask;
 
+extern const SISignalManager sSignalManager;
+extern const ISignalManager  signalManager;
+
 typedef void (*signalFunc)(int);
 
+void signalCtor(void* self);
 void dispatchQueuedSignals();
 
 #endif

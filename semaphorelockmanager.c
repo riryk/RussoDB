@@ -3,6 +3,7 @@
 #include "signalmanager.h"
 #include "semaphore.h"
 #include "errno.h"
+#include "errorlogger.h"
 
 #ifdef _WIN32
 HANDLE*  semaphoresSet;		/* IDs of semaphore sets acquired so far */
@@ -13,18 +14,8 @@ int  semaphoresMax;         /* Max number of semaphores */
 
 const SISemaphoreLockManager sSemaphoreLockManager = 
 { 
-	IErrorLogger       errorLogger;
-    ISignalManager     signalManager; 
-
-	nextPowerOf2,
-    setExecFold,
-    getExecFold,
-	fillCommonParams
-};
-
-
-    IErrorLogger       errorLogger;
-    ISignalManager     signalManager; 
+	&sErrorLogger,
+	&sSignalManager,
 
 	signalCtor,
 	dispatchQueuedSignals,
@@ -33,7 +24,7 @@ const SISemaphoreLockManager sSemaphoreLockManager =
 	lockSemaphore,
 	unlockSemaphore,
 	releaseSemaphores
-
+};
 
 const ISemaphoreLockManager semaphoreLockManager = &sSemaphoreLockManager;
 
@@ -170,6 +161,38 @@ void unlockSemaphore(
            ERROR_CODE_RELEASE_SEMAPHORE_FAILED, 
 		   "Could not release semaphore: error code %lu",
 		   GetLastError());        
+}
+
+#endif
+
+#ifdef _WIN32
+
+Bool tryLockSemaphore(
+    void*          self,
+    TSemaphore     sem)
+{
+	DWORD		   ret;
+
+	ISemaphoreLockManager _    = (ISemaphoreLockManager)self;
+    IErrorLogger          elog = _->errorLogger;
+
+	ret = WaitForSingleObject(*sem, 0);
+
+	if (ret == WAIT_OBJECT_0)
+		return True;
+	
+	if (ret == WAIT_TIMEOUT)
+	{
+		errno = ERROR_CODE_WAIT_FOR_TIMEOUT;
+		return False;
+	}
+
+	elog->log(LOG_FATAL, 
+		      ERROR_CODE_TRY_SEMAPHORE_LOCK_FAILED,
+			  "Attempt to apply semaphore lock failed: error code %lu",
+              GetLastError());
+
+	return False;
 }
 
 #endif
