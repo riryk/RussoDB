@@ -1,15 +1,10 @@
 #include "semaphorelockmanager.h"
 #include "spin.h"
-#include "spinlockstrategy.h"
-
-void initLock_semaphore(volatile TSpinLock* lock);
-int tryLock_semaphore(volatile TSpinLock* lock);
-void delay_semaphore();
-Bool freeLock_semaphore(volatile TSpinLock* lock);
-void unlock_semaphore(volatile TSpinLock* lock); 
+#include "spinlocksemaphorestrategy.h"
 
 const SISpinLockStrategy sSpinLockSemaphoreStrategy = 
 { 
+    spinLockSemStratCtor,
 	initLock_semaphore,
     tryLock_semaphore,
     delay_semaphore,
@@ -19,6 +14,11 @@ const SISpinLockStrategy sSpinLockSemaphoreStrategy =
 
 const ISpinLockStrategy     spinLockSemaphoreStrategy = &sSpinLockSemaphoreStrategy;
 const ISemaphoreLockManager semLockMan                = &sSemaphoreLockManager;
+
+void spinLockSemStratCtor(void* self)
+{
+	semLockMan->semaphoresCtor(semLockMan, 100, 0);
+}
 
 void initLock_semaphore(volatile TSpinLock* lock) 
 {
@@ -43,8 +43,8 @@ Bool freeLock_semaphore(volatile TSpinLock* lock)
 
 void unlock_semaphore(volatile TSpinLock* lock) 
 {
-    semLockMan->semaphoreCreate(
+	semLockMan->unlockSemaphore(
         semLockMan,
-	    (TSemaphore)lock);
+        (TSemaphore)lock);
 }
 

@@ -2,6 +2,7 @@
 #include "common.h"
 #include "isignalmanager.h"
 #include "ierrorlogger.h"
+#include "semaphore.h"
 
 #ifndef ISEMAPHORELOCKMANAGER_H
 #define ISEMAPHORELOCKMANAGER_H

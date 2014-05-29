@@ -53,6 +53,7 @@ void create_spin_lock_manager_slfstip()
 	m_slfstip->spinLockCtor    = &spinLockCtor;
     m_slfstip->spinLockAcquire = spinLockAcquire;
     m_slfstip->spinLockRelease = spinLockRelease;
+	m_slfstip->spinLockInit    = spinLockInit;
 }
 
 void create_shar_mem_manager_slfstip()

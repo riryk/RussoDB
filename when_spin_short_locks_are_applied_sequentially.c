@@ -57,7 +57,8 @@ SETUP_DEPENDENCIES(spin_short_locks_are_applied_sequentially)
 	m_sslaas->slockStrategy   = &sSpinLockStrategy;
     m_sslaas->spinLockAcquire = spinLockAcquire;
     m_sslaas->spinLockRelease = spinLockRelease;
-
+	m_sslaas->spinLockInit    = spinLockInit;
+	
 	th_sslaas = (IThreadHelper)malloc(sizeof(SIThreadHelper));
 	th_sslaas->threadHelpCtor = &threadHelpCtor;
     th_sslaas->errorLogger    = &sFakeErrorLogger;

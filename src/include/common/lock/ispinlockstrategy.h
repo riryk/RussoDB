@@ -7,11 +7,12 @@
 
 typedef struct SISpinLockStrategy
 {
-	void (*initLock)(volatile TSpinLock* lock);
-    int  (*tryLock) (volatile TSpinLock* lock);
-    void (*delay)   ();    
-	Bool (*freeLock)(volatile TSpinLock* lock);
-	void (*unlock)  (volatile TSpinLock* lock);
+	void (*spinLockStratCtor)(void* self);
+	void (*initLock)         (volatile TSpinLock* lock);
+    int  (*tryLock)          (volatile TSpinLock* lock);
+    void (*delay)            ();    
+	Bool (*freeLock)         (volatile TSpinLock* lock);
+	void (*unlock)           (volatile TSpinLock* lock);
 } SISpinLockStrategy, *ISpinLockStrategy;
 
 #endif

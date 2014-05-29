@@ -466,6 +466,10 @@
 							>
 						</File>
 						<File
+							RelativePath="src\include\common\lock\spinlocksemaphorestrategy.h"
+							>
+						</File>
+						<File
 							RelativePath="src\include\common\lock\spinlockstrategy.h"
 							>
 						</File>
@@ -1037,6 +1041,18 @@
 								>
 								<File
 									RelativePath=".\when_spin_lock_for_short_time_inter_process.c"
+									>
+								</File>
+							</Filter>
+							<Filter
+								Name="semaphore_strategy"
+								>
+								<File
+									RelativePath=".\when_spin_lock_acquire_in_another_process_sem.c"
+									>
+								</File>
+								<File
+									RelativePath=".\when_spin_lock_acquire_without_contention_sem.c"
 									>
 								</File>
 							</Filter>

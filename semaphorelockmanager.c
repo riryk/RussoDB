@@ -10,20 +10,20 @@ HANDLE*  semaphoresSet;		/* IDs of semaphore sets acquired so far */
 #endif
 
 int  semaphoresNum = 0;     /* Number of semaphore sets acquired so far */
-int  semaphoresMax;         /* Max number of semaphores */
+int  semaphoresMax = 100;   /* Max number of semaphores */
 
 const SISemaphoreLockManager sSemaphoreLockManager = 
 { 
 	&sErrorLogger,
 	&sSignalManager,
-
 	signalCtor,
 	dispatchQueuedSignals,
 	semaphoreCreate,
 	semaphoresCtor,
 	lockSemaphore,
 	unlockSemaphore,
-	releaseSemaphores
+	releaseSemaphores,
+    tryLockSemaphore
 };
 
 const ISemaphoreLockManager semaphoreLockManager = &sSemaphoreLockManager;
@@ -70,7 +70,7 @@ void semaphoreCreate(
 
     /* Create a new semaphore */
 	curHandle = CreateSemaphore(&secAttrs, 1, 32767, NULL); 
-	if (curHandle == NULL)
+	if (curHandle != NULL)
 	{
         *sem = curHandle;
         semaphoresSet[semaphoresNum++] = curHandle;
@@ -176,15 +176,15 @@ Bool tryLockSemaphore(
 	ISemaphoreLockManager _    = (ISemaphoreLockManager)self;
     IErrorLogger          elog = _->errorLogger;
 
-	ret = WaitForSingleObject(*sem, 0);
+	ret = WaitForSingleObject(*sem, SEMAPHORE_WAIT_TIMEOUT);
 
 	if (ret == WAIT_OBJECT_0)
-		return True;
+		return False;
 	
 	if (ret == WAIT_TIMEOUT)
 	{
 		errno = ERROR_CODE_WAIT_FOR_TIMEOUT;
-		return False;
+		return True;
 	}
 
 	elog->log(LOG_FATAL, 
@@ -192,7 +192,7 @@ Bool tryLockSemaphore(
 			  "Attempt to apply semaphore lock failed: error code %lu",
               GetLastError());
 
-	return False;
+	return True;
 }
 
 #endif

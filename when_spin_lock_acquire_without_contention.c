@@ -20,6 +20,7 @@ SETUP_DEPENDENCIES(spin_lock_manager_acquire_without_contention)
 	m_slmawc->slockStrategy   = &sSpinLockStrategy;
     m_slmawc->spinLockAcquire = spinLockAcquire;
     m_slmawc->spinLockRelease = spinLockRelease;
+	m_slmawc->spinLockInit    = spinLockInit;
 }
 
 GIVEN(spin_lock_manager_acquire_without_contention) 

@@ -34,6 +34,7 @@ SETUP_DEPENDENCIES(spin_lock_for_short_time)
 	m_slfst->spinLockCtor    = &spinLockCtor;
     m_slfst->spinLockAcquire = spinLockAcquire;
     m_slfst->spinLockRelease = spinLockRelease;
+	m_slfst->spinLockInit    = spinLockInit;
 
 	th_slfst = (IThreadHelper)malloc(sizeof(SIThreadHelper));
 	th_slfst->threadHelpCtor = &threadHelpCtor;

@@ -19,6 +19,10 @@ typedef struct SISpinLockManager
          void*              self,
          sleepFunc          slpFuncParam);
 
+	void (*spinLockInit)(
+	     void*              self,
+	     volatile long*     lock);
+
 	int (*spinLockAcquire)(
 	     void*              self,
 	     volatile long*     lock, 

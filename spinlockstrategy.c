@@ -2,6 +2,7 @@
 
 const SISpinLockStrategy sSpinLockStrategy = 
 { 
+	spinLockCtor_spinlock,
 	initLock_spinlock,
     tryLock_spinlock,
     delay_spinlock,
@@ -10,6 +11,8 @@ const SISpinLockStrategy sSpinLockStrategy =
 };
 
 const ISpinLockStrategy spinLockStrategy = &sSpinLockStrategy;
+
+void spinLockCtor_spinlock(void* self) { }
 
 void initLock_spinlock(volatile TSpinLock* lock) 
 {

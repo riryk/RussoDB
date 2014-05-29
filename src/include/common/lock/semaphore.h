@@ -9,6 +9,7 @@
 typedef HANDLE* TSemaphore;
 
 #define EIDRM 4096
+#define SEMAPHORE_WAIT_TIMEOUT 1000000
 
 #endif
 

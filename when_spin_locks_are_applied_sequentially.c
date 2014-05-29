@@ -51,6 +51,7 @@ SETUP_DEPENDENCIES(spin_locks_are_applied_sequentially)
 	m_slaas->slockStrategy   = &sSpinLockStrategy;
     m_slaas->spinLockAcquire = spinLockAcquire;
     m_slaas->spinLockRelease = spinLockRelease;
+	m_slaas->spinLockInit    = spinLockInit;
 
 	th_slaas = (IThreadHelper)malloc(sizeof(SIThreadHelper));
 	th_slaas->threadHelpCtor = &threadHelpCtor;

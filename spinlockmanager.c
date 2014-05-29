@@ -15,6 +15,7 @@ const SISpinLockManager sSpinLockManager =
 	&sErrorLogger,
 	&sSpinLockStrategy,
 	spinLockCtor,
+	spinLockInit,
 	spinLockAcquire,
 	spinLockRelease
 };
@@ -25,11 +26,24 @@ void spinLockCtor(
     void*            self,
     sleepFunc        slpFuncParam)
 {
-    ISpinLockManager _    = (ISpinLockManager)self;
-	IErrorLogger     elog = _->errorLogger;
+    ISpinLockManager  _     = (ISpinLockManager)self;
+	ISpinLockStrategy slstr = _->slockStrategy;
+	IErrorLogger      elog  = _->errorLogger;
 
     slpSpinFunc = slpFuncParam;
     ASSERT_VOID(elog, slpSpinFunc != NULL);
+
+	slstr->spinLockStratCtor(slstr);
+}
+
+void spinLockInit(
+	void*             self,
+	volatile long*    lock)
+{
+    ISpinLockManager  slm   = (ISpinLockManager)self;
+	ISpinLockStrategy slstr = slm->slockStrategy;
+
+	slstr->initLock(lock);
 }
 
 int spinLockAcquire(
