@@ -38,7 +38,7 @@ void signalCtor(void* self)
 
 	for (i = 0; i < SIGNAL_COUNT; i++)
 	{
-		signalArray[i]    = SIGNAL_IGNORE;
+		signalArray[i]    = SIGNAL_DEFAULT;
 		signalDefaults[i] = SIGNAL_IGNORE;
 	}
     
@@ -61,6 +61,31 @@ void signalCtor(void* self)
 				  "Could not create signal handler thread: error code %lu",
 				  GetLastError());
 
+	/* Create console control handle to pick up Ctrl-C etc */
+	if (!SetConsoleCtrlHandler(consoleHandler, TRUE))
+        elog->log(LOG_FATAL, 
+		          ERROR_CODE_SET_CONSOLE_CTRL_HANDLER, 
+				  "Could not set console control handler: error code %lu",
+				  GetLastError());
+}
+
+/* Console control handler will execute on a thread 
+ * created by the OS at the time of invocation.
+ */
+BOOL WINAPI consoleHandler(
+    void*          self, 
+	DWORD          ctrlType)
+{
+	if (ctrlType == CTRL_C_EVENT ||
+		ctrlType == CTRL_BREAK_EVENT ||
+		ctrlType == CTRL_CLOSE_EVENT ||
+		ctrlType == CTRL_SHUTDOWN_EVENT)
+	{
+		queueSignal(self, SIGNAL_INTERRUPT);
+		return True;
+	}
+
+	return False;
 }
 
 /* Signal handling thread */
@@ -70,6 +95,36 @@ DWORD __stdcall signalThread(LPVOID param)
 	HANDLE		pipe = signalPipe;
 
 	snprintf(pipeName, sizeof(pipeName), "\\\\.\\pipe\\signal_%lu", GetCurrentProcessId());
+}
+
+signalFunc signalMain(
+    void*          self,
+    int            signum, 
+	signalFunc     handler)
+{
+	signalFunc	   prevFunc;
+
+	if (signum >= SIGNAL_COUNT || signum < 0)
+		return SIGNAL_ERROR;
+
+	prevFunc            = signalArray[signum];  
+	signalArray[signum] = handler;
+
+	return prevFunc;
+}
+
+void queueSignal(
+    void*          self, 
+	int            signum)
+{
+	if (signum >= SIGNAL_COUNT || signum <= 0)
+		return;
+
+	EnterCriticalSection(&signalCritSec);
+	signalQueue |= SIGNAL_MASK(signum);
+	LeaveCriticalSection(&signalCritSec);
+
+	SetEvent(signalEvent);
 }
 
 /* Dispatch all queued signals. */
@@ -128,3 +183,5 @@ void dispatchQueuedSignals()
 }
 
 #endif
+
+

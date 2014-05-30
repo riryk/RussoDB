@@ -94,6 +94,7 @@ typedef enum
 #define ERROR_CODE_RESERVE_MEMORY_FAILED    1047
 #define ERROR_CODE_WAIT_FOR_TIMEOUT         1048
 #define ERROR_CODE_TRY_SEMAPHORE_LOCK_FAILED 1049
+#define ERROR_CODE_SET_CONSOLE_CTRL_HANDLER 1050
 
 /* The structure contains complete information 
  * about an error
