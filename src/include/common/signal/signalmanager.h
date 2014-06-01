@@ -14,7 +14,26 @@
 #define SIGNAL_CTRL_BREAK            21      /* Ctrl-Break sequence */
 #define SIGNAL_ABNORMAL_TERMINATION  22      /* abnormal termination triggered by abort call */
 
+
+/* Some extra signal types */
+#define SIGNAL_HUP				     1
+#define SIGNAL_QUIT				     3
+#define SIGNAL_TRAP				     5
+#define SIGNAL_KILL				     9
+#define SIGNAL_PIPE				     13
+#define SIGNAL_ALRM				     14
+#define SIGNAL_STOP				     17
+#define SIGNAL_TSTP				     18
+#define SIGNAL_CONT				     19
+#define SIGNAL_CHLD				     20
+#define SIGNAL_TTIN				     21
+#define SIGNAL_ABRT				     22	     
+#define SIGNAL_WINCH			     28
+#define SIGNAL_USR1				     30
+#define SIGNAL_USR2				     31
+
 #define SIGNAL_COUNT 32
+#define MAX_CREATE_NAMED_PIPES_ATTEMPTS 20
 
 #define SIGNAL_DEFAULT (void (__cdecl *)(int))0        /* default signal action */
 #define SIGNAL_IGNORE (void (__cdecl *)(int))1         /* ignore signal action */      
@@ -37,5 +56,11 @@ typedef void (*signalFunc)(int);
 
 void signalCtor(void* self);
 void dispatchQueuedSignals();
+void queueSignal(int signum);
+DWORD __stdcall signalThreadFunc(LPVOID param);
+
+BOOL WINAPI consoleHandler(
+    void*          self, 
+	DWORD          ctrlType);
 
 #endif

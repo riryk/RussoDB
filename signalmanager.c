@@ -2,6 +2,7 @@
 #include "signalmanager.h"
 #include "error.h"
 #include "errorlogger.h"
+#include "snprintf.h"
 
 #ifdef _WIN32
 
@@ -54,7 +55,7 @@ void signalCtor(void* self)
 				  GetLastError());
 
 	/* Create thread for handling signals */
-	signalThread = CreateThread(NULL, 0, signalThread, NULL, 0, NULL);
+	signalThread = CreateThread(NULL, 0, signalThreadFunc, NULL, 0, NULL);
 	if (signalThread == NULL)
         elog->log(LOG_FATAL, 
 		          ERROR_CODE_CREATE_THREAD_FAILED, 
@@ -88,13 +89,224 @@ BOOL WINAPI consoleHandler(
 	return False;
 }
 
+/* Signal dispatching thread */
+DWORD __stdcall signalDispatchThread(LPVOID param)
+{
+	HANDLE		pipe = (HANDLE) param;
+	BYTE		sigNum;
+	DWORD		bytes;
+
+	if (!ReadFile(pipe, &sigNum, 1, &bytes, NULL))
+	{
+		CloseHandle(pipe);
+		return 0;
+	}
+
+	if (bytes != 1)
+	{
+		/* Received incorrect message through named pipe. */
+		CloseHandle(pipe);
+		return 0;
+	}
+
+	WriteFile(pipe, &sigNum, 1, &bytes, NULL);	
+
+	FlushFileBuffers(pipe);
+	DisconnectNamedPipe(pipe);
+	CloseHandle(pipe);
+
+	queueSignal(sigNum);
+
+	return 0;
+}
+
+/* Create the signal listener pipe for specified PID */
+HANDLE createSignalListener(
+	void*          self, 
+	int            pid)
+{
+    ISignalManager _    = (ISignalManager)self;
+    IErrorLogger   elog = _->errorLogger;
+
+	char	       pipename[128];
+	HANDLE	       pipe;
+
+	snprintf(pipename, 
+		     sizeof(pipename), 
+			 "\\\\.\\pipe\\pgsignal_%u", 
+			 (int)pid);
+
+	pipe = CreateNamedPipe(
+		     pipename, 
+			 PIPE_ACCESS_DUPLEX,
+			 PIPE_TYPE_MESSAGE | PIPE_READMODE_MESSAGE | PIPE_WAIT,
+			 PIPE_UNLIMITED_INSTANCES, 
+			 16, 
+			 16, 
+			 1000, 
+			 NULL);
+
+	if (pipe == INVALID_HANDLE_VALUE)
+        elog->log(LOG_ERROR, 
+		          ERROR_CODE_CREATE_NAMED_PIPE_FAILED, 
+				  "could not create signal listener pipe for process id %d: error code %lu",
+                  pid,
+				  GetLastError());     
+
+	return pipe;
+}
+
 /* Signal handling thread */
-DWORD __stdcall signalThread(LPVOID param)
+DWORD __stdcall signalThreadFunc(LPVOID param)
 {
     char		pipeName[128];
-	HANDLE		pipe = signalPipe;
+	HANDLE		pipe        = signalPipe;
+	int         attemptsNum = 0;
+	DWORD       procId      = GetCurrentProcessId();
 
-	snprintf(pipeName, sizeof(pipeName), "\\\\.\\pipe\\signal_%lu", GetCurrentProcessId());
+	snprintf(pipeName, 
+		     sizeof(pipeName), 
+			 "\\\\.\\pipe\\signal_%u", 
+			 procId);
+
+	CYCLE
+	{
+        BOOL		fConnected;
+		HANDLE		hThread;
+		HANDLE		newpipe;
+
+		if (pipe == INVALID_HANDLE_VALUE)
+		{
+            pipe = CreateNamedPipe(
+				       pipeName, 
+				       PIPE_ACCESS_DUPLEX,
+					   PIPE_TYPE_MESSAGE | PIPE_READMODE_MESSAGE | PIPE_WAIT,
+					   PIPE_UNLIMITED_INSTANCES, 
+					   16, 
+					   16, 
+					   1000, 
+					   NULL);    
+ 
+            if (pipe == INVALID_HANDLE_VALUE)
+			{
+				if (attemptsNum == MAX_CREATE_NAMED_PIPES_ATTEMPTS)
+				{
+                    fprintf(
+						stderr, 
+		                "max number of attempts to create a named pipe has been reached",
+						MAX_CREATE_NAMED_PIPES_ATTEMPTS);
+
+					return 0;
+				}
+
+                attemptsNum++;
+                 
+			    fprintf(
+				    stderr, 
+		            "could not create signal listener pipe: error code %lu; retrying\n",
+                    GetLastError());
+
+				SleepEx(500, FALSE);
+				continue;
+			}
+
+			/* Enables a named pipe server process to wait for a client process 
+			 * to connect to an instance of a named pipe. 
+			 * A client process connects by calling either the CreateFile or CallNamedPipe function. 
+			 */
+			fConnected = ConnectNamedPipe(pipe, NULL);
+
+            if (!fConnected)
+			{
+				DWORD  lastErr = GetLastError();
+
+				if (lastErr != ERROR_PIPE_CONNECTED)
+				{
+                    if (attemptsNum == MAX_CREATE_NAMED_PIPES_ATTEMPTS)
+				    {
+                        fprintf(
+						    stderr, 
+		                    "max number of attempts to create a named pipe has been reached",
+						    MAX_CREATE_NAMED_PIPES_ATTEMPTS);
+
+					    return 0;
+				    }
+
+                    attemptsNum++;
+
+                    fprintf(
+				        stderr, 
+		                "could not connect to a named pipe: error code %lu; retrying\n",
+                        GetLastError());  
+
+					CloseHandle(pipe);
+			        pipe = INVALID_HANDLE_VALUE;
+
+					continue;
+				}
+			}
+
+		    newpipe = CreateNamedPipe(
+				          pipeName, 
+						  PIPE_ACCESS_DUPLEX,
+				          PIPE_TYPE_MESSAGE | PIPE_READMODE_MESSAGE | PIPE_WAIT,
+						  PIPE_UNLIMITED_INSTANCES, 
+						  16, 
+						  16, 
+						  1000, 
+						  NULL);
+
+			if (newpipe == INVALID_HANDLE_VALUE)
+		    { 
+                if (attemptsNum == MAX_CREATE_NAMED_PIPES_ATTEMPTS)
+			    {
+                    fprintf(
+					    stderr, 
+	                    "max number of attempts to create a named pipe has been reached",
+					    MAX_CREATE_NAMED_PIPES_ATTEMPTS);
+
+				    return 0;
+				}
+
+                attemptsNum++;
+
+                fprintf(
+			        stderr, 
+	                "could not create signal listener pipe: error code %lu; retrying\n",
+                    GetLastError());
+			}
+
+			hThread = CreateThread(
+				          NULL, 
+						  0,
+					      (LPTHREAD_START_ROUTINE)signalDispatchThread,
+						  (LPVOID)pipe, 
+						  0, 
+						  NULL);
+
+			if (hThread == INVALID_HANDLE_VALUE)
+			{
+                if (attemptsNum == MAX_CREATE_NAMED_PIPES_ATTEMPTS)
+			    {
+                    fprintf(
+					    stderr, 
+	                    "max number of attempts to create a named pipe has been reached",
+					    MAX_CREATE_NAMED_PIPES_ATTEMPTS);
+
+				    return 0;
+				}
+
+                attemptsNum++;  
+
+                fprintf(
+			        stderr, 
+	                "could not create signal dispatch thread: error code %lu;\n",
+                    GetLastError());
+			}
+		    else
+			    CloseHandle(hThread);
+		}
+	}
 }
 
 signalFunc signalMain(
@@ -113,9 +325,7 @@ signalFunc signalMain(
 	return prevFunc;
 }
 
-void queueSignal(
-    void*          self, 
-	int            signum)
+void queueSignal(int signum)
 {
 	if (signum >= SIGNAL_COUNT || signum <= 0)
 		return;

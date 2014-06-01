@@ -1097,6 +1097,18 @@
 								</File>
 							</Filter>
 						</Filter>
+						<Filter
+							Name="signal"
+							>
+							<Filter
+								Name="signal_main"
+								>
+								<File
+									RelativePath=".\when_signal_main.c"
+									>
+								</File>
+							</Filter>
+						</Filter>
 					</Filter>
 					<Filter
 						Name="memory"

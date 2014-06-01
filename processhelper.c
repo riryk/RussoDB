@@ -63,39 +63,6 @@ Bool getDuplicatedHandle(
 
 #endif
 
-#ifdef _WIN32
-
-/* Create a pipe for listening signals */
-HANDLE createSignalListener(void* self, int pid)
-{
-    IProcessManager _    = (IProcessManager)self;
-	IErrorLogger    elog = _->errorLogger;
-
-	char		pipename[128];
-	HANDLE		pipe;
-
-	snprintf(pipename, sizeof(pipename), "\\\\.\\pipe\\signal_%u", (int)pid);
-
-	pipe = CreateNamedPipe(pipename, 
-		                   PIPE_ACCESS_DUPLEX,
-					       PIPE_TYPE_MESSAGE | PIPE_READMODE_MESSAGE | PIPE_WAIT,
-						   PIPE_UNLIMITED_INSTANCES, 
-						   16, 
-						   16, 
-						   1000, 
-						   NULL);
-
-	if (pipe == INVALID_HANDLE_VALUE)
-        elog->log(LOG_ERROR, 
-		          ERROR_CODE_CREATE_PIPE_FAILED, 
-				  "could not create signal listener pipe for PID %d: error code %lu", 
-                  pid,
-				  GetLastError());
-
-	return pipe;
-}
-
-#endif
 
 Bool fillBackandParams(
     void*            self,
@@ -126,7 +93,7 @@ Bool fillBackandParams(
 
 #ifdef _WIN32
 
-	signListener = createSignalListener(self, childPid);
+	//signListener = createSignalListener(self, childPid);
 
     if (!getDuplicatedHandle(
 		    self,
