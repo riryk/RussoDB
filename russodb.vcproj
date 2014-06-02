@@ -418,6 +418,10 @@
 							>
 						</File>
 						<File
+							RelativePath="src\include\common\signal\signal.h"
+							>
+						</File>
+						<File
 							RelativePath="src\include\common\signal\signalmanager.h"
 							>
 						</File>
@@ -1105,6 +1109,10 @@
 								>
 								<File
 									RelativePath=".\when_signal_main.c"
+									>
+								</File>
+								<File
+									RelativePath=".\when_signal_thread_waiting_for_semaphore.c"
 									>
 								</File>
 							</Filter>

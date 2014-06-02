@@ -7,6 +7,7 @@
 #ifdef _WIN32
 
 HANDLE	          signalEvent;
+HANDLE		      signalThread;
 HANDLE		      signalPipe = INVALID_HANDLE_VALUE;
 CRITICAL_SECTION  signalCritSec;
 
@@ -20,12 +21,11 @@ const SISignalManager sSignalManager =
 {
     &sErrorLogger,
 	signalCtor,
-	dispatchQueuedSignals
+	dispatchQueuedSignals,
+	signalDtor
 };
 
 const ISignalManager  signalManager  = &sSignalManager;
-
-DWORD __stdcall signalThread(LPVOID param);
 
 void signalCtor(void* self)
 {
@@ -33,7 +33,6 @@ void signalCtor(void* self)
     IErrorLogger    elog = _->errorLogger;
 
     int			    i;
-	HANDLE		    signalThread;
 
 	InitializeCriticalSection(&signalCritSec);
 
@@ -68,6 +67,12 @@ void signalCtor(void* self)
 		          ERROR_CODE_SET_CONSOLE_CTRL_HANDLER, 
 				  "Could not set console control handler: error code %lu",
 				  GetLastError());
+}
+
+void signalDtor(void* self)
+{
+    TerminateThread(signalThread, 0); 
+    CloseHandle(signalThread);
 }
 
 /* Console control handler will execute on a thread 
@@ -309,7 +314,7 @@ DWORD __stdcall signalThreadFunc(LPVOID param)
 	}
 }
 
-signalFunc signalMain(
+signalFunc setSignal(
     void*          self,
     int            signum, 
 	signalFunc     handler)
@@ -344,10 +349,10 @@ void dispatchQueuedSignals()
 
 	EnterCriticalSection(&signalCritSec);
 
-	while (QUEUE_LEFT)
+	while (QUEUE_LEFT())
 	{
         /* Get queue mask that represent queued signals. */
-		int	   mask = QUEUE_LEFT;   
+		int	   mask = QUEUE_LEFT();   
 
 		for (i = 0; i < SIGNAL_COUNT; i++)
 		{

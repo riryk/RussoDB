@@ -26,6 +26,12 @@ typedef struct SIThreadHelper
 	     void*            self,
 	     TEvent           eventToWait);
 
+	void (*waitForMultipleEvents)(
+	     void*            self,
+	     TEvent*          eventsToWait,
+	     int              eventsCount,
+	     Bool             waitAll);
+
 } SIThreadHelper, *IThreadHelper;
 
 #endif

@@ -61,6 +61,42 @@ void waitForEvent(
 	}
 }
 
+void waitForMultipleEvents(
+	void*          self,
+	TEvent*        eventsToWait,
+	int            eventsCount,
+	Bool           waitAll)
+{
+    IThreadHelper  _    = (IThreadHelper)self;
+	IErrorLogger   elog = _->errorLogger;
+
+	DWORD          result;
+
+	result = WaitForMultipleObjects(
+		        eventsCount,
+                eventsToWait,
+                waitAll,
+                INFINITE);
+
+    switch (result)
+	{
+	/* In this case we have successfully waited for the event. */
+	case WAIT_OBJECT_0:
+        elog->log(LOG_LOG, 
+		          0, 
+				  "Successfully waited for the events"); 
+		break;
+    
+	/* When we are here, probably some error has happened. */
+    default:
+        elog->log(LOG_ERROR, 
+		          ERROR_CODE_WAIT_FOR_SINGLE_OBJECT_FAILED, 
+				  "Wait for single object failed: error code %lu",
+				  GetLastError()); 
+		break;
+	}
+}
+
 #endif
 
 TThread startThread(

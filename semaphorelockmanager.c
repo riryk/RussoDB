@@ -16,7 +16,6 @@ const SISemaphoreLockManager sSemaphoreLockManager =
 { 
 	&sErrorLogger,
 	&sSignalManager,
-	signalCtor,
 	dispatchQueuedSignals,
 	semaphoreCreate,
 	semaphoresCtor,

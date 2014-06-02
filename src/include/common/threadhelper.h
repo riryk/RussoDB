@@ -21,7 +21,13 @@ TThread startThread(
 void spinWait(int spinMaxCount);
 
 void waitForEvent(
-	void*       self,
-	TEvent      eventToWait);
+	void*            self,
+	TEvent           eventToWait);
+
+void waitForMultipleEvents(
+	void*            self,
+	TEvent*          eventsToWait,
+	int              eventsCount,
+	Bool             waitAll);
 
 #endif

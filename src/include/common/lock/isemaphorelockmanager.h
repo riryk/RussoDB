@@ -12,8 +12,6 @@ typedef struct SISemaphoreLockManager
 	IErrorLogger       errorLogger;
     ISignalManager     signalManager; 
 
-	void (*signalCtor)(void* self);
-
 	void (*dispatchQueuedSignals)();
 
 	void (*semaphoreCreate)(
