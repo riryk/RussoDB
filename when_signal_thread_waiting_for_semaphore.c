@@ -16,7 +16,8 @@ ISemaphoreLockManager slm_stwfs;
 TThread        thread_working_stwfs;
 TThread        thread_error_stwfs;
 TEvent         event_stwfs;
-TSemaphore     sem_stwfs; 
+long           sem_id_stwfs = 0;
+TSemaphore     sem_stwfs    = &sem_id_stwfs; 
 
 int            signal_interrupt_func_calls_stwfs   = 0;
 
@@ -39,6 +40,7 @@ SETUP_DEPENDENCIES(signal_thread_waiting_for_semaphore)
 
 	slm_stwfs = (ISemaphoreLockManager)malloc(sizeof(SISemaphoreLockManager));
     slm_stwfs->errorLogger          = &sFakeErrorLogger;
+	slm_stwfs->signalManager        = sm_stwfs;
     slm_stwfs->semaphoresCtor       = semaphoresCtor;
     slm_stwfs->semaphoreCreate      = semaphoreCreate;
 	slm_stwfs->lockSemaphore        = lockSemaphore;
@@ -56,15 +58,13 @@ void signal_interrupt_func_stwfs  ()
 
 DWORD WINAPI workingThreadFunc_stwfs(LPVOID lpParam) 
 {
-    Sleep(1000);
-
 	slm_stwfs->lockSemaphore(slm_stwfs, sem_stwfs);
 }
 
 DWORD WINAPI errorThreadFunc_stwfs(LPVOID lpParam) 
 {
-    Sleep(100000);
-    
+    th_stwfs->waitForEvent(th_stwfs, event_stwfs); 
+
 	sm_stwfs->queueSignal(SIGNAL_INTERRUPT);
 }
 
@@ -108,6 +108,9 @@ WHEN(signal_thread_waiting_for_semaphore)
 	eventsToWait[0] = thread_working_stwfs;
     eventsToWait[1] = thread_error_stwfs;
 
+    Sleep(1000);
+	SetEvent(event_stwfs);
+
 	th_stwfs->waitForMultipleEvents(th_stwfs, eventsToWait, 2, True);
 }
 
@@ -122,14 +125,15 @@ TEST_TEAR_DOWN(signal_thread_waiting_for_semaphore)
 	free(sm_stwfs);
 }
 
-TEST(signal_thread_waiting_for_semaphore, then_test)
+TEST(signal_thread_waiting_for_semaphore, then_signal_interrupt_handler_must_be_called)
 {
-	TEST_ASSERT_EQUAL_INT(1, 1);
+	TEST_ASSERT_EQUAL_INT(signal_interrupt_func_calls_stwfs, 1);
 }
 
 TEST_GROUP_RUNNER(signal_thread_waiting_for_semaphore)
 {
-    RUN_TEST_CASE(signal_thread_waiting_for_semaphore, then_test);
+    RUN_TEST_CASE(signal_thread_waiting_for_semaphore, 
+		          then_signal_interrupt_handler_must_be_called);
 }
 
 

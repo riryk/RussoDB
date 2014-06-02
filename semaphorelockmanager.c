@@ -128,14 +128,19 @@ void lockSemaphore(
            signMan->dispatchQueuedSignals();
 		   errno = EINTR;
 	   }
-
-	   /* If result is the second wait handler it means that
-	    * we have got the semaphore.
-	    */
-	   if (ret == WAIT_OBJECT_0 + 1)
-	       errno = EINTR;
-
-	} while (errno == EINTR);
+	   else if (ret == WAIT_OBJECT_0 + 1)
+	   {
+		   /* If result is the second wait handler it means that
+	        * we have got the semaphore.
+	        */
+           errno = 0;
+	   }
+	   else
+	   {
+		   errno = EIDRM;
+	   }
+	} 
+	while (errno == EINTR);
 
 	if (errno != EINTR)
         elog->log(LOG_FATAL, 
