@@ -32,4 +32,9 @@ signalFunc setSignal(
 void queueSignal(int signum);
 void dispatchQueuedSignals();
 
+int sentSignal(
+	void*          self, 
+	int            pid,
+	int            signal);
+
 #endif

@@ -21,6 +21,11 @@ typedef struct SISignalManager
 
 	void (*queueSignal)(int signum);
 
+	int (*sentSignal)(
+	     void*          self, 
+	     int            pid,
+	     int            signal);
+
 } SISignalManager, *ISignalManager;
 
 

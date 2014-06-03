@@ -14,4 +14,7 @@ void process_func_request(char* funcName)
 
     if (strcmp(funcName, "proc_func_slaiaps") == 0) 
 		proc_func_slaiaps(); 
+
+    if (strcmp(funcName, "proc_func_sstap") == 0) 
+		proc_func_sstap(); 
 }

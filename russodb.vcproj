@@ -1108,6 +1108,10 @@
 								Name="signal_main"
 								>
 								<File
+									RelativePath=".\when_send_signal_to_another_process.c"
+									>
+								</File>
+								<File
 									RelativePath=".\when_signal_main.c"
 									>
 								</File>

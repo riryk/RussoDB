@@ -3,6 +3,7 @@
 #include "error.h"
 #include "errorlogger.h"
 #include "snprintf.h"
+#include "errno.h"
 
 #ifdef _WIN32
 
@@ -22,7 +23,10 @@ const SISignalManager sSignalManager =
     &sErrorLogger,
 	signalCtor,
 	dispatchQueuedSignals,
-	signalDtor
+	signalDtor,
+    setSignal,
+	queueSignal,
+	sentSignal
 };
 
 const ISignalManager  signalManager  = &sSignalManager;
@@ -138,7 +142,7 @@ HANDLE createSignalListener(
 
 	snprintf(pipename, 
 		     sizeof(pipename), 
-			 "\\\\.\\pipe\\pgsignal_%u", 
+			 "\\\\.\\pipe\\signal_%u", 
 			 (int)pid);
 
 	pipe = CreateNamedPipe(
@@ -159,6 +163,62 @@ HANDLE createSignalListener(
 				  GetLastError());     
 
 	return pipe;
+}
+
+int sentSignal(
+	void*          self, 
+	int            pid,
+	int            signal)
+{
+    ISignalManager _    = (ISignalManager)self;
+    IErrorLogger   elog = _->errorLogger;
+
+    char	       pipename[128];
+	BYTE           signalData = signal;
+	BYTE           signalRet  = 0;
+	DWORD          bytesCount;
+    
+	if (signal >= SIGNAL_COUNT || signal < 0)
+	{
+		errno = EINVAL;
+		return -1;
+	}
+
+	if (pid <= 0)
+	{
+		errno = EINVAL;
+		return -1;
+	}
+   
+    snprintf(pipename, 
+		     sizeof(pipename), 
+			 "\\\\.\\pipe\\signal_%u", 
+			 pid);
+
+    if (CallNamedPipe(pipename, &signalData, 1, &signalRet, 1, &bytesCount, 20000))
+	{
+		if (bytesCount != 1 || signalRet != signal)
+		{
+			errno = ESRCH;
+			return -1;
+		}
+		return 0;
+	}
+    
+    if (GetLastError() == ERROR_FILE_NOT_FOUND)
+	{
+		errno = ESRCH;
+		return -1;
+	}
+
+	if (GetLastError() == ERROR_ACCESS_DENIED)
+	{
+		errno = EPERM;
+		return -1;
+	}
+	
+	errno = EINVAL;
+	return -1;
 }
 
 /* Signal handling thread */
@@ -214,55 +274,20 @@ DWORD __stdcall signalThreadFunc(LPVOID param)
 				SleepEx(500, FALSE);
 				continue;
 			}
+		}
 
-			/* Enables a named pipe server process to wait for a client process 
-			 * to connect to an instance of a named pipe. 
-			 * A client process connects by calling either the CreateFile or CallNamedPipe function. 
-			 */
-			fConnected = ConnectNamedPipe(pipe, NULL);
+		/* Enables a named pipe server process to wait for a client process 
+		 * to connect to an instance of a named pipe. 
+		 * A client process connects by calling either the CreateFile or CallNamedPipe function. 
+		 */
+		fConnected = ConnectNamedPipe(pipe, NULL);
 
-            if (!fConnected)
+        if (!fConnected)
+		{
+			DWORD  lastErr = GetLastError();
+
+			if (lastErr != ERROR_PIPE_CONNECTED)
 			{
-				DWORD  lastErr = GetLastError();
-
-				if (lastErr != ERROR_PIPE_CONNECTED)
-				{
-                    if (attemptsNum == MAX_CREATE_NAMED_PIPES_ATTEMPTS)
-				    {
-                        fprintf(
-						    stderr, 
-		                    "max number of attempts to create a named pipe has been reached",
-						    MAX_CREATE_NAMED_PIPES_ATTEMPTS);
-
-					    return 0;
-				    }
-
-                    attemptsNum++;
-
-                    fprintf(
-				        stderr, 
-		                "could not connect to a named pipe: error code %lu; retrying\n",
-                        GetLastError());  
-
-					CloseHandle(pipe);
-			        pipe = INVALID_HANDLE_VALUE;
-
-					continue;
-				}
-			}
-
-		    newpipe = CreateNamedPipe(
-				          pipeName, 
-						  PIPE_ACCESS_DUPLEX,
-				          PIPE_TYPE_MESSAGE | PIPE_READMODE_MESSAGE | PIPE_WAIT,
-						  PIPE_UNLIMITED_INSTANCES, 
-						  16, 
-						  16, 
-						  1000, 
-						  NULL);
-
-			if (newpipe == INVALID_HANDLE_VALUE)
-		    { 
                 if (attemptsNum == MAX_CREATE_NAMED_PIPES_ATTEMPTS)
 			    {
                     fprintf(
@@ -271,46 +296,92 @@ DWORD __stdcall signalThreadFunc(LPVOID param)
 					    MAX_CREATE_NAMED_PIPES_ATTEMPTS);
 
 				    return 0;
-				}
+			    }
 
                 attemptsNum++;
 
                 fprintf(
 			        stderr, 
-	                "could not create signal listener pipe: error code %lu; retrying\n",
-                    GetLastError());
+	                "could not connect to a named pipe: error code %lu; retrying\n",
+                    GetLastError());  
+
+				CloseHandle(pipe);
+		        pipe = INVALID_HANDLE_VALUE;
+
+				continue;
 			}
+	    }
 
-			hThread = CreateThread(
-				          NULL, 
-						  0,
-					      (LPTHREAD_START_ROUTINE)signalDispatchThread,
-						  (LPVOID)pipe, 
-						  0, 
-						  NULL);
+		/* If we have a successfully connected named pipe, we 
+		 * pass it along to a working thread that will read and process data.
+		 * But this process can be very fast and the working thread can 
+		 * close the pipe before we create a new one. In this case we can miss
+		 * some requests. So we create a new named pipe.
+		 */
+	    newpipe = CreateNamedPipe(
+			          pipeName, 
+					  PIPE_ACCESS_DUPLEX,
+			          PIPE_TYPE_MESSAGE | PIPE_READMODE_MESSAGE | PIPE_WAIT,
+					  PIPE_UNLIMITED_INSTANCES, 
+					  16, 
+					  16, 
+					  1000, 
+					  NULL);
 
-			if (hThread == INVALID_HANDLE_VALUE)
-			{
-                if (attemptsNum == MAX_CREATE_NAMED_PIPES_ATTEMPTS)
-			    {
-                    fprintf(
-					    stderr, 
-	                    "max number of attempts to create a named pipe has been reached",
-					    MAX_CREATE_NAMED_PIPES_ATTEMPTS);
-
-				    return 0;
-				}
-
-                attemptsNum++;  
-
+		if (newpipe == INVALID_HANDLE_VALUE)
+	    { 
+            if (attemptsNum == MAX_CREATE_NAMED_PIPES_ATTEMPTS)
+		    {
                 fprintf(
-			        stderr, 
-	                "could not create signal dispatch thread: error code %lu;\n",
-                    GetLastError());
+				    stderr, 
+                    "max number of attempts to create a named pipe has been reached",
+				    MAX_CREATE_NAMED_PIPES_ATTEMPTS);
+
+			    return 0;
 			}
-		    else
-			    CloseHandle(hThread);
+
+            attemptsNum++;
+
+            fprintf(
+		        stderr, 
+                "could not create signal listener pipe: error code %lu; retrying\n",
+                GetLastError());
 		}
+
+		hThread = CreateThread(
+			          NULL, 
+					  0,
+				      (LPTHREAD_START_ROUTINE)signalDispatchThread,
+					  (LPVOID)pipe, 
+					  0, 
+					  NULL);
+
+		if (hThread == INVALID_HANDLE_VALUE)
+		{
+            if (attemptsNum == MAX_CREATE_NAMED_PIPES_ATTEMPTS)
+		    {
+                fprintf(
+				    stderr, 
+                    "max number of attempts to create a named pipe has been reached",
+				    MAX_CREATE_NAMED_PIPES_ATTEMPTS);
+
+			    return 0;
+			}
+
+            attemptsNum++;  
+
+            fprintf(
+		        stderr, 
+                "could not create signal dispatch thread: error code %lu;\n",
+                GetLastError());
+		}
+	    else
+		    CloseHandle(hThread);
+
+		/* Our background thread is processing our old pipe. 
+		 * So we need to substitute pipe with the new one.
+		 */
+        pipe = newpipe;
 	}
 }
 
