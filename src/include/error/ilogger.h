@@ -24,6 +24,7 @@ typedef struct SILogger
 	     int                 count);
     
 	void (*logger_start)(void*  self);
+	void (*logger_main) (void*  self);
 
 } SILogger, *ILogger;
 

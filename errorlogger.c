@@ -167,7 +167,7 @@ Bool beginError(
     
 	einf->domain = (domain != NULL) ?
                 domain :
-                "postgres";
+                "russo";
 
 	einf->errorCode = ERROR_CODE_SUCCESS;
 

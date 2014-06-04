@@ -8,6 +8,11 @@
 #include "nodes.h"
 #include "ilogger.h"
 #include "snprintf.h"
+#include "latchmanager.h"
+#include "errorlogger.h"
+#include "trackmemmanager.h"
+#include "listmanager.h"
+#include "processhelper.h"
 
 FILE*  logFile       = NULL;
 
@@ -16,6 +21,23 @@ Bool              redirect_done       = False;
 Latch             loggerLatch         = NULL;
 char*             loggerDirectory     = NULL;
 int64             loggerFileTimeFirst = 0;
+
+const SILogger sLogger = 
+{ 
+	&sLatchManager,
+    &sErrorLogger,
+	&sStringManager,
+	&sTrackMemManager,
+    &sListManager,
+    &sProcessManager,
+    ctorLogger,
+	write_message_file,
+	logger_start,
+    logger_main
+};
+
+const ILogger logger = &sLogger;
+
 
 #ifdef WIN32
 
@@ -163,10 +185,11 @@ int logger_start(void*  self)
 	IMemoryManager   mm     = (IMemoryManager)_->memManager;
 	IProcessManager  prcman = (IProcessManager)_->processManager;
 
-	char*  filename;
-	int    res;
-	int	   fileDesc;
-    int    mkdirres;
+	char*            filename;
+	int              res;
+	int	             fileDesc;
+    int              mkdirres;
+	char*            pm_args[4];
 
     /* First time we enter here we create the pipe that will
 	 * receive all information from all stderrs from all processes.
@@ -208,7 +231,12 @@ int logger_start(void*  self)
 	logFile  = logFileOpen(_, filename, "a");
 	mm->free(filename);
 
-    res = prcman->startSubProcess(prcman, 0, NULL);
+	pm_args[0] = "---";
+    pm_args[1] = "logger";
+    pm_args[2] = NULL;
+    pm_args[3] = NULL;
+
+    res = prcman->startSubProcess(prcman, 0, pm_args);
 	if (res == -1)
         elog->log(LOG_ERROR, 
 		      ERROR_CODE_DIR_CREATE_FAILED, 
@@ -218,9 +246,24 @@ int logger_start(void*  self)
 	{
 		/* Do stderr redirection. */
 		fflush(stderr);
+
+		/* Associates a C run-time file descriptor with 
+		 * an existing operating-system file handle. 
+		 * The first parameter is an operating system handle.
+		 * If the function runs successfully, _open_osfhandle
+		 * returns a C run-time file descriptor, otherwise it
+		 * returns -1. 
+		 */
 		fileDesc = _open_osfhandle((intptr_t)logPipe[1], 
 								   _O_APPEND | _O_BINARY);
 
+        /* _fileno returns the file descriptor.  
+		 * The _dup and _dup2 functions associate a second 
+		 * file descriptor with a currently open file. 
+		 * After applying this function all messages that are 
+		 * being written to stderr stream will be redirected 
+		 * to fileDesc which is a named pipe write edge.
+		 */
 		if (dup2(fileDesc, _fileno(stderr)) < 0)   
 			elog->log(LOG_ERROR, 
 				  ERROR_CODE_STDERR_REDIRECT_FAILED, 
@@ -439,7 +482,7 @@ uint __stdcall pipeThread(
 		if (bytesRead > 0)
 		{
             bufbytes += bytesRead;
-
+            
 		}
 
 		LeaveCriticalSection(&logSection);

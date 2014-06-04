@@ -1,5 +1,17 @@
 #include "listmanager.h"
 #include "nodes.h"
+#include "errorlogger.h"
+#include "trackmemmanager.h"
+
+const SIListManager sListManager = 
+{ 
+	&sErrorLogger,
+    &sTrackMemManager,
+    getListHead,
+	listAppend
+};
+
+const IListManager listManager = &sListManager;
 
 ListCell getListHead(List list)
 {

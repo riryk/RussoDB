@@ -29,6 +29,7 @@ GIVEN(logger_start)
 WHEN(logger_start)
 {
     ll_ls->logger_start(ll_ls);
+    Sleep(9000000);
 }
 
 TEST_TEAR_DOWN(logger_start)

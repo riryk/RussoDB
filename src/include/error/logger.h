@@ -48,11 +48,15 @@ extern char*  loggerDirectory;
 extern List*  buffer_lists[BUFFER_LISTS_COUNT];
 extern HANDLE logPipe[2];
 
+extern const SILogger sLogger;
+extern const ILogger logger;
+
 void ctorLogger(void* self, char* logDir);
 void write_message_file(
 	char*               buffer, 
 	int                 count);
 uint __stdcall pipeThread(void *arg);
 int logger_start(void*  self);
+void logger_main(void*  self);
 
 #endif
