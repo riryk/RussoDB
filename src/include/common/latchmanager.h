@@ -7,8 +7,9 @@
 extern const SILatchManager sLatchManager;
 extern const ILatchManager  latchManager;
 
-void initLatch(void* self, Latch latch);
+Latch initLatch(void* self);
 void setLatch(Latch latch);
 void resetLatch(Latch latch);
+void waitLatch(void* self, Latch latch);
 
 #endif

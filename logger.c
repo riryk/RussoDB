@@ -30,6 +30,7 @@ const SILogger sLogger =
 	&sTrackMemManager,
     &sListManager,
     &sProcessManager,
+	&sSignalManager,
     ctorLogger,
 	write_message_file,
 	logger_start,
@@ -78,9 +79,14 @@ void write_message_file(
 
 void logger_main(void*  self)
 {
-	ILogger        _    = (ILogger)self;
-    ILatchManager  lm   = (ILatchManager)_->latchManager;
-	IErrorLogger   elog = (IErrorLogger)_->errorLogger;
+	ILogger         _    = (ILogger)self;
+    ILatchManager   lm   = (ILatchManager)_->latchManager;
+	IErrorLogger    elog = (IErrorLogger)_->errorLogger;
+	ISignalManager  sm   = (ISignalManager)_->signalManager;
+	IProcessManager pm   = (IProcessManager)_->processManager;
+
+	sm->signalCtor(sm);
+    loggerLatch = lm->initLatch(lm);
 
     if (redirect_done)
 	{
@@ -108,24 +114,24 @@ void logger_main(void*  self)
 
 #endif
 
-    lm->initLatch(lm, loggerLatch);
+    loggerLatch = lm->initLatch(lm);
 
 #ifdef WIN32
     
     InitializeCriticalSection(&logSection);
-    EnterCriticalSection(&logSection);
-    
-    threadHandle = (HANDLE)_beginthreadex(NULL, 0, pipeThread, NULL, 0, NULL);
+
+    threadHandle = (HANDLE)_beginthreadex(NULL, 0, pipeThread, _, 0, NULL);
 	if (threadHandle == 0)
         elog->log(LOG_FATAL, 
 		          ERROR_CODE_CREATE_THREAD_FAILED, 
 				  "could not create syslogger data transfer thread");
-
+    
 #endif
     
     CYCLE
 	{
 		lm->resetLatch(loggerLatch);
+        lm->waitLatch(lm, loggerLatch);
         break;
 	}
 }
@@ -444,8 +450,7 @@ void processLogBuffer(
 
 /* This method transfers data from the pipe to the current log file. */
 uint __stdcall pipeThread(
-    void*       self,
-	void*       arg)
+    void*       self)
 {
 	char   buf[READ_BUF_SIZE];
 	int	   bufbytes = 0;

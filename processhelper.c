@@ -20,7 +20,9 @@ const SIProcessManager sProcessManager =
 	&sErrorLogger,
 	startSubProcess,
     subProcessMain,
-    killAllSubProcesses
+    killAllSubProcesses,
+	restoreBackandParams,
+	restoreBackendParamsFromSharedMemory
 };
 
 const IProcessManager processManager = &sProcessManager;
@@ -109,6 +111,33 @@ Bool fillBackandParams(
 	return True;
 }
 
+Bool restoreBackandParams(
+    void*            self,
+	BackendParams    param)
+{
+    strcpy(DataDir, param->dataDir, MAX_PATH);
+
+    memcpy(ListenSockets, &param->listenSockets, sizeof(socket_type));
+
+    CancelKey   = param->cancelKey;
+    ChildSlot   = param->childSlot;
+
+	ProcId      = GetProcessId(GetCurrentProcess());
+
+	StartTime   = param->startTime;
+    ReloadTime  = param->reloadTime;
+
+    LoggerFileTime     = param->loggerFileTime;
+    RedirectDone       = param->redirectDone;
+    maxFileDescriptors = param->maxSafeFileDescriptors;
+
+	memcpy(&logPipe, &param->logPipe, sizeof(logPipe));
+
+	strcpy(ExecPath, param->execPath);
+
+	return True;
+}
+
 #ifdef _WIN32
 
 /* This code gets executed when a child process is terminated. */
@@ -194,6 +223,59 @@ BOOL SetPrivilege(
 }
 
 #endif
+
+BackendParams  restoreBackendParamsFromSharedMemory(void* self)
+{
+	IProcessManager  _    = (IProcessManager)self;
+	IErrorLogger     elog = _->errorLogger;
+
+    BackendParams    paramSm;
+    HANDLE           hMapFile;
+
+	hMapFile = OpenFileMapping(
+		           FILE_MAP_ALL_ACCESS, 
+				   FALSE,
+                   sharedMemParamsName);
+
+    if (hMapFile == NULL)
+        elog->log(LOG_ERROR, 
+		          ERROR_CODE_FILE_OPEN_MAPPING_FAILED, 
+				  "could not open file mapping object: error code %lu",
+				  GetLastError());
+
+	/* Maps a view of a file mapping into the address space of a calling process. */
+	paramSm = (BackendParams)
+		          MapViewOfFile(
+				     hMapFile, 
+					 FILE_MAP_ALL_ACCESS,
+					 0, 
+					 0, 
+					 sizeof(SBackendParams));
+	if (!paramSm)
+	{
+        elog->log(LOG_ERROR, 
+		          ERROR_CODE_MAP_MEMORY_TO_FILE, 
+				  "could not map backend parameter memory: error code %lu", 
+				  GetLastError());
+
+		CloseHandle(paramSm);
+		return -1;
+	}
+
+	if (!UnmapViewOfFile(paramSm))
+        elog->log(LOG_ERROR, 
+		          ERROR_CODE_UNMAP_VIEW_OF_FILE, 
+				  "could not unmap view of backend parameter file: error code %lu",
+				  GetLastError());
+
+	if (!CloseHandle(hMapFile))
+        elog->log(LOG_ERROR, 
+		          ERROR_CODE_CLOSE_HANDLER_FAILED, 
+				  "could not close handle to backend parameter file: error code %lu",
+				  GetLastError());
+
+	return paramSm;
+}
 
 TProcess startSubProcess(void* self, int argc, char* argv[])
 {
@@ -448,54 +530,8 @@ int subProcessMain(void* self, int argc, char* argv[])
 	IProcessManager  _    = (IProcessManager)self;
 	IErrorLogger     elog = _->errorLogger;
 
-    char             str[80];
-    BackendParams    paramSm;
-    HANDLE           hMapFile;
-   
-    printf("Enter a string: ");
-    fgets(str, 10, stdin);
-
-	hMapFile = OpenFileMapping(
-		           FILE_MAP_ALL_ACCESS, 
-				   FALSE,
-                   sharedMemParamsName);
-
-    if (hMapFile == NULL)
-        elog->log(LOG_ERROR, 
-		          ERROR_CODE_FILE_OPEN_MAPPING_FAILED, 
-				  "could not open file mapping object: error code %lu",
-				  GetLastError());
-
 	/* Maps a view of a file mapping into the address space of a calling process. */
-	paramSm = (BackendParams)
-		          MapViewOfFile(
-				     hMapFile, 
-					 FILE_MAP_ALL_ACCESS,
-					 0, 
-					 0, 
-					 sizeof(SBackendParams));
-	if (!paramSm)
-	{
-        elog->log(LOG_ERROR, 
-		          ERROR_CODE_MAP_MEMORY_TO_FILE, 
-				  "could not map backend parameter memory: error code %lu", 
-				  GetLastError());
-
-		CloseHandle(paramSm);
-		return -1;
-	}
-
-	if (!UnmapViewOfFile(paramSm))
-        elog->log(LOG_ERROR, 
-		          ERROR_CODE_UNMAP_VIEW_OF_FILE, 
-				  "could not unmap view of backend parameter file: error code %lu",
-				  GetLastError());
-
-	if (!CloseHandle(hMapFile))
-        elog->log(LOG_ERROR, 
-		          ERROR_CODE_CLOSE_HANDLER_FAILED, 
-				  "could not close handle to backend parameter file: error code %lu",
-				  GetLastError());
+	paramSm = restoreBackendParamsFromSharedMemory();
 }
 
 #endif

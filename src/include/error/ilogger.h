@@ -4,6 +4,7 @@
 #include "imemcontainermanager.h"
 #include "ilistmanager.h"
 #include "iprocesshelper.h"
+#include "isignalmanager.h"
 
 #ifndef ILOGGER_H
 #define ILOGGER_H
@@ -16,6 +17,7 @@ typedef struct SILogger
     IMemoryManager        memManager;
     IListManager          listManager;
     IProcessManager       processManager;
+	ISignalManager        signalManager;
 
 	void (*ctorLogger)(void* self, char* logDir);
 
