@@ -1,5 +1,6 @@
 #include "processhelper.h"
 #include "errorlogger.h"
+#include "trackmemmanager.h"
 
 #ifdef _WIN32
 #include "TlHelp32.h"
@@ -18,6 +19,7 @@ ProcBackData  backendProc = NULL;
 const SIProcessManager sProcessManager = 
 { 
 	&sErrorLogger,
+	&sTrackMemManager,
 	startSubProcess,
     subProcessMain,
     killAllSubProcesses,
@@ -226,11 +228,16 @@ BOOL SetPrivilege(
 
 BackendParams  restoreBackendParamsFromSharedMemory(void* self)
 {
-	IProcessManager  _    = (IProcessManager)self;
-	IErrorLogger     elog = _->errorLogger;
+	IProcessManager  _      = (IProcessManager)self;
+	IErrorLogger     elog   = _->errorLogger;
+	IMemoryManager   memMan = _->memManager;
 
     BackendParams    paramSm;
+	BackendParams    paramSmCpy = (BackendParams)memMan->alloc(sizeof(SBackendParams));
+
     HANDLE           hMapFile;
+
+    IMemoryManager   memManager;
 
 	hMapFile = OpenFileMapping(
 		           FILE_MAP_ALL_ACCESS, 
@@ -262,6 +269,8 @@ BackendParams  restoreBackendParamsFromSharedMemory(void* self)
 		return -1;
 	}
 
+	memcpy(paramSmCpy, paramSm, sizeof(SBackendParams));
+
 	if (!UnmapViewOfFile(paramSm))
         elog->log(LOG_ERROR, 
 		          ERROR_CODE_UNMAP_VIEW_OF_FILE, 
@@ -274,7 +283,7 @@ BackendParams  restoreBackendParamsFromSharedMemory(void* self)
 				  "could not close handle to backend parameter file: error code %lu",
 				  GetLastError());
 
-	return paramSm;
+	return paramSmCpy;
 }
 
 TProcess startSubProcess(void* self, int argc, char* argv[])
@@ -527,11 +536,13 @@ TProcess startSubProcess(void* self, int argc, char* argv[])
 
 int subProcessMain(void* self, int argc, char* argv[])
 {
-	IProcessManager  _    = (IProcessManager)self;
-	IErrorLogger     elog = _->errorLogger;
+	IProcessManager  _       = (IProcessManager)self;
+	IErrorLogger     elog    = _->errorLogger;
 
-	/* Maps a view of a file mapping into the address space of a calling process. */
-	paramSm = restoreBackendParamsFromSharedMemory();
+	/* Maps a view of a file mapping into 
+	 * the address space of a calling process. 
+	 */
+	BackendParams    paramSm = _->restoreBackendParamsFromSharedMemory(_);
 }
 
 #endif

@@ -85,6 +85,14 @@ void logger_main(void*  self)
 	ISignalManager  sm   = (ISignalManager)_->signalManager;
 	IProcessManager pm   = (IProcessManager)_->processManager;
 
+	BackendParams   backParam    = pm->restoreBackendParamsFromSharedMemory(pm);  
+    Bool            backParamRes = pm->restoreBackandParams(pm, backParam);
+
+	if (backParamRes == False)
+	{
+	    return;
+	}
+
 	sm->signalCtor(sm);
     loggerLatch = lm->initLatch(lm);
 
@@ -488,6 +496,7 @@ uint __stdcall pipeThread(
 		{
             bufbytes += bytesRead;
             
+			_->processLogBuffer(_, buf, bufbytes);
 		}
 
 		LeaveCriticalSection(&logSection);

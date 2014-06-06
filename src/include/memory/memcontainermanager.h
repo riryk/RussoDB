@@ -1,9 +1,15 @@
 #include "imemcontainermanager.h"
 
+#ifndef MEMCONTAINERMANAGER_H
+#define MEMCONTAINERMANAGER_H
+
 extern unsigned char Log2Table[256];
 
 extern MemoryContainer topMemCont;
 extern MemoryContainer currentMemCont;
+
+extern const SIMemContainerManager sMemContainerManager;
+extern const IMemContainerManager  memContainerManager;
 
 void ctorMemContMan(
     void*            self, 
@@ -59,3 +65,6 @@ void freeChunk(
 void resetMemContainer(
     void*              self,
 	MemoryContainer    cont);
+
+#endif
+

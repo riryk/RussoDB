@@ -29,7 +29,8 @@ const SIErrorLogger sErrorLogger =
 	assertArg,
 	assert,
 	log,
-	writeException
+	writeException,
+	writeMessageInChunks
 };
 
 const IErrorLogger errorManager = &sErrorLogger;

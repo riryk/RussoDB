@@ -5,11 +5,15 @@
 #include "fakeerrorlogger.h"
 #include "logger.h"
 #include "processhelper.h"
+#include "confmanager.h"
+#include "errorlogger.h"
 
 TEST_GROUP(logger_start);
 
-ILogger  ll_ls;
-char*    log_folder_ls = "logs";
+ILogger       ll_ls;
+IErrorLogger  er_ls;
+char*         log_folder_ls = "logs";
+char*         test_message  = "I am a large test message.";
 
 SETUP_DEPENDENCIES(logger_start) 
 {
@@ -19,6 +23,11 @@ SETUP_DEPENDENCIES(logger_start)
     ll_ls->processManager = &sProcessManager;
     ll_ls->ctorLogger     = ctorLogger;
 	ll_ls->logger_start   = logger_start;
+
+    er_ls = (IErrorLogger)malloc(sizeof(SIErrorLogger));
+	er_ls->confManager          = &sConfManager;
+	er_ls->memContManager       = &sMemContainerManager;
+	er_ls->writeMessageInChunks = writeMessageInChunks;
 }
 
 GIVEN(logger_start) 
@@ -29,7 +38,10 @@ GIVEN(logger_start)
 WHEN(logger_start)
 {
     ll_ls->logger_start(ll_ls);
-    Sleep(9000000);
+
+    Sleep(5000);
+
+    er_ls->writeMessageInChunks(er_ls, test_message, strlen(test_message)); 
 }
 
 TEST_TEAR_DOWN(logger_start)

@@ -1,5 +1,5 @@
 #include "memcontainermanager.h"
-#include "ierrorlogger.h"
+#include "errorlogger.h"
 #include <stdio.h>
 
 /* This table matches n to log2(n) + 1 
@@ -24,6 +24,22 @@ FFree    funcFree    = NULL;
 FRealloc funcRealloc = NULL;
 
 typedef void* (*FRealloc)(void* mem, size_t size);
+
+const SIMemContainerManager sMemContainerManager = 
+{ 
+	&sErrorLogger,
+    ctorMemContMan,
+	resetErrCont,
+	changeToErrorContainer,
+	dtorMemContMan,
+	memContCreate,
+	memSetCreate,
+	allocateMemory,
+	resetMemoryFromSet,
+	freeChunk
+};
+
+const IMemContainerManager memContainerManager = &sMemContainerManager;
 
 void ctorMemContMan(
     void*            self, 

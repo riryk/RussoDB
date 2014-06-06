@@ -1,8 +1,9 @@
 
+#include "common.h"
+#include "ierrorlogger.h"
+
 #ifndef ERRORLOGGER_H
 #define ERRORLOGGER_H
-
-#include "common.h"
 
 extern const SIErrorLogger sErrorLogger;
 extern const IErrorLogger errorManager;
@@ -18,5 +19,9 @@ void writeException(
      char*    errType,
 	 char*    fileName,
 	 int      lineNum);
+void writeMessageInChunks(
+     void*    self,
+     char*    data, 
+	 int      len);
 
 #endif

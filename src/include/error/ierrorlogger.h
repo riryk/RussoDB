@@ -9,6 +9,7 @@ typedef struct SIErrorLogger
 {
 	IConfManager   confManager;
 	IStringManager strManager;
+
 	void*          logger;
 	void*          memContManager;
 
@@ -20,6 +21,10 @@ typedef struct SIErrorLogger
            char*    errType,
 	       char*    fileName,
 	       int      lineNum);
+	void (*writeMessageInChunks)(
+           void*    self,
+           char*    data, 
+	       int      len);
 } SIErrorLogger, *IErrorLogger;
 
 #endif
