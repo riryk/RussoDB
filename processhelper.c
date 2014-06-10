@@ -24,7 +24,8 @@ const SIProcessManager sProcessManager =
     subProcessMain,
     killAllSubProcesses,
 	restoreBackandParams,
-	restoreBackendParamsFromSharedMemory
+	restoreBackendParamsFromSharedMemory,
+	fillBackandParams
 };
 
 const IProcessManager processManager = &sProcessManager;
@@ -84,6 +85,8 @@ Bool fillBackandParams(
 
 	param->segmId    = NULL;
 	param->segmAddr  = NULL;
+
+	ProcId           = GetProcessId(GetCurrentProcess());
 	param->processId = ProcId;
 
 	param->startTime      = StartTime;
@@ -99,12 +102,17 @@ Bool fillBackandParams(
 
 	//signListener = createSignalListener(self, childPid);
 
-    if (!getDuplicatedHandle(
-		    self,
-			&(param->initPipe), 
-	        signListener, 
-	        childProcess))
-		return False;
+	if (childProcess == NULL)
+	{
+        if (!getDuplicatedHandle(
+		       self,
+			   &(param->initPipe), 
+	           signListener, 
+	           childProcess))
+		{
+		    return False;
+		}
+	}
 
 #endif
 

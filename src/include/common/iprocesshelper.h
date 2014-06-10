@@ -15,6 +15,12 @@ typedef struct SIProcessManager
 	void (*killAllSubProcesses)();
 	Bool (*restoreBackandParams)(void* self, BackendParams param);
 	BackendParams (*restoreBackendParamsFromSharedMemory)(void* self);
+	Bool (*fillBackandParams)(
+           void*            self,
+	       BackendParams    param, 
+	       HANDLE           childProcess, 
+	       int              childPid);
+
 } SIProcessManager, *IProcessManager;
 
 #endif

@@ -22,11 +22,26 @@ typedef struct SILogger
 	void (*ctorLogger)(void* self, char* logDir);
 
 	void (*write_message_file)(
-	     char*               buffer, 
-	     int                 count);
+	       char*       buffer, 
+	       int         count);
     
 	void (*logger_start)(void*  self);
+
 	void (*logger_main) (void*  self);
+
+	void (*processLogBuffer)(
+	       void*       self,
+           char*       buf, 
+	       int*        buf_bytes);
+
+	char* (*getLogFileName)(
+           void*       self,
+	       int         time);
+
+	FILE* (*logFileOpen)(
+           void*       self,
+	       char*       filename,
+	       char*       mode);
 
 } SILogger, *ILogger;
 

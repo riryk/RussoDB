@@ -52,11 +52,29 @@ extern const SILogger sLogger;
 extern const ILogger logger;
 
 void ctorLogger(void* self, char* logDir);
+
 void write_message_file(
 	char*               buffer, 
 	int                 count);
+
 uint __stdcall pipeThread(void *arg);
+
 int logger_start(void*  self);
+
 void logger_main(void*  self);
+
+void processLogBuffer(
+	void*       self,
+    char*       buf, 
+	int*        buf_bytes);
+
+char* getLogFileName(
+    void*       self,
+	int         time);
+
+FILE* logFileOpen(
+    void*       self,
+	char*       filename,
+    char*       mode);
 
 #endif

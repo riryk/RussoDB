@@ -14,6 +14,7 @@
 #include "listmanager.h"
 #include "processhelper.h"
 
+char*  fileName      = NULL; 
 FILE*  logFile       = NULL;
 
 /* stderr has already been redirected for syslogger? */
@@ -34,7 +35,10 @@ const SILogger sLogger =
     ctorLogger,
 	write_message_file,
 	logger_start,
-    logger_main
+    logger_main,
+	processLogBuffer,
+	getLogFileName,
+	logFileOpen
 };
 
 const ILogger logger = &sLogger;
@@ -63,10 +67,16 @@ void ctorLogger(void* self, char* logDir)
 
 /* Writes a message directly to an opened log file */
 void write_message_file(
-	char*               buffer, 
-	int                 count)
+    void*         self,
+	char*         buffer, 
+	int           count)
 {
-	int			result;
+	ILogger       _    = (ILogger)self;
+    IErrorLogger  elog = (IErrorLogger)_->errorLogger;
+
+	int			  result;
+
+	ASSERT_VOID(elog, buffer != NULL);
 
 	result = fwrite(buffer, 1, count, logFile);
 
@@ -74,10 +84,14 @@ void write_message_file(
 	 * We should report an error.
 	 */
 	if (result != count)
-		; // Should report an error
+	{
+        elog->log(LOG_ERROR, 
+		          ERROR_CODE_FWRITE_FAILED, 
+				  "could not create syslogger data transfer thread");
+	}
 }
 
-void logger_main(void*  self)
+void logger_main(void*  self, char* fileNameParam)
 {
 	ILogger         _    = (ILogger)self;
     ILatchManager   lm   = (ILatchManager)_->latchManager;
@@ -127,6 +141,8 @@ void logger_main(void*  self)
 #ifdef WIN32
     
     InitializeCriticalSection(&logSection);
+    
+	fileName = fileNameParam;
 
     threadHandle = (HANDLE)_beginthreadex(NULL, 0, pipeThread, _, 0, NULL);
 	if (threadHandle == 0)
@@ -154,7 +170,7 @@ char* getLogFileName(
     char*           filename;
 
     filename = (char*)memman->alloc(MAX_PATH);
-    snprintf(filename, MAX_PATH, "%s/%u.log", loggerDirectory, time);
+    snprintf(filename, MAX_PATH, "%s/%u.log", loggerDirectory, 1000);
 
 	return filename;
 }
@@ -240,15 +256,12 @@ int logger_start(void*  self)
 	}
 
 	loggerFileTimeFirst = time(NULL);
-	filename = getLogFileName(_, loggerFileTimeFirst);
-
-	logFile  = logFileOpen(_, filename, "a");
-	mm->free(filename);
+	fileName = getLogFileName(_, loggerFileTimeFirst);
 
 	pm_args[0] = "---";
     pm_args[1] = "logger";
     pm_args[2] = NULL;
-    pm_args[3] = NULL;
+    pm_args[3] = fileName;
 
     res = prcman->startSubProcess(prcman, 0, pm_args);
 	if (res == -1)
@@ -291,8 +304,6 @@ int logger_start(void*  self)
 	}
 
     /* postmaster will never write the file; close it */
-    fclose(logFile);
-	logFile = NULL;
 	return (int)res;
 }
 
@@ -345,7 +356,7 @@ void processLogBuffer(
 			}
 
 			/* fall back on the stderr log as the destination */
-			write_message_file(cursor, hdr.len);
+			write_message_file(_, cursor, hdr.len);
 
 			cursor += chunklen;
 			count  -= chunklen;
@@ -424,6 +435,7 @@ void processLogBuffer(
 		{
 			/* The whole message was one chunk, evidently. */
 		    write_message_file(
+				_,
 				cursor + PIPE_CHUNK_HEADER_SIZE, 
 				hdr.len);
 
@@ -438,7 +450,7 @@ void processLogBuffer(
 					  cursor + PIPE_CHUNK_HEADER_SIZE,
 					  hdr.len);
 
-		write_message_file(str->data, str->len);
+		write_message_file(_, str->data, str->len);
         
 		existing_buf->proc_id = 0;
 		memman->free(str->data);
@@ -460,22 +472,26 @@ void processLogBuffer(
 uint __stdcall pipeThread(
     void*       self)
 {
+	int    bufSize  = READ_BUF_SIZE;
 	char   buf[READ_BUF_SIZE];
 	int	   bufbytes = 0;
-    
+
     ILogger      _    = (ILogger)self;
     IErrorLogger elog = (IErrorLogger)_->errorLogger;
 
     CYCLE
 	{
-        DWORD	bytesRead;
-		BOOL    result;
+        DWORD	         bytesRead;
+		BOOL             result;
+        UPipeProtoChunk* chunk;
 
         result = ReadFile(logPipe[0],
 						  buf + bufbytes,
 						  sizeof(buf) - bufbytes,
 						  &bytesRead, 
 						  0); 
+
+		chunk = (UPipeProtoChunk*)(buf + bufbytes);
 
         EnterCriticalSection(&logSection);
 
@@ -492,12 +508,16 @@ uint __stdcall pipeThread(
 				  "could not read from logger pipe");
 		}
 
+		logFile  = logFileOpen(_, fileName, "a");
+
 		if (bytesRead > 0)
 		{
             bufbytes += bytesRead;
             
-			_->processLogBuffer(_, buf, bufbytes);
+			_->processLogBuffer(_, buf, &bufbytes);
 		}
+
+        fclose(logFile);
 
 		LeaveCriticalSection(&logSection);
 	}

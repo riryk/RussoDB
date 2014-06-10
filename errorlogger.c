@@ -314,8 +314,11 @@ void writeMessageInChunks(
 	int              len)
 {
     UPipeProtoChunk  p;
-	int			     fd = fileno(stderr);
+
+	int			     fd           = fileno(stderr);
 	int			     result;
+    int              chunkHdrSize = PIPE_CHUNK_HEADER_SIZE;
+	int              chunkSize    = chunkHdrSize + len; 
 
 	assertCond(len > 0);
 
@@ -338,7 +341,7 @@ void writeMessageInChunks(
 	p.header.len    = len;
 	
 	memcpy(p.header.data, data, len);
-	result = write(fd, &p, PIPE_CHUNK_HEADER_SIZE + len);
+	result = write(fd, &p, chunkSize);
 }
 
 void sendToServer(
