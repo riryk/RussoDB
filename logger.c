@@ -475,6 +475,7 @@ uint __stdcall pipeThread(
 	int    bufSize  = READ_BUF_SIZE;
 	char   buf[READ_BUF_SIZE];
 	int	   bufbytes = 0;
+	void*  buf_start;
 
     ILogger      _    = (ILogger)self;
     IErrorLogger elog = (IErrorLogger)_->errorLogger;
@@ -512,9 +513,10 @@ uint __stdcall pipeThread(
 
 		if (bytesRead > 0)
 		{
+            buf_start = buf + bufbytes;
             bufbytes += bytesRead;
             
-			_->processLogBuffer(_, buf, &bufbytes);
+			_->processLogBuffer(_, buf_start, &bufbytes);
 		}
 
         fclose(logFile);

@@ -14,9 +14,10 @@ ILogger         ll_ls;
 IErrorLogger    er_ls;
 IProcessManager proc_ls;
 
-char*           log_folder_ls = "logs";
-char*           test_message  = "I am a large test message.";
-FILE*           log_file_ls   = NULL;
+char*           log_folder_ls       = "logs";
+char*           test_short_message  = "I am a large test message.";
+char*           test_long_message   = "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA";
+FILE*           log_file_ls         = NULL;
 
 BackendParams   param_ls; 
 char*           log_file_name_ls;
@@ -67,16 +68,27 @@ WHEN(logger_start)
 
     Sleep(5000);
 
-    er_ls->writeMessageInChunks(er_ls, test_message, strlen(test_message)); 
+    er_ls->writeMessageInChunks(er_ls, test_short_message, strlen(test_short_message)); 
+	er_ls->writeMessageInChunks(er_ls, test_long_message,  strlen(test_long_message));
 
 	Sleep(5000);
 }
 
 TEST_TEAR_DOWN(logger_start)
 {
-	int res = rmdir(log_folder_ls);
+	int res, res_file;
+	char str[100];
 
 	proc_ls->killAllSubProcesses();
+
+	strcpy(str, "logs\\");
+	strcpy(str, log_file_name_ls);
+
+    res_file = remove(str);
+    res      = rmdir(log_folder_ls);
+
+    TEST_ASSERT_EQUAL_INT(res, 0);
+
 	proc_ls->memManager->freeAll();
 
 	free(proc_ls);
@@ -84,22 +96,37 @@ TEST_TEAR_DOWN(logger_start)
     free(er_ls);
 }
 
-TEST(logger_start, then_test)
+TEST(logger_start, then_the_message_should_be_written_to_the_log_file)
 {
 	size_t  read_size;
 	size_t  buf_size = 1024;
     char    buf_dest[1024];
+	int     cmp_results;
+    char    str[2000];
+	int     short_msg_len;
 
-	log_file_ls = ll_ls->logFileOpen(ll_ls, log_file_name_ls, "a");
+	memset(buf_dest, 0, buf_size);
 
-	read_size   = fread(buf_dest, buf_size, buf_size, log_file_ls);
+	log_file_ls = ll_ls->logFileOpen(ll_ls, log_file_name_ls, "r");
+
+	read_size   = fread(buf_dest, 1, buf_size, log_file_ls);
 
 	fclose(log_file_ls);
+
+	strcpy(str, test_short_message);
+
+	short_msg_len = strlen(test_short_message);
+
+	strcpy(str + short_msg_len, test_long_message);
+
+	cmp_results = strcmp(str, buf_dest);
+
+	TEST_ASSERT_EQUAL_INT(cmp_results, 0);
 }
 
 TEST_GROUP_RUNNER(logger_start)
 {
-    RUN_TEST_CASE(logger_start, then_test);
+    RUN_TEST_CASE(logger_start, then_the_message_should_be_written_to_the_log_file);
 }
 
 
