@@ -384,10 +384,10 @@ void processLogBuffer(
                 free_buf = buf;
 		}
 
-        isChunkLast = hdr.isLast == 'f' || hdr.isLast == 'F';
+        isChunkLast = hdr.isLast == 't' || hdr.isLast == 'T';
 
 		/* If the buffer is not the last */
-		if (isChunkLast)
+		if (!isChunkLast)
 		{
 			/* Save a complete non-final chunk in a per process id buffer */
             if (existing_buf != NULL)
@@ -400,7 +400,7 @@ void processLogBuffer(
 						  str, 
 						  cursor + PIPE_CHUNK_HEADER_SIZE,
 						  hdr.len);
-				break;
+				continue;
 			}
 
             /* We have not found an existing buffer where to put a buffer.
@@ -427,7 +427,7 @@ void processLogBuffer(
 			cursor += chunklen;
 		    count  -= chunklen;
 
-			break;
+		    continue;
 	    }
 
         /* Process the final chunk */
@@ -438,6 +438,9 @@ void processLogBuffer(
 				_,
 				cursor + PIPE_CHUNK_HEADER_SIZE, 
 				hdr.len);
+
+			cursor += chunklen;
+		    count  -= chunklen;
 
 			break;
 		}
@@ -461,7 +464,7 @@ void processLogBuffer(
 		break;
 	}
 
-    /* We don't have a full chunk, so left-align what remains in the buffer */
+	/* We don't have a full chunk, so left-align what remains in the buffer */
 	if (count > 0 && cursor != buf)
 		memmove(buf, cursor, count);
 
@@ -475,8 +478,7 @@ uint __stdcall pipeThread(
 	int    bufSize  = READ_BUF_SIZE;
 	char   buf[READ_BUF_SIZE];
 	int	   bufbytes = 0;
-	void*  buf_start;
-
+	
     ILogger      _    = (ILogger)self;
     IErrorLogger elog = (IErrorLogger)_->errorLogger;
 
@@ -492,7 +494,7 @@ uint __stdcall pipeThread(
 						  &bytesRead, 
 						  0); 
 
-		chunk = (UPipeProtoChunk*)(buf + bufbytes);
+		chunk = (UPipeProtoChunk*)(buf);
 
         EnterCriticalSection(&logSection);
 
@@ -512,11 +514,10 @@ uint __stdcall pipeThread(
 		logFile  = logFileOpen(_, fileName, "a");
 
 		if (bytesRead > 0)
-		{
-            buf_start = buf + bufbytes;
-            bufbytes += bytesRead;
-            
-			_->processLogBuffer(_, buf_start, &bufbytes);
+		{  
+			bufbytes += bytesRead;
+
+			_->processLogBuffer(_, buf, &bufbytes);
 		}
 
         fclose(logFile);

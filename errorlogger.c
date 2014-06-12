@@ -341,7 +341,7 @@ void writeMessageInChunks(
 	p.header.len    = len;
 	
 	memcpy(p.header.data, data, len);
-	result = write(fd, &p, chunkSize);
+	result = write(fd, &p, PIPE_CHUNK_HEADER_SIZE + len);
 }
 
 void sendToServer(

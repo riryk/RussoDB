@@ -64,12 +64,15 @@ GIVEN(logger_start)
 
 WHEN(logger_start)
 {
+	int  short_msg_len = strlen(test_short_message);
+	int  long_msg_len  = strlen(test_long_message);
+
     ll_ls->logger_start(ll_ls);
 
     Sleep(5000);
 
-    er_ls->writeMessageInChunks(er_ls, test_short_message, strlen(test_short_message)); 
-	er_ls->writeMessageInChunks(er_ls, test_long_message,  strlen(test_long_message));
+    er_ls->writeMessageInChunks(er_ls, test_short_message, short_msg_len); 
+	er_ls->writeMessageInChunks(er_ls, test_long_message,  long_msg_len);
 
 	Sleep(5000);
 }
