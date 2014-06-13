@@ -1,4 +1,4 @@
-
+﻿
 SQL Server:
 
 To stimulate the Deadlock, let’s create two tables 
@@ -284,6 +284,7 @@ if there are a lot of different keys.
 
 
 67. Difference between EXISTS and IN in SQL?
+
 
 EXISTS will be faster because once the engine has found a hit, 
 it will quit looking as the condition has proved true. 

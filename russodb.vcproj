@@ -703,6 +703,10 @@
 					RelativePath=".\logger.c"
 					>
 				</File>
+				<File
+					RelativePath=".\logger.txt"
+					>
+				</File>
 			</Filter>
 			<Filter
 				Name="memory"

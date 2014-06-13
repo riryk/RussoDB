@@ -60,5 +60,31 @@ Infinite loop:
    mov reg, mem 
    read register value  
 
+6. Adjusting spin lock strategy.
+
+Spin lock manager accepts a ISpinLockStrategy interface. 
+
+ISpinLockStrategy initLock(TSpinLock lock) method initializes 
+lock. When we our spin lock strategy in classic SpinLockStrategy, 
+we just set lock to 0. When we have our lock strategy SpinLockSemaphoreStrategy
+we create a semaphore and set it to our lock.
+
+ISpinLockStrategy tryLock(TSpinLock lock) method tries to apply a lock.
+When we can't apply the lock we usually wait. When we have our lock strategy
+set to SpinLockSemaphoreStrategy, tryLock method usually waits for the 
+semaphore to get signalled. And when we successfully waited for the semaphore to
+be signalled it automatically gets unsignalled and other backends have to wait.
+
+ISpinLockStrategy delay() method is supplemental method for delay, that makes
+the processor to do some additional optimization. 
+
+ISpinLockStrategy unLock(TSpinLock lock) method releases the lock. When a backend
+has been waiting for a semaphore to get signalled and finally gets signalled, the 
+current backend gets control and semaphore becomes unsignalled. So other backends 
+should wait. Unlock method calls ReleseSemaphore method that makes the semaphore 
+signalled and someone else can acquire the lock.
+
+
+
 
  

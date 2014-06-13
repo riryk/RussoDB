@@ -1,29 +1,71 @@
 
-void Error(const char* format,...)
-{
-   va_list arglist;
+
+  1. IHS. 
+
+  Created SQL Server 2000 dts package to migrate data from Oracle to Sql Sever.
+  Fixed bugs in MS Access 2003 in Visual Basic.  
+
+
+ 
+  2. IPREO Retail project.
+
+  When there is a company and company grows large and is lookig for investors.
+  A bank manager creates a new deal new document that can be bonds, stocks.
+  They type some information about money costs and ather different fields.
+
+  My role. Implemented Create Deal page. This is the page with many fields.
+  And the main problem was that different banks needed different fields 
+  and they wanted to change layout. 
+
+  So on the server side there was a configuration. .NET objects. Then if was 
+  converted to JSon and passed along to client Java Script. Java Script generated 
+  controls dynamically and also adjusted layout according to settings. 
+
+  Also I fixed small issues, bugs with Java Script.
+
+
+
+  3. MSB Insurance. 
+
+  Web application that collects building construction parameters 
+  and estimates the cost needed for reconstruction in case a catastrophy happens.
+
+  Created a command line utility to for data migration and transformation from old 
+  BVS MS Sql Database to new CHUP datbase. Database structure was different. 
+  Create File Storage RESTful Web Service for uploading business photos and documents
+  using Java Script and Ajax technologies. Created AJAX Web pages for viewing, editing and 
+  uploading attachments. 
+  
+  Also business needed to find a building on Bing map and user can see the building 
+  from different angles and save it. Used Microsoft Bing Map API.
+
+  Also created some reports that took records from Raven DB.
+  
+
+
+  4. Ukrainian Post.
+  
+  Created a WCF Service, central service for whole Ukraine. There were Delphi desktop client
+  that used .NET dll that made queries to WCF service. WCF Service accepted mobile phone
+  and the money for replenishment and saved this into database and also performed integration
+  with Global Money gateway. Did async requests and waited for actual status.
+
+
+  5. Data warehouse in Informix for tracking all information about parcels and 
+  letters. 
+
+  All events and all routes that the parcel went through. 
+  Writing reports and optimizing sql queries. Very large volume of data. 
+  5-10 millions per day.
+
+  6. Desktop program for tracking all periodical publications (newspapers, journals)
+    Program that allows Post workers to distribute newspapers among trucks.
+    And also assigns trucks to specific routes.
+  
    
-   va_start(arglist, format);
-   
-   
-   
-   va_end(args); 
-}
-
-??????? ???? ??? ????? ?????? ???? ????????
-
-1.37:02
-
-Liliane Tiger
 
 
 
 
 
-public static int Main(string[] args)
-        {
-            var aa = new WhenIPostAdd();
-            aa.then_add_user_command_should_be_sent();
 
-            return 0;
-        }
