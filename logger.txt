@@ -1,0 +1,235 @@
+
+1. Start logger.
+
+  We launch the main russo db central process and it starts all
+auxiliary processes. One of them is logger. 
+
+  From the start we create an anonymous pipe with two ends: 
+read end and write end. Then the logger folder is created.
+After that we launch a new logger process. This will be the 
+second part of our description. 
+
+  Then do the redirection of stderr to our named pipe. 
+From the start we associates a C run-time file descriptor 
+which is the write end of the anonymous pipe. 
+with an existing operating-system file handle using _open_osfhandle
+
+  With dup2 function we associate stderr thread with the write end 
+of the anonymous pipe. After this all messages that are written 
+to stderr will be automatically redirected to the named pipe.
+
+2. Start logger listener process.
+
+  The central russo db process creates shared memory for parameters 
+fills in the named pipes and launches a new logger backend process.
+Logger main process opens the shared memory for parameters, 
+retrieves the anonymous named pipe. 
+
+  Then we initialize an exit latch. And at the end of the method 
+we wait for this latch to be signalled. It can be signalled from 
+console or from outside using signalling mechanism.
+
+  Then we start the thread that will listen to the named pipe and 
+process all incoming messages.
+
+3. Message protocol description.
+
+3.1 Client method description.
+
+   When we write a short message. The max chunk length if 512. 
+The chunk header length is sizeof(UPipeProtoChunk) = 13
+So that the maximum data length is 512 - 13 = 499.  
+The short message is a message with the length < 499.
+
+   The memory for the short message looks like:
+ -------------------------------------------------------------- -------------------------------------
+| nul[0] | nul[1] |    len   |   pid    | isLast |  alignment  |         data 
+ -------------------------------------------------------------- -------------------------------------  
+|        |        |          |          |        |             |
+|--------|--------|----------|----------|--------|-------------|-------------------------------------
+  1 byte   1 byte   4 bytes    4 bytes    1 byte     2 bytes
+ 
+ 1 + 1 + 4 + 4 + 1 = 
+
+And we will have the structure: 
+
+PipeChunkHeader  hdr;
+hdr->len    = some_len;         And  some_len < 499
+hdr->pid    = current proc id;      
+hdr->isLast = true;
+hdr->data   = "message data";
+
+   When we have a long message. For example:
+   
+msg = "I am a long message................. <end of the message>"
+Let's len(msg) = 1800;
+The maximum part of the message that can fit into a chunk is 499.
+So we have 1800 \ 499 = 3.7  We round it to 4. 
+So we will have 3 complete parts and one half completed.
+The length of the last chunk is 1800 - 499 * 3 = 1800 - 1497 = 303
+
+3 completed parts will look like:
+
+| <-----------------------> | <-----------------------------------> |
+|     | len | isLast |      |                                       |
+|     | 499 |   f    |      |       Some part of the data           |
+|---------------------------|---------------------------------------| 
+  sizeof(SPipeChunkHeader)                   data           
+       13 bytes                           499 bytes          
+       
+The last part will look like: 
+
+| <-----------------------> | <-----------------------------------> |
+|     | len | isLast |      |                           |           |
+|     | 303 |   t    |      | The last part of the data |           |
+|---------------------------|---------------------------------------| 
+  sizeof(SPipeChunkHeader)                   data           
+       13 bytes                           499 bytes          
+       
+       
+Client will write 4 messages into the stderr thread which then 
+will be redirected to the named pipe. 
+
+       
+3.2 Server method description.       
+
+On the server side we have a thread that will listen to the named pipe.
+It launches a cycle and waits for ReadFile function to return.
+ReadFile function reads bytes from named pipe which is a queue and then 
+processes them. 
+
+Step 1. 
+
+It reads bytes and puts them into the buffer   
+
+char buf[1024];  our buffer
+int  count = 0;  is the number of bytes in the array.
+
+From the start count is equal to 1024.
+Then we parse the first header and find out that this buffer is not 
+the last. 
+
+
+
+3.3 Buffer list cache organisation.
+
+buffer_lists:
+--------------      ---------
+0             | -> |  empty  |
+--------------      ---------
+1             | -> |  empty  |
+--------------      ---------      -----------      ----------               ----------  
+2             | -> |  item 1 | -> |  item 2   | -> |  item 3  | --> ... --> |  item n  |
+--------------      ---------      -----------      ----------               ----------
+3             | 
+--------------
+....          | 
+--------------      ----------      -----------      -----------              -----------
+254           | -> |  item k1 | -> |  item k2  | -> |  item k3  | -> ... --> | item km   | 
+--------------      ----------      -----------      -----------              -----------
+255           | 
+--------------
+
+We have buffer_lists collection 256 lists. 
+When we have some message that was sent from the process pid = some_pid
+we calculate an appropriate buffer list: 
+
+buffer_list_id = some_pid % 256
+
+all pids:  256 * k + buffer_list_id  will go to the buffer list: buffer_list_id.
+
+The example of one buffer list:
+
+----------            ------------      --------------             --------------
+i         | -------> | proc_id_01 | -> |  proc_id_02  | -> ... -> |  proc_id_0k  | 
+----------            ------------      --------------             --------------
+
+All k items are from different processes and these processes are described 
+by the following formula:
+
+proc_id_01 = 256 * 0 + i
+proc_id_02 = 256 * 1 + i
+....
+proc_id_0m = 256 * m + i
+....
+proc_id_0k = 256 * (k - 1) + i
+
+A List item will look like:
+
+             ------------------------
+buffer_im = | proc_id = 256 * m + i  |
+            | data    = <empty>      |
+             ------------------------  
+
+From the start we look for a buffer with  proc_id = 256 * m + i
+And from the start we do not find it. So we need to create an empty buffer
+with proc_id set to 256 * m + i and data = <empty>.
+Then we set data to <The first part>. len(<The first part>) = 499
+
+The first step:
+
+             ----------------------------
+buffer_im = | proc_id = 256 * m + i      |
+            | data    = <The first part> |
+             ----------------------------  
+
+Then we substract 512 from count and receive count = 512.
+Compare 512 with (int)sizeof(SPipeChunkHeader): 
+512 >= (int)sizeof(SPipeChunkHeader) 
+
+Then we find the existing buffer by process id and append <The second part>
+to the data:
+
+             -------------------------------------------------
+buffer_im = | proc_id = 256 * m + i                           |
+            | data    = <The first part> | <The second part>  |
+             -------------------------------------------------  
+
+After substraction 512 from count, we get count = 0
+So we call ReadFile again. For example if we have read the whole buffer:
+
+ -----------------------------------------------------------------------------------------------------------------------------
+| prod_id1  len  |                           | prod_id2  len   |                        | prod_id3   len  |                   |
+|   1222    388  |   ******  data ******     |  1333     200   |  ******* data *******  |  1444       512 | ****** data ***** | 
+|                |                           |                 |                        |                 |                   |
+ ----------------------------------------------------------------------------------------------------------------------------- 
+                 |          388              |                 |          200           |                 |      410          |
+                 |---------------------------|                 |------------------------|                 |-------------------|
+                 
+We read the first header and see that this is the last 
+chunk. So we read the first 388 bytes, find the existing buffer 
+and append the data to the existing string and since this buffer is
+the last we flush the data to the file on a disk.
+
+After that we receive count = 1024 - 388 - 13 = 623 > sizeof(SPipeChunkHeader) = 13
+Then parse the next header and see that len = 200 < count. 
+So that we read the message body and if it is a last message we write it out to the file.
+
+Then count = 623 - 200 - 13 = 410 and it is more than > sizeof(SPipeChunkHeader) = 13 
+So we can easily parse the header and see that the chunk len is 512 which is more than 410
+That means that we can't process this chunk. We need to read the last part of the message.
+
+We move the first (410 + 13) bytes from the end of the buffer to the beginning. 
+and then execute function ReadFile on buffer + 410 + 13. This function will write 
+the ending of the message to the buffer. And after that we can process it.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+       
+       
+       
