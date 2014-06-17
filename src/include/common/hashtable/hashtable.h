@@ -4,7 +4,7 @@
 #include "error.h"
 #include "imemorymanager.h"
 #include "hashfunctions.h"
-
+#include "semaphore.h"
 
 #ifndef HASHTABLE_H
 #define HASHTABLE_H
@@ -63,14 +63,13 @@ typedef HashSegment* AHashSegment; /* A array of HashSegments */
 
 typedef struct SHashtable
 {
+	TSemaphore              mutex;
 	Bool		            isInShared;		/* is in shared memory */
 	Bool		            noEnlarge;  		
 	Bool		            noInserts;	    
 	uint	                keyLen;		    
     uint                    valLen;
-
 	char*                   name;		    /* name */
-
     /* Each hashtable consists of an array os segments.
 	 * Each segment is a list of a hash items linked lists. */
     AHashSegment            segments;	    
@@ -83,6 +82,7 @@ typedef struct SHashtable
 	uint                    nSegs;
 	uint                    hashListSize;
 	HashItem*               startSegm;		
+	/* Number of partiotions. It should be power of 2 */
 	uint                    partNum;
     hashFunc                hashFunc;	    /* hash function */
 	hashCmpFunc             hashCmp;
@@ -110,9 +110,14 @@ typedef struct SHashtable
 #define HASH_LIST_SIZE          0x020
 #define HASH_ITEM		        0x040
 #define HASH_WITHOUT_EXTENTION  0x080
+#define HASH_PARTITION          0x100
+#define HASH_SHARED_MEMORY      0x200
+
 
 #define GET_HASH_KEY(item)           ((char*)item + ALIGN_DEFAULT(sizeof(SHashItem)))
 #define GET_HASH_VALUE(key, keyLen)  ((char*)key + ALIGN_DEFAULT(keyLen))
+#define IS_TABLE_PARTITIONED(table)  ((table)->partNum != 0)
+
 
 #define Max(x, y)		((x) > (y) ? (x) : (y))
 

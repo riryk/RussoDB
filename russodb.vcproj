@@ -1529,6 +1529,14 @@
 							RelativePath=".\fakeerrorlogger.c"
 							>
 						</File>
+						<Filter
+							Name="process_error"
+							>
+							<File
+								RelativePath=".\when_process_error_log.c"
+								>
+							</File>
+						</Filter>
 					</Filter>
 					<Filter
 						Name="logger"

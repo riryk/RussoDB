@@ -43,8 +43,8 @@ typedef struct SIStringManager
 
 } SIStringManager, *IStringManager;
 
-extern const SIStringManager sStringManager;
-extern const IStringManager strManager;
+extern SIStringManager sStringManager;
+extern IStringManager strManager;
 
 void initStringInfo(
 	void*             self,

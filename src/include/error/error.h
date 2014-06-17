@@ -143,6 +143,10 @@ typedef struct SErrorCallback
 } SErrorCallback, *ErrorCallback;
 
 
+#define PROCESS_ERROR_LOG(logger, level, domain, rest) \
+   ((logger)->beginError((logger), (level), __FILE__, __LINE__, NULL, domain) ? \
+   ((logger)->endError((logger), rest)) : (void)0) 
+
 #define ASSERT(logger, condition, retval) \
 	if (!(condition)) \
     { \
