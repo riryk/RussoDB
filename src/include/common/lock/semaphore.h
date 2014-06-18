@@ -6,7 +6,8 @@
 
 #ifdef _WIN32
 
-typedef HANDLE* TSemaphore;
+typedef HANDLE     Semaphore;
+typedef Semaphore* TSemaphore;
 
 #define EIDRM 4096
 #define SEMAPHORE_WAIT_TIMEOUT 1000000

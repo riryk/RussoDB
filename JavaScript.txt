@@ -147,7 +147,19 @@
 
    
     4.4 Object.create, Object.getPrototypeOf
-
+    
+      var animal = { eats: true }
+      rabbit = Object.create(animal)
+      alert(rabbit.eats)              // true
+	  rabbit.jumps = true
+      
+      var animal = {
+        eats: true
+      }
+	  
+      rabbit = Object.create(animal)
+      alert( Object.getPrototypeOf(rabbit) === animal ) // true
+        	  
      
 	  
 	  

@@ -100,6 +100,7 @@ typedef enum
 #define ERROR_CODE_WAIT_FOR_MULTIPLE_OBJECTS_FAILED 1053
 #define ERROR_CODE_READ_FILE_FAILED         1054
 #define ERROR_CODE_FWRITE_FAILED            1055
+#define ERROR_CODE_FAILED_TO_INIT_HASHTABLE 1056
 
 /* The structure contains complete information 
  * about an error

@@ -63,7 +63,7 @@ typedef HashSegment* AHashSegment; /* A array of HashSegments */
 
 typedef struct SHashtable
 {
-	TSemaphore              mutex;
+	Semaphore               mutex;
 	Bool		            isInShared;		/* is in shared memory */
 	Bool		            noEnlarge;  		
 	Bool		            noInserts;	    
