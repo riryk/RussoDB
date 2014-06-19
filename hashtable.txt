@@ -1,0 +1,14 @@
+
+1. Calculate the number of hash lists.
+Let's set tbl->hashListSize to 100
+
+tbl->hashListSize is the number of elements in the hash list.
+maxItemsNum       is the maximum number of items in a hash table.
+
+tbl->hashListSize = 100
+maxItemsNum       = 1000
+
+
+
+nHashLists = (maxItemsNum - 1) / tbl->hashListSize + 1;
+    nHashLists = _->commonHelper->nextPowerOf2(nHashLists);
