@@ -143,6 +143,19 @@ typedef struct SErrorCallback
 } SErrorCallback, *ErrorCallback;
 
 
+/* Choose __func__ or __FUNCTION__ */
+#ifdef HAVE_FUNCNAME__FUNC
+#define RUSSO_DB_FUNCNAME_MACRO	__func__
+#else
+
+#ifdef HAVE_FUNCNAME__FUNCTION
+#define RUSSO_DB_FUNCNAME_MACRO	__FUNCTION__
+#else
+#define RUSSO_DB_FUNCNAME_MACRO	NULL
+#endif
+
+
+
 #define ASSERT(logger, condition, retval) \
 	if (!(condition)) \
     { \
@@ -170,5 +183,40 @@ typedef struct SErrorCallback
 	   (logger)->assertArg((condition)); \
 	   return (retval); \
     }
+
+#define PROCESS_ERROR_LOG(logger, level, domain, rest) \
+    ((logger)->beginError( \
+                (logger), \
+			    (level), \ 
+				__FILE__, \ 
+				__LINE__, \ 
+				RUSSO_DB_FUNCNAME_MACRO, \
+				domain) ? \
+		  ((logger)->)
+		
+		
+		elog_start(__FILE__, __LINE__, PG_FUNCNAME_MACRO), elog_finish
+
+
+#define ereport_domain(elevel, domain, rest)	\
+	(errstart(elevel, __FILE__, __LINE__, PG_FUNCNAME_MACRO, domain) ? \
+	 (errfinish rest) : (void) 0),									   \
+		((elevel) >= ERROR ? abort() : (void) 0)
+
+
+
+/* Which __func__ symbol do we have, if any? */
+#ifdef HAVE_FUNCNAME__FUNC
+#define PG_FUNCNAME_MACRO	__func__
+#else
+#ifdef HAVE_FUNCNAME__FUNCTION
+#define PG_FUNCNAME_MACRO	__FUNCTION__
+#else
+#define PG_FUNCNAME_MACRO	NULL
+#endif
+#endif
+
+
+
 
 #endif

@@ -1570,6 +1570,14 @@
 							</Filter>
 						</Filter>
 					</Filter>
+					<Filter
+						Name="errorlogger"
+						>
+						<File
+							RelativePath=".\when_begin_error.c"
+							>
+						</File>
+					</Filter>
 				</Filter>
 			</Filter>
 			<Filter
