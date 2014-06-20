@@ -1,6 +1,8 @@
 #include "hashtable.h"
 #include "imemorymanager.h"
 #include "hashtablehelper.h"
+#include "ierrorlogger.h"
+#include "ispinlockmanager.h"
 
 #ifndef IHASHTABLE_MANAGER_H
 #define IHASHTABLE_MANAGER_H
@@ -8,9 +10,10 @@
 
 typedef struct SIHashtableManager
 {
-	IMemoryManager   memManager;
-	ICommon          commonHelper;
-	IHashtableHelper hashtableHelper;
+	IMemoryManager    memManager;
+	ICommon           commonHelper;
+	IHashtableHelper  hashtableHelper;
+	ISpinLockManager  spinLockHelper; 
 
     Hashtable (*createHashtable)(
 		void*              self,
@@ -32,6 +35,8 @@ typedef struct SIHashtableManager
 	    void*              self,
         Hashtable          tbl, 
         void*              key);
+
+	IErrorLogger      errorLogger;
 
 } SIHashtableManager, *IHashtableManager;
 

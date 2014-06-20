@@ -19,8 +19,7 @@ ErrorCallback*    errorStack     = NULL;
 char  str_start_time[TIME_STRING_LEN];
 char  str_log_time[TIME_STRING_LEN];
 
-
-const SIErrorLogger sErrorLogger = 
+SIErrorLogger sErrorLogger = 
 { 
 	&sConfManager,
 	&sStringManager,
@@ -30,12 +29,20 @@ const SIErrorLogger sErrorLogger =
 	assert,
 	log,
 	writeException,
-	writeMessageInChunks
+	writeMessageInChunks,
+	ctorErrorLogger
 };
 
-const IErrorLogger errorManager = &sErrorLogger;
+IErrorLogger errorManager = &sErrorLogger;
 
-
+void ctorErrorLogger(
+    void*          self)
+{
+    IErrorLogger   eman  = (IErrorLogger)self;
+	IStringManager sman  = (IStringManager)eman->strManager;
+    
+	sman->errorLogger = eman;
+}
 
 /* checks if errorLevel is logically more 
  * than min error level or not. 
@@ -260,9 +267,6 @@ void errorInfoToString(
 	int	   i;
     
 	line_number++;
-
-	//if (Log_line_prefix == NULL)
-	//	return;	
 }
 
 char* severity_message(int level)

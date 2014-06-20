@@ -1,4 +1,8 @@
- 
+  
+  
+   http://javascript.info/tutorial/inheritance 
+   
+   
  
   1. In JavaScript, what is the difference between var x = 1 and x = 1? 
      Answer in as much or as little detail as you feel comfortable.
@@ -82,7 +86,81 @@
 	    
 	  var instance = new Sub();
 	  instance.showColor(); // blue
+
+
+    4.1 Inheritance using __proto__
+
+          
+        var animal = { eats: true }
+        var rabbit = { jumps: true }
+
+        rabbit.__proto__ = animal     // inherit
+        alert(rabbit.eats)            // true
+
+
+
+    4.2 When one property is found in the class and the same property is found in the prototype.
+        For example, when eats is in the child object, parent is ignored: 
+
+
+        var animal      = { eats: true }
+        var fedUpRabbit = { eats: false }
+
+        fedUpRabbit.__proto__ = animal 
+        alert(fedUpRabbit.eats)       // false
+    
+
+    4.3 When a method is put into the base class it becomes available in the child class.
+
+        var animal = 
+        {
+            eat: function() 
+            {
+                alert("I'm full");
+                this.full = true;
+            } 
+        }
+
+        var rabbit = 
+        {
+            jump: function() { /* something */ }
+        }
+
+        rabbit.__proto__ = animal 
+        rabbit.eat() 
+
+        First, the interpreter looks up rabbit.eat. 
+        There’s no eat in rabbit object, so it goes to 
+        rabbit.__proto__ and finds it there.                  
+        
+
+        The function runs with this = rabbit. 
+        So, this.full = true stores the value in the rabbit object:
+         
+
+     Reading looks up, writing doesn't
+     
+     When a property is read, like this.prop, the interpreter looks it in the prototype.
+     When a property is assigned, like this.prop = value, 
+     then there is no reason to search. 
+     The property is written directly into the object (here this).          
+
+   
+    4.4 Object.create, Object.getPrototypeOf
+    
+      var animal = { eats: true }
+      rabbit = Object.create(animal)
+      alert(rabbit.eats)              // true
+	  rabbit.jumps = true
+      
+      var animal = {
+        eats: true
+      }
 	  
+      rabbit = Object.create(animal)
+      alert( Object.getPrototypeOf(rabbit) === animal ) // true
+        	  
+     
 	  
 	  
    

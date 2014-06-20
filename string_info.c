@@ -5,7 +5,7 @@
 #include "string_info.h"
 #include "trackmemmanager.h"
 
-const SIStringManager sStringManager = 
+SIStringManager sStringManager = 
 { 
     &sTrackMemManager,
 	NULL,
@@ -16,7 +16,7 @@ const SIStringManager sStringManager =
     appendStringInfoBinary
 };
 
-const IStringManager strManager = &sStringManager;
+IStringManager strManager = &sStringManager;
 
 void initStringInfo(
 	void*             self,
