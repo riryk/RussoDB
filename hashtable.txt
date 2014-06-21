@@ -1,14 +1,83 @@
 
 1. Calculate the number of hash lists.
-Let's set tbl->hashListSize to 100
+   Let's set tbl->hashListSize to 100
 
-tbl->hashListSize is the number of elements in the hash list.
-maxItemsNum       is the maximum number of items in a hash table.
+   tbl->hashListSize is the number of elements in the hash list.
+   maxItemsNum       is the maximum number of items in a hash table.
 
-tbl->hashListSize = 100
-maxItemsNum       = 1000
+   tbl->hashListSize = 100
+   maxItemsNum       = 1000
+   
+   nHashLists = (maxItemsNum - 1) / tbl->hashListSize + 1;
+   nHashLists = _->commonHelper->nextPowerOf2(nHashLists);
+    
+    
+################################################
+#                                              #
+#  2. Insert items into a hashtable.           #
+#                                              #
+################################################
 
+   We pass key to the function. Generally it is some sequence of bytes.
+   It can also be an integer value. 
 
+   2.1 Try to find an existing item by the key.
 
-nHashLists = (maxItemsNum - 1) / tbl->hashListSize + 1;
-    nHashLists = _->commonHelper->nextPowerOf2(nHashLists);
+   Calculate hash value. It will be an arbitrary integer value from 
+   [0...maxInt]. Each integer from this space can be generated 
+   with eaqual probability.
+
+   Convert a hash value to a list number. 
+   
+   lowMask  = numLists - 1      Formulas for computing lowMask 
+   highMask = 2*numLists - 1    and highMask.
+
+   |..............|...............|
+   0          numLists         2numLists
+ 
+   First of all we take the hash value 
+   hashVal from [0...maxInt] and mod it by highMask. 
+   And we get some number hashListNum from [0...2numLists]    
+   Each item from [0...2numLists] is chosen with equal probability.  
+   
+   With the probability 50% we get a number from the interval [0        ... numLists]
+   With the probability 50% we get a number from the interval [numLists ... 2numLists]
+   
+   if we get a number from the interval [numLists ... 2numLists] we mod it by 
+   numLists and receive a number from the interval [0 ... numLists] 
+   Using this approach each number from the interval [0 ... numLists] appears with 
+   the same probability. 
+   
+   So we find listId - the number of the list where we need to look for the item.
+   Then we compute segmId and get pointer to the list.
+   
+   Then we loop through the list and look for the item by the key.
+   If we have found the item in the list we return a pointer to it.
+   
+   For example:
+   
+    -------------      -------------             ---------------      ---------------      ------------- 
+   | key1 | next | -> | key2 | next | -> ... -> | keyn-2 | next | -> | keyn-1 | next | -> | keyn | next | -> NULL
+    -------------      -------------             ---------------      ---------------      -------------
+   
+   We loop from key1 until keyn and suppose that keyn-1 equal to key. 
+   So we need to return a pointer to (n-1)-th item. 
+   
+   HashItem*    itemPtr = (n-2)-th item;
+   
+   So that the function returns &(itemPtr->next)
+   
+   If we have not found the item, we have reached the last item of the list. 
+   So that itemPtr points to:
+   
+   HashItem*    itemPtr = (n)-th item;
+   The function returns &(itemPtr->next) and it's value is NULL.
+   
+   
+   
+   
+   
+   
+   
+   
+
