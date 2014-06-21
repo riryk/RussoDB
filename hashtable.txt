@@ -1,5 +1,10 @@
 
-1. Calculate the number of hash lists.
+#################################################
+#                                               #
+#   1. Calculate the number of hash lists.      #
+#                                               #
+#################################################
+
 Let's set tbl->hashListSize to 100
 
 tbl->hashListSize is the number of elements in the hash list.
@@ -8,7 +13,55 @@ maxItemsNum       is the maximum number of items in a hash table.
 tbl->hashListSize = 100
 maxItemsNum       = 1000
 
+We calculate the number of hash lists as division of 
+maxItemsNum on the hash list size.
+
+nHashLists = (maxItemsNum - 1) / tbl->hashListSize + 1
+           = (1000 - 1) / 100 + 1 = 10.99 = 11.
+                
+After that we round it to the next power of 2, which is 16.
+Then we calculate low and high masks:
+
+lowMask    = 16 - 1     = 15;
+highMask   = 2 * 16 - 1 = 31;
+
+Then we calculate the number of segments. 
+Suppose that segment size is 10. One segment which is a bunch of 
+hash table lists contains 5 hash table lists. 
+
+So that we have:
+
+segmNum = (11 - 1) / 5 + 1 = 10 / 5 + 1 = 2 + 1 = 3
+
+The hash table looks like:
+                             -------------
+                   ---------| hash list 0 | 
+                  |          -------------
+ --------         |--------- .......
+| Segm 0 |--------|
+ --------         |--------- .......
+                  |          -------------
+                  |---------| hash list 1 |
+                             ------------- 
+ --------     --------           ---------               
+| Segm 1 | , | Segm 2 | , ... , | Segm n  |
+ --------     --------           ---------
+ 
+After that we allocate the initial segments.
+Calculate the number of items to allocate.
+
+We need to alloc at least 32 items. 
+We are going to allocate 32 + k hash items and the memory that
+is going to be allocated should be power of 2.
+
+we have elementSize. From the start we suppose that elementSize is 8 bits
+And suppose that we want to allocate 32 items. 
+The total memory will be 32 * 8 bits
+Check our assumption by dividing (32 * 8) / elemSize.
+ - when the result is less than 32 we multiple on 2 until we get value more than 32.
+ - when the result is more than 32, that's good.
 
 
-nHashLists = (maxItemsNum - 1) / tbl->hashListSize + 1;
-    nHashLists = _->commonHelper->nextPowerOf2(nHashLists);
+ 
+ 
+ 2. 
