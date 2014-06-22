@@ -1,39 +1,43 @@
 
+
 #################################################
 #                                               #
 #   1. Calculate the number of hash lists.      #
 #                                               #
 #################################################
 
-Let's set tbl->hashListSize to 100
+   Let's set tbl->hashListSize to 100
+   
+   tbl->hashListSize is the number of elements in the hash list.
+   maxItemsNum       is the maximum number of items in a hash table.
 
-tbl->hashListSize is the number of elements in the hash list.
-maxItemsNum       is the maximum number of items in a hash table.
+   tbl->hashListSize = 100
+   maxItemsNum       = 1000
+   
+   nHashLists = (maxItemsNum - 1) / tbl->hashListSize + 1;
+   nHashLists = _->commonHelper->nextPowerOf2(nHashLists);
+   
+   We calculate the number of hash lists as division of 
+   maxItemsNum on the hash list size.
 
-tbl->hashListSize = 100
-maxItemsNum       = 1000
-
-We calculate the number of hash lists as division of 
-maxItemsNum on the hash list size.
-
-nHashLists = (maxItemsNum - 1) / tbl->hashListSize + 1
-           = (1000 - 1) / 100 + 1 = 10.99 = 11.
+   nHashLists = (maxItemsNum - 1) / tbl->hashListSize + 1
+              = (1000 - 1) / 100 + 1 = 10.99 = 11.
                 
-After that we round it to the next power of 2, which is 16.
-Then we calculate low and high masks:
+   After that we round it to the next power of 2, which is 16.
+   Then we calculate low and high masks:
 
-lowMask    = 16 - 1     = 15;
-highMask   = 2 * 16 - 1 = 31;
+   lowMask    = 16 - 1     = 15;
+   highMask   = 2 * 16 - 1 = 31;
 
-Then we calculate the number of segments. 
-Suppose that segment size is 10. One segment which is a bunch of 
-hash table lists contains 5 hash table lists. 
+   Then we calculate the number of segments. 
+   Suppose that segment size is 10. One segment which is a bunch of 
+   hash table lists contains 5 hash table lists. 
 
-So that we have:
+   So that we have:
 
-segmNum = (11 - 1) / 5 + 1 = 10 / 5 + 1 = 2 + 1 = 3
+   segmNum = (11 - 1) / 5 + 1 = 10 / 5 + 1 = 2 + 1 = 3
 
-The hash table looks like:
+   The hash table looks like:
                              -------------
                    ---------| hash list 0 | 
                   |          -------------
@@ -47,21 +51,144 @@ The hash table looks like:
 | Segm 1 | , | Segm 2 | , ... , | Segm n  |
  --------     --------           ---------
  
-After that we allocate the initial segments.
-Calculate the number of items to allocate.
+   After that we allocate the initial segments.
+   Calculate the number of items to allocate.
 
-We need to alloc at least 32 items. 
-We are going to allocate 32 + k hash items and the memory that
-is going to be allocated should be power of 2.
+   We need to alloc at least 32 items. 
+   We are going to allocate 32 + k hash items and the memory that
+   is going to be allocated should be power of 2.
 
-we have elementSize. From the start we suppose that elementSize is 8 bits
-And suppose that we want to allocate 32 items. 
-The total memory will be 32 * 8 bits
-Check our assumption by dividing (32 * 8) / elemSize.
- - when the result is less than 32 we multiple on 2 until we get value more than 32.
- - when the result is more than 32, that's good.
+   we have elementSize. From the start we suppose that elementSize is 8 bits
+   And suppose that we want to allocate 32 items.   
+   The total memory will be 32 * 8 bits
+   
+   Check our assumption by dividing (32 * 8) / elemSize.
+   - when the result is less than 32 we multiple on 2 until we get value more than 32.
+   - when the result is more than 32, that's good.
+   
+   We pass key to the function. Generally it is some sequence of bytes.
+   It can also be an integer value. 
 
 
+    
+################################################
+#                                              #
+#  2. Insert items into a hashtable.           #
+#                                              #
+################################################   
+   
+    -------------------------------------------------
+   | 2.1 Try to find an existing item by the key.    |
+    -------------------------------------------------
+
+   Calculate hash value. It will be an arbitrary integer value from 
+   [0...maxInt]. Each integer from this space can be generated 
+   with eaqual probability.
+
+   Convert a hash value to a list number. 
+   
+   lowMask  = numLists - 1      Formulas for computing lowMask 
+   highMask = 2*numLists - 1    and highMask.
+
+   |..............|...............|
+   0          numLists         2numLists
  
- 
- 2. 
+   First of all we take the hash value 
+   hashVal from [0...maxInt] and mod it by highMask. 
+   And we get some number hashListNum from [0...2numLists]    
+   Each item from [0...2numLists] is chosen with equal probability.  
+   
+   With the probability 50% we get a number from the interval [0        ... numLists]
+   With the probability 50% we get a number from the interval [numLists ... 2numLists]
+   
+   if we get a number from the interval [numLists ... 2numLists] we mod it by 
+   numLists and receive a number from the interval [0 ... numLists] 
+   Using this approach each number from the interval [0 ... numLists] appears with 
+   the same probability. 
+   
+   So we find listId - the number of the list where we need to look for the item.
+   Then we compute segmId and get pointer to the list.
+   
+   Then we loop through the list and look for the item by the key.
+   If we have found the item in the list we return a pointer to it.
+   
+   For example:
+   
+    -------------      -------------             ---------------      ---------------      ------------- 
+   | key1 | next | -> | key2 | next | -> ... -> | keyn-2 | next | -> | keyn-1 | next | -> | keyn | next | -> NULL
+    -------------      -------------             ---------------      ---------------      -------------
+   
+   We loop from key1 until keyn and suppose that keyn-1 equal to key. 
+   So we need to return a pointer to (n-1)-th item. 
+   
+   HashItem*    itemPtr = (n-2)-th item;
+   
+   So that the function returns &(itemPtr->next)
+   
+   If we have not found the item, we have reached the last item of the list. 
+   So that itemPtr points to:
+   
+   HashItem*    itemPtr = (n)-th item;
+   The function returns &(itemPtr->next) and it's value is NULL.
+   
+    --------------------------------------------------
+   | 2.2 Allocate a new item in the free list.        |
+    --------------------------------------------------
+   
+   2.2.3 When hashtable->freeList = NULL we allocate new items to free list
+   
+   tbl->numItemsToAlloc is always a power of 2. For example, 2^n.
+   We calculate ElemSize - the size of an element HashItem.
+   Then calculate the total size of memory needed to allocate.
+   
+   memSizeToAlloc = tbl->numItemsToAlloc * ElemSize
+   
+   We allocate memory as 
+   
+   void* newMem = malloc(tbl->numItemsToAlloc * ElemSize);
+   
+   And after that we use one loop to split this memory up onto 
+   small pieces of length ElemSize and set next pointer correctly.
+   
+   From the start the memory looks like:
+    ---------------------------------------------
+   |   one large piece of memory                 |
+    ---------------------------------------------
+   |      numItemsToAlloc * ElemSize             | 
+   |---------------------------------------------| 
+   
+   After readjusting it looks like:
+                 -------------              ------ ... --- 
+                /             \            /              \
+               /               V          /                V
+    --------------------------------------------------------------------------------------
+   | 1_key | 1_next | 1_value | 2_key | 2_next | 2_value | ... | n_key | n_next | n_value |
+    -------------------------------------------------------------------------------------- 
+              
+   Allocated memory looks like:
+   We have allocated n new items that will be added to the free list.
+   
+     NULL <- item0 <- item1 <- ... <- itemn-2 <- itemn-1
+	           \                                   \
+             firstItem                           prevItem
+
+   Free list can be NULL or not empty list.
+   
+                free0 -> free1 -> ..... -> freek 
+	    freeList /   
+   
+   We need to insert the new list of items into the head of the free list.
+   
+   freek <- freek-1 <- ... <- free1 <- free0 <- item0 <- item1 <- ... <- itemn-2 <- itemn-1
+                                         \        \                                   \ 
+    	                              freeList  firstItem                            prevItem   
+    	                              
+   firstItem->next = freeList;
+   freeList        = prevItem;
+   
+   
+   
+   
+   
+   
+    
