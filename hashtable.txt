@@ -279,4 +279,114 @@
    2.4.2 Alloc new items function is not embraced by spin lock.
          Possible conflicts.
          
+   Two threads simultaneously check whether freeList is null or not. 
+   Two threads at the same time check freeList and find out that freeList is NULL.
+   So that they both run function allocNewItems and start allocating new memory.
+   They both allocate a list of new items and intend to insert them into 
+   the head of freeList. 
+   
+   At the end of the function two new lists will be inserted.
+   But we accept that. It is much better than hold a lock 
+   for the whole allocNewItems function.
+   
+   2.4.3 When 2 different keys are being inserted. 
+         Provement that there won't be mistakes.
+         
+   Both simultaneously try to find. And both can't find.
+   Both of them allocate new list of items in memory and 
+   take 2 different sequential items and delete them from
+   the frelist by protection of a spin lock.
+   
+   One possible issue:
+   
+   Thread1 is trying to find an item in the hash table by key1
+   Thread1 is trying to find an item in the hash table by key2
+   
+   Everything is ok when key1 and key2 are from different hash lists.
+   But there can be problems when they both are directed to the same hash list.
+   
+   In this case itemPtr which is returned by function hashFindInternal.
+   in these two threads will be the same. 
+   And when two threads launch the code  *itemPtr = newElem;
+   One of them will be the first which assigns this and 
+   after that when the second thread launches the same code, it will 
+   clear the chnages which have been made by the first thread. 
+   So that key1 won't be inserted. The caller thread should provide 
+   locking mechanism.
+
+   
+################################################
+#                                              #
+#  2. Expand the table.                        #
+#                                              #
+################################################  
+
+    -------------------------------------------------
+   | 2.1 Preconditions when we start expanding       |
+    -------------------------------------------------   
+
+   We have the following parameters:
+   tbl->numItems     - the total number of items in the hash table.
+   tbl->hashListSize - the average number of items in one hash list 
+   tbl->numHashLists - the number of hash lists in the table.
+   
+   The maximum number of items in a hash table is calculated 
+   by the following formula:
+   
+   table items max numbers = tbl->hashListSize * tbl->numHashLists
+   
+   We expand the table provided that actual number of items 
+   is larger than maximum allowed items number. 
+   
+
+    -------------------------------------------------
+   | 2.2 Extend the hashtable                        |
+    -------------------------------------------------      
+   
+   From the start we have numLists the number of lists in the hashtable
+   
+   lowMask  = numLists   - 1      Formulas for computing lowMask 
+   highMask = 2*numLists - 1      and highMask.
+
+   |.|.|............|................|
+                    
+   0 1 2       numLists - 1       2numLists
+        
+   Before extending the table we increment numLists: 
+   So previously we had numLists hash lists.
+   
+   n = numLists.
+   
+   0, 1, 2, 3, ... , n - 2, n - 1.
+   
+   We add a new empty hash list to the hashtable.
+   We will have:
+   
+   0, 1, 2, 3, ... , n - 2, n - 1, n
+   
+   oldList = newListNum % lowMask 
+           = newListNum % (numLists - 1)
+           = (numLists - 1) % (numLists - 1) = 0.
+           
+   And now we should split up all items in the list 0 onto two
+   groups: One group will be left untouched and another group
+   will be relocated to the new list as if there weren't any 
+   extention, just all items were inserted from the start.
+   
+   We go through all items in the list 0 and recalculate list number
+   having incremented tbl->numItems before. And those items, that received 
+   newListNum to numLists, are relocated to the new list.
+           
+   Previously:
+   
+   When hashVal % highMask = hashVal % (2*numLists - 1) = numLists > numLists - 1.
+   And after that we mod it by lowMask and receive 0-th list.
+    
+   After: 
+   hashVal % highMask > = numLists = (numLists - 1) + 1, which is a new numLists.
+   
+   
+   
+   
+   
    
