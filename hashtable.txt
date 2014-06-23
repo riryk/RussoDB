@@ -186,9 +186,97 @@
    firstItem->next = freeList;
    freeList        = prevItem;
    
+    ----------------------------------------
+   | 2.3  Set value to the new item.        |
+    ----------------------------------------   
+   
+   Take the first item from the free list. 
+   Remove this item from the free list.
+   Increment the number of items in the table.
+   Set the new item to itemPtr, which is a pointer to NULL:
+   
+   HashItem*    itemPtr = (n)-th item;
+   *itemPtr = newElem;
+   
+   After that we set next pointer and key.
    
    
-   
-   
-   
+    --------------------------------------------
+   | 2.4  Protection from simultaneous threads. |
+    --------------------------------------------     
     
+   2.4.1 When we simultaneously insert 2 different keys.
+   In the first thread:  hashInsert(_, tbl, key1)
+   In the second thread: hashInsert(_, tbl, key2) 
+   
+   First of all we protect the code that checks whether freeList is empty or not.
+   We have 3 situations that are protected by spin lock:
+   
+   Situation 1: Check not empty free list.
+   
+   spinLockAcquire(&tbl->mutex)
+   
+   newElem = tbl->freeList;             
+
+   if (newElem != NULL)
+   {
+       tbl->freeList = newElem->next;
+	   tbl->numItems++;
+   }
+      
+   spinLockRelease(&tbl->mutex)
+   
+   Situation 2: Check empty free list.
+   
+   spinLockAcquire(&tbl->mutex)
+   
+   newElem = tbl->freeList;             
+
+   if (newElem != NULL)
+       break; 
+      
+   spinLockRelease(&tbl->mutex)
+   
+   Situation 3: Insert newly allocated items.
+   
+   spinLockAcquire(&tbl->mutex)
+   
+   firstItem->next = tbl->freeList;
+   tbl->freeList   = prevItem;
+      
+   spinLockRelease(&tbl->mutex)
+   
+   It is done only to provide unique access to tbl->freeList pointer.
+   If someone is reading it and we intend to modify, we should wait.
+   If someone is modifying, all reads should wait. 
+   
+   What problems can cause not following these rules.
+   Imagine the situation:
+   
+   Thread 1                                   Thread 2 
+   
+   newElem = tbl->freeList;                  firstItem->next = tbl->freeList;
+   tbl->freeList = newElem->next;            tbl->freeList   = prevItem;
+   
+   Problem1. When we allocate new items but do not insert them into the free list.
+             Lost update in the thread 2.
+             
+   newElem = tbl->freeList;                                                
+                                             firstItem->next = tbl->freeList;             
+                                             tbl->freeList   = prevItem;
+   tbl->freeList = newElem->next;
+   
+   Problem 2. Deleted item is not deleted.
+   
+   newElem = tbl->freeList;                  ...............................
+   ........................                  firstItem->next = tbl->freeList;             
+   tbl->freeList = newElem->next;            ...............................
+   ........................                  tbl->freeList   = prevItem; 
+   
+   In this case item that we are deleting is not deleted.
+   
+   
+   2.4.2 Alloc new items function is not embraced by spin lock.
+         Possible conflicts.
+         
+   
