@@ -136,6 +136,7 @@
     --------------------------------------------------
    
    2.2.3 When hashtable->freeList = NULL we allocate new items to free list
+   ------------------------------------------------------------------------  
    
    tbl->numItemsToAlloc is always a power of 2. For example, 2^n.
    We calculate ElemSize - the size of an element HashItem.
@@ -206,6 +207,8 @@
     --------------------------------------------     
     
    2.4.1 When we simultaneously insert 2 different keys.
+   -----------------------------------------------------
+   
    In the first thread:  hashInsert(_, tbl, key1)
    In the second thread: hashInsert(_, tbl, key2) 
    
@@ -276,8 +279,8 @@
    In this case item that we are deleting is not deleted.
    
    
-   2.4.2 Alloc new items function is not embraced by spin lock.
-         Possible conflicts.
+   2.4.2 Alloc new items function is not embraced by spin lock. Possible conflicts.
+   --------------------------------------------------------------------------------
          
    Two threads simultaneously check whether freeList is null or not. 
    Two threads at the same time check freeList and find out that freeList is NULL.
@@ -289,8 +292,8 @@
    But we accept that. It is much better than hold a lock 
    for the whole allocNewItems function.
    
-   2.4.3 When 2 different keys are being inserted. 
-         Provement that there won't be mistakes.
+   2.4.3 When 2 different keys are being inserted. Provement that there won't be mistakes.
+   ---------------------------------------------------------------------------------------
          
    Both simultaneously try to find. And both can't find.
    Both of them allocate new list of items in memory and 
@@ -385,8 +388,52 @@
    After: 
    hashVal % highMask > = numLists = (numLists - 1) + 1, which is a new numLists.
    
+   After that we add another new hash list:
+   
+   0, 1, 2, 3, ... , n - 2, n - 1, n, n + 1
+   
+   oldList = (n + 1 - 1) % (n - 1) = n % (n - 1) = 1.
+   
+   Repeat the same procedure.
+   We repeat this procedure until we exceed tbl->highMask = 2*n - 1
+   So we increse low and high masks:
+   
+   newHashListNum = 2*n = 2^k = 10000...000
+                                     k
+   tbl->lowMask = 2^k - 1 = 1111...111
+                                k
+   Compute highMask: newHashListNum | tbl->lowMask = 
+      1000....000 | = 111....111
+       111....111      (k + 1) times
+          k times 
    
    
+################################################
+#                                              #
+#  3. Remove from hash.                        #
+#                                              #
+################################################  
    
+   From the start we find the item in the hash table by the key.
+   Then we delete the item from bi-directional hash list.
+   hashFindInternal function returns a pointer to the item:
    
+      -----------------          ---------------          ------------------- 
+     | item k-1 | next |------->| item k | next |------->| item k + 1 | next |
+      -----------------          ---------------          -------------------
    
+   hashFindInternal function returns a pointer to the item: 
+   HashItem* itemPtr = &(itemk-1->next);
+   
+   Delete this item from one-directional list:
+   (*itemPtr) = (*itemPtr)->next;
+   
+   Add this item into free list:
+     --------      --------             ----------      ---------  
+    | free 0 | -> | free 1 | -> ... -> | free n-1 | -> | free n  |
+     --------      --------             ----------      ---------
+      ^           item->next     = freeList; 
+     /            freeList->next = item; 
+   freeList
+   
+    
