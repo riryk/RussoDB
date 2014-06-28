@@ -1,0 +1,131 @@
+
+
+#################################################
+#                                               #
+#   1. Set signal function.                     #
+#                                               #
+#################################################
+
+    We have signalArray which is an array of 32 elements
+and consists of event handler functions. 
+Set signal function accepts event code and event handler 
+function and fills the array with it.
+
+
+#################################################
+#                                               #
+#   2. Queue a signal.                          #
+#                                               #
+#################################################
+
+    We have a process. And there are many threads that 
+are launched in this process. And suppose that in one 
+of them some serious exception has happened. It can be
+interruption, termination, segment violation, cntrl break,
+abnormal termination. It means that if in one thread such 
+serious error has happened, we need to stop the whole process
+or thread should notify the process about a serious error
+and the process should execute an appropriate event handler function.
+When a thread wants to notify a main process about an error
+it launches the function: 
+
+   queueSignal(int signum)
+   
+This function sets (sugnum)-th bit of signalQueue, which is 
+an integer number, the original value of signalQueue is 0.
+ 
+ |0|1|2|3|......|signum|................|29|30|31|
+ -------------------------------------------------
+ |0|0|0|0|......|  0   |................|0 |0 |0 |
+
+We set (signnum)-th bit to 1. And set the signalEvent to a 
+signaling state and thus notify all waiters that some event has happened.
+
+
+#################################################
+#                                               #
+#   3. Signal queue waiters.                    #
+#                                               #
+#################################################
+  
+    ---------------------------------------------------------
+   | 3.1. Wait for a signal using PROCESS_INTERRUPTS macro   |
+    ---------------------------------------------------------
+    
+   PROCESS_INTERRUPTS macros just checks if the queue has been filled or not.
+It bitwise ands with 1111....11111  32 times. If the queue is empty will get 0.
+If at least one bit is set, we will receive more than 0. If it is more than 0,
+we dispatch all signals.  
+
+   For example:
+   
+   Suppose that we have a very complicated loop and do some computations in one.
+And in another thread have have discovered a critical error. This thread queues 
+a signal to the signal queue and the first thread every time it starts the loop
+it call macro PROCESS_INTERRUPTS.
+
+   for (i = 0; i < 1000; i++)
+   {
+        // Do some work before
+	    // and check for interrupts
+	    PROCESS_INTERRUPTS(sm_sm);
+	    // Do some work after
+   }
+   
+    --------------------------------------------------------------
+   | 3.2. Wait for the signal event to jump into signalling state |   
+    --------------------------------------------------------------
+    
+   There can be a situation when in some thread we need to wait for a semaphore 
+of for some other window events. And at the same time in another thread 
+we experience some crusial exception. And we need to notify the first thread 
+that at the moment is waiting for a semaphore. There is only one way we can do it:
+
+   In the first thread we wait for two objects to get signalled.
+The first object is the semaphore or the event we originally intended to wait for.
+The second object is the signalEvent and we wait for two objects altogether.
+
+   HANDLE		   waitHandles[2];
+   DWORD		   ret;
+
+   waitHandles[0] = signalEvent;
+   waitHandles[1] = semaphore or some other event;
+   
+   WaitForMultipleObjectsEx(2, waitHandles, FALSE, INFINITE, TRUE)
+
+   When the second thread queues an item to SignalQueue it also sets the SignalEvent
+   and the thread, that was waiting for 2 objects to get signalled, wakes up. 
+   And after that we can determine what object has gotten signalled. 
+   
+   if (ret == WAIT_OBJECT_0)
+   {
+       signMan->dispatchQueuedSignals();
+   }
+   else if (ret == WAIT_OBJECT_0 + 1)
+   { }
+   else if (ret == WAIT_OBJECT_0 + 2)
+   { }
+   ...
+   else if (ret == WAIT_OBJECT_0 + n)
+   { } 
+   
+
+#################################################
+#                                               #
+#   4. Send a signal from another process.      #
+#                                               #
+#################################################
+
+We have a backend process with many threads that processes a client.
+In RussoDB we create an isolated process for every connection.
+And we have a command line frocess for administrators. And suppose that 
+an administrator wants to send a command to a backend and stop the backend.
+
+   ---------------------------------------------------------
+  | 4.1. Setting up a listener for all inward signals       |
+   ---------------------------------------------------------   
+
+
+
+
+    
