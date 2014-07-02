@@ -125,6 +125,25 @@ an administrator wants to send a command to a backend and stop the backend.
   | 4.1. Setting up a listener for all inward signals       |
    ---------------------------------------------------------   
 
+From the start we run the signal manager constructor. This constructor 
+creates a signal event, sets console cntrl handler and runs a thread 
+that listens to inward requests. 
+
+The sequence of steps that are done in the listener thread:
+From the start it creates a named pipe by calling the function CreateNamedPipe,
+Then it calls ConnectNamedPipe function to wait for incoming requests,
+This function blocks the calling thread until a request comes up.
+
+Then when a request comes from a client, ConnectNamedPipe function returns and 
+After that we create a new listener named pipe and impart the old pipe to a thread 
+worker function. The thread worker function takes one parameter: 
+the original named pipe. 
+
+Thread worker thread uses ReadFile function and read 1 byte. 
+So that we receive a signal code. Then we use WriteFile function
+and write the same code in response. After that we queue this signal to 
+the signal queue. And after that some thread will notice it in the queue 
+and will process the signal.
 
 
 
