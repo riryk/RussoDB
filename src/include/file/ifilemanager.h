@@ -3,10 +3,13 @@
 #define IFILE_MANAGER_H
 
 #include "imemorymanager.h"
+#include "ierrorlogger.h"
 
 typedef struct SIFileManager
 {
 	IMemoryManager             memManager;
+    IErrorLogger               errorLogger; 
+
 	void (*ctorFileMan)        (void* self);
 	int  (*openFileToCache)    (void* self, char* name, int flags, int mode);
 	long (*restoreFilePos)     (void* self, int fileId, long offset, int placeToPut);

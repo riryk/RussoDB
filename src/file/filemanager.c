@@ -1,10 +1,12 @@
 
 #include "filemanager.h"
+#include "errorlogger.h"
 #include <stdio.h>
 
 const SIFileManager sFileManager = 
 { 
 	&sTrackMemManager,
+    &sErrorLogger,
 	ctorFileMan,
 	openFileToCache,
 	restoreFilePos,
@@ -33,8 +35,17 @@ void ctorFileMan(void* self)
 {
     IFileManager   _      = (IFileManager)self;
 	IMemoryManager memMan = _->memManager;
+	IErrorLogger   elog  = _->errorLogger;
 
 	fileCache = (FCacheEl)memMan->alloc(sizeof(SFCacheEl));
+
+	if (fileCache == NULL)
+	{
+	    elog->log(LOG_FATAL, 
+		          ERROR_CODE_OUT_OF_MEMORY, 
+				  "Could not allocate new memory: error code %lu",
+				  GetLastError());    
+	}
 
 	memset((char*)&(fileCache[0]), 0, sizeof(SFCacheEl));
 	fileCache->fileDesc = FILE_INVALID;
@@ -60,6 +71,7 @@ void estimateFileCount(
 {   
     IFileManager    _      = (IFileManager)self;
     IMemoryManager  memMan = _->memManager;
+	IErrorLogger    elog = _->errorLogger;
 
 	int*            fds;
 	int             i;
@@ -68,6 +80,14 @@ void estimateFileCount(
     int             size    = 1024;
 
 	fds = (int*)memMan->alloc(size * sizeof(int));
+
+    if (fds == NULL)
+	{
+	    elog->log(LOG_FATAL, 
+		          ERROR_CODE_OUT_OF_MEMORY, 
+				  "Could not allocate new memory: error code %lu",
+				  GetLastError());    
+	}
 
     CYCLE
 	{
@@ -85,6 +105,14 @@ void estimateFileCount(
 		{
 			size *= 2;
 			fds = (int*)memMan->realloc(fds, size * sizeof(int));
+
+			if (fds == NULL)
+			{
+                elog->log(LOG_FATAL, 
+		          ERROR_CODE_OUT_OF_MEMORY, 
+				  "Could not allocate new memory: error code %lu",
+				  GetLastError());            
+			}
 		}
 
         fds[fdCount++] = dupRes;
@@ -128,6 +156,7 @@ void cacheRealloc(void* self)
 {
 	IFileManager   _        = (IFileManager)self;
 	IMemoryManager memMan   = _->memManager;
+	IErrorLogger   elog     = _->errorLogger;
 
     size_t	       newCount = fileCacheCount * 2;
     int            min      = MIN_CACHE_EL_TO_ALLOC;
@@ -138,6 +167,14 @@ void cacheRealloc(void* self)
 		newCount = min;
 
 	fileCache = memMan->realloc(fileCache, sizeof(SFCacheEl) * newCount);
+
+    if (fileCache == NULL)
+	{
+        elog->log(LOG_FATAL, 
+		     ERROR_CODE_OUT_OF_MEMORY, 
+		     "Could not allocate new memory: error code %lu",
+		     GetLastError());            
+    } 
 
 	for (i = fileCacheCount; i < newCount; i++)
 	{

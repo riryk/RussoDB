@@ -1,0 +1,77 @@
+
+
+#################################################
+#                                               #
+#   1. File manager ctor.                       #
+#                                               #
+#################################################
+ 
+Allocate the first single item in the file cache. 
+The FileItemCache item looks like:
+
+    -------    moreRecent   -------  moreRecent          ---------  moreRecent   -------  
+   | item0 |-------------->| item1 |------------....--->| itemn   |------------>| item0 |      
+    -------                 -------                      ---------               -------
+           ^  lessRecent   /       ^  lessRecent         /        ^  lessRecent  /
+            \-------------          \-------------------           \------------       
+            
+So we have more and less recent items ring.    
+We can explain how it works from the start.
+From the start we have only one item:
+
+  lessRecent -------  moreRecent
+    /-------| item0 |------\ 
+   |         -------       | 
+   |       ^        ^      |
+    \-----/          \-----/ 
+   
+lessRecent and morerecent pointers point to item0.
+Then we insert another one and we get the ring:
+
+           moreRecent            moreRecent
+  ------- ----------->  ------- ------------> -------- 
+ | item0 | lessRecent  | item1 | lessRecent  | item0  |
+  ------- <-----------  ------- <-----------  --------
+  
+ If we take item0, than we have that more recent is item1.
+ And if we take item1, item0 will be less recent than item1.
+ 
+Struct FileCacheItem looks like:
+ ---------------
+| lessRecent    | a pointer to an item that has been in the cache
+|               | longer than the current item.
+| ------------- | 
+| moreRecent    | a pointer to an item that has been in the cache
+|               | shorter than the current item.
+| ------------- |
+| fileDesc      | a descriptor of an open file.
+| ------------- |
+| state         | a state of the file
+| ------------- |
+| nextFree      | a pointer to a free item in the cache.
+| ------------- |
+| seekPos       | a seek position in the file. 
+|               | The previous saved pointer position.
+| ------------- |
+| size          | The size of the file.
+| ------------- |
+| name          | Name of the file.
+| ------------- |
+| 
+
+typedef struct SFCacheEl
+{
+        int                       fileDesc;                        
+        uint16                    state;                
+        int                       nextFree;
+        int                       moreRecent;        
+        int                       lessRecent;
+        long                      seekPos;
+        long                      size;
+        char*                     name;
+        int                       flags;
+        int                       mode;
+} SFCacheEl, *FCacheEl; 
+ 
+ 
+  

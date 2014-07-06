@@ -145,6 +145,27 @@ and write the same code in response. After that we queue this signal to
 the signal queue. And after that some thread will notice it in the queue 
 and will process the signal.
 
+   ---------------------------------------------------------
+  | 4.2. Dispatch queued signals                            |
+   ---------------------------------------------------------   
+  
+Process interrupts macros functionality:
+
+1. Check if there are some records in the signalQueue.
+If there are, we call the function dispatchQueuedSignals().
+This function retrieves all signals from the queue, finds an 
+appropriate function to process this signal, launch this 
+function and removes the signal from the queue. 
+
+Launching the function handler is embraced by critical section
+because many threads can simultaneously work with this queue. 
+
+After that we reset the event, so that the event becomes unsignalled 
+again. 
+     
+
+
+
 
 
     

@@ -688,6 +688,10 @@
 					>
 				</File>
 				<File
+					RelativePath=".\filemanager.txt"
+					>
+				</File>
+				<File
 					RelativePath="src\file\relfilemanager.c"
 					>
 				</File>
