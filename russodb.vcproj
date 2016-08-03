@@ -44,7 +44,7 @@
 				Name="VCCLCompilerTool"
 				AdditionalOptions="/MP"
 				Optimization="0"
-				AdditionalIncludeDirectories="src/include/file;src/include/error;src/include/common;src/include/os/file;src/include/commands;src/include/commands/relation;src/include/memory;src/include/lib/unity;src/include/tests/unit;src/include/common/hashtable;src/include/tests/unit/memory;src/include/tests/unit/common/hashtable;src/include/commands/relation/row;src/include/tests/unit/commands/relation/row;src/include/commands/relation/buffer;src/include/tests/unit/file/file_manager;src/include/common/config;src/include/tests/unit/error;src/include/common/signal;src/include/common/lock;src/include/tests/unit/common/sharedmem;"
+				AdditionalIncludeDirectories="src/include/file;src/include/error;src/include/common;src/include/os/file;src/include/commands;src/include/commands/relation;src/include/memory;src/include/lib/unity;src/include/tests/unit;src/include/common/hashtable;src/include/tests/unit/memory;src/include/tests/unit/common/hashtable;src/include/commands/relation/row;src/include/tests/unit/commands/relation/row;src/include/commands/relation/buffer;src/include/tests/unit/file/file_manager;src/include/common/config;src/include/tests/unit/error;src/include/common/signal;src/include/common/lock;src/include/tests/unit/common/sharedmem;src/include/dataaccess/spacepartitioning;src/include/storage;"
 				StringPooling="false"
 				RuntimeLibrary="3"
 				AssemblerOutput="0"
@@ -679,6 +679,34 @@
 						</Filter>
 					</Filter>
 				</Filter>
+				<Filter
+					Name="dataaccess"
+					>
+					<Filter
+						Name="spacepartitioning"
+						>
+						<File
+							RelativePath="src\include\dataaccess\spacepartitioning\spacepartitioning.h"
+							>
+						</File>
+				    </Filter>
+					<File
+						RelativePath="src\include\dataaccess\indextuple.h"
+						>
+					</File>
+				</Filter>
+				<Filter
+					Name="storage"
+					>
+					<File
+						RelativePath="src\include\storage\block.h"
+						>
+					</File>
+					<File
+						RelativePath="src\include\storage\pageitempointer.h"
+						>
+					</File>
+				</Filter> 
 			</Filter>
 			<Filter
 				Name="file"
@@ -700,15 +728,15 @@
 				Name="error"
 				>
 				<File
-					RelativePath=".\errorlogger.c"
+					RelativePath="src\error\errorlogger.c"
 					>
 				</File>
 				<File
-					RelativePath=".\logger.c"
+					RelativePath="src\error\logger.c"
 					>
 				</File>
 				<File
-					RelativePath=".\logger.txt"
+					RelativePath="src\error\logger.txt"
 					>
 				</File>
 			</Filter>
@@ -716,11 +744,11 @@
 				Name="memory"
 				>
 				<File
-					RelativePath=".\mem_management.txt"
+					RelativePath="src\memory\mem_management.txt"
 					>
 				</File>
 				<File
-					RelativePath=".\memcontainermanager.c"
+					RelativePath="src\memory\memcontainermanager.c"
 					>
 				</File>
 				<File
@@ -1530,7 +1558,7 @@
 						Name="error"
 						>
 						<File
-							RelativePath=".\fakeerrorlogger.c"
+							RelativePath="src\tests\unit\error\fakeerrorlogger.c"
 							>
 						</File>
 						<Filter
@@ -1596,15 +1624,15 @@
 					>
 				</File>
 				<File
-					RelativePath=".\listmanager.c"
+					RelativePath="src\common\listmanager.c"
 					>
 				</File>
 				<File
-					RelativePath=".\processhelper.c"
+					RelativePath="src\common\processhelper.c"
 					>
 				</File>
 				<File
-					RelativePath=".\sharedmemmanager.c"
+					RelativePath="src\common\sharedmemmanager.c"
 					>
 				</File>
 				<File
@@ -1612,11 +1640,11 @@
 					>
 				</File>
 				<File
-					RelativePath=".\string_info.c"
+					RelativePath="src\common\string_info.c"
 					>
 				</File>
 				<File
-					RelativePath=".\threadhelper.c"
+					RelativePath="src\common\threadhelper.c"
 					>
 				</File>
 				<Filter
@@ -1643,11 +1671,11 @@
 					Name="config"
 					>
 					<File
-						RelativePath=".\confmanager.c"
+						RelativePath="src\common\config\confmanager.c"
 						>
 					</File>
 					<File
-						RelativePath=".\errorconfmanager.c"
+						RelativePath="src\common\config\errorconfmanager.c"
 						>
 					</File>
 				</Filter>
@@ -1655,15 +1683,15 @@
 					Name="signal"
 					>
 					<File
-						RelativePath=".\mainprocsignal.c"
+						RelativePath="src\common\signal\mainprocsignal.c"
 						>
 					</File>
 					<File
-						RelativePath=".\signal.txt"
+						RelativePath="src\common\signal\signal.txt"
 						>
 					</File>
 					<File
-						RelativePath=".\signalmanager.c"
+						RelativePath="src\common\signal\signalmanager.c"
 						>
 					</File>
 				</Filter>
@@ -1671,27 +1699,27 @@
 					Name="lock"
 					>
 					<File
-						RelativePath=".\lightlockmanager.c"
+						RelativePath="src\common\lock\lightlockmanager.c"
 						>
 					</File>
 					<File
-						RelativePath=".\semaphorelockmanager.c"
+						RelativePath="src\common\lock\semaphorelockmanager.c"
 						>
 					</File>
 					<File
-						RelativePath=".\spin_lock.txt"
+						RelativePath="src\common\lock\spin_lock.txt"
 						>
 					</File>
 					<File
-						RelativePath=".\spinlockmanager.c"
+						RelativePath="src\common\lock\spinlockmanager.c"
 						>
 					</File>
 					<File
-						RelativePath=".\spinlocksemaphorestrategy.c"
+						RelativePath="src\common\lock\spinlocksemaphorestrategy.c"
 						>
 					</File>
 					<File
-						RelativePath=".\spinlockstrategy.c"
+						RelativePath="src\common\lock\spinlockstrategy.c"
 						>
 					</File>
 				</Filter>
