@@ -3,6 +3,7 @@
 #define IRELROW_H
 
 #include "common.h"
+#include "block.h"
 
 #define ROW_ATTRS_MAX_COUNT 1600
 /* 0x80 = 1000 0000 */
@@ -51,7 +52,7 @@
 
 typedef struct SRowPointer
 {
-	SBlockId     block;
+	BlockIdData     block;
 	uint16       pos;
 } SRowPointer, *RowPointer;
 

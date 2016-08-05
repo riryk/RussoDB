@@ -2,6 +2,8 @@
 #ifndef MEMORY_H
 #define MEMORY_H
 
+#define AllocateMemory malloc
+
 /* The smallest chunk of memory is 8 bytes.
  * 8 = 2^3. So that the smallest power of 2 is 3.
  */

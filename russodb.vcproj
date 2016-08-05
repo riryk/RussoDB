@@ -44,7 +44,7 @@
 				Name="VCCLCompilerTool"
 				AdditionalOptions="/MP"
 				Optimization="0"
-				AdditionalIncludeDirectories="src/include/file;src/include/error;src/include/common;src/include/os/file;src/include/commands;src/include/commands/relation;src/include/memory;src/include/lib/unity;src/include/tests/unit;src/include/common/hashtable;src/include/tests/unit/memory;src/include/tests/unit/common/hashtable;src/include/commands/relation/row;src/include/tests/unit/commands/relation/row;src/include/commands/relation/buffer;src/include/tests/unit/file/file_manager;src/include/common/config;src/include/tests/unit/error;src/include/common/signal;src/include/common/lock;src/include/tests/unit/common/sharedmem;src/include/dataaccess/spacepartitioning;src/include/storage;"
+				AdditionalIncludeDirectories="src/include/file;src/include/error;src/include/common;src/include/os/file;src/include/commands;src/include/commands/relation;src/include/memory;src/include/lib/unity;src/include/tests/unit;src/include/common/hashtable;src/include/tests/unit/memory;src/include/tests/unit/common/hashtable;src/include/commands/relation/row;src/include/tests/unit/commands/relation/row;src/include/commands/relation/buffer;src/include/tests/unit/file/file_manager;src/include/common/config;src/include/tests/unit/error;src/include/common/signal;src/include/common/lock;src/include/tests/unit/common/sharedmem;src/include/dataaccess;src/include/dataaccess/spacepartitioning;src/include/storage;"
 				StringPooling="false"
 				RuntimeLibrary="3"
 				AssemblerOutput="0"
@@ -689,6 +689,10 @@
 							RelativePath="src\include\dataaccess\spacepartitioning\spacepartitioning.h"
 							>
 						</File>
+						<File
+							RelativePath="src\include\dataaccess\spacepartitioning\spacepartitioning.txt"
+							>
+						</File>
 				    </Filter>
 					<File
 						RelativePath="src\include\dataaccess\indextuple.h"
@@ -703,7 +707,15 @@
 						>
 					</File>
 					<File
+						RelativePath="src\include\storage\block.txt"
+						>
+					</File>  
+					<File
 						RelativePath="src\include\storage\pageitempointer.h"
+						>
+					</File>
+					<File
+						RelativePath="src\include\storage\pageitempointer.txt"
 						>
 					</File>
 				</Filter> 
@@ -1723,6 +1735,26 @@
 						>
 					</File>
 				</Filter>
+			</Filter>
+			<Filter
+				Name="dataaccess"
+				>
+				<Filter
+				    Name="spacepartitioning"
+				    >
+				    <File
+					    RelativePath="src\dataaccess\spacepartitioning\spaceinserter.c"
+					    >
+				    </File>
+					<File
+					    RelativePath="src\dataaccess\spacepartitioning\spaceinserter.txt"
+					    >
+				    </File>
+					<File
+					    RelativePath="src\dataaccess\spacepartitioning\spacenodescreator.c"
+					    >
+				    </File>
+				</Filter>	
 			</Filter>
 		</Filter>
 	</Files>

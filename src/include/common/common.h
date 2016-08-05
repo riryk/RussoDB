@@ -12,6 +12,11 @@
 extern const SICommon sCommonHelper;
 extern const ICommon  commonHelper;
 
+typedef uintptr_t DataPointer;
+
+typedef unsigned int ObjectId;
+typedef unsigned int TransactionId;
+
 typedef unsigned char  uint8;
 typedef char           int8;
 typedef unsigned short uint16;
@@ -66,12 +71,6 @@ extern int64       LoggerFileTime;
 extern Bool		   RedirectDone;
 extern int         MaxBackends; 
 
-typedef struct SBlockId
-{
-	uint16		 high;
-	uint16		 low;
-} SBlockId, *BlockId;
-
 typedef struct SRelFileInfo
 {
 	int		      tblSpaceId;
@@ -97,21 +96,6 @@ typedef struct SFileSeg
 } SFileSeg, *FileSeg;
 
 typedef FileSeg *AFileSeg;
-
-
-/* Invalid block id is a 32-bit number where all bits are 1
- * 1111 1111 1111 1111  1111 1111 1111 1111 
- */
-#define INVALID_BLOCK_ID ((uint)0xFFFFFFFF)
-
-/* This macros divides 32bit block number to
- * a high and low 16 bit parts
- */
-#define SET_BLOCK_ID(blockId, blockNumber) \
-( \
-	(blockId)->high = (blockNumber) >> 16, \
-	(blockId)->low = (blockNumber) & 0xffff \
-)
 
 /* This is the same char* but the length restrictions is provided */
 typedef struct SName

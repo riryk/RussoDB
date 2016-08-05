@@ -1,0 +1,20 @@
+
+
+Each data file (heap or index) is divided into disk blocks
+(which may be thought of as the unit of i/o 
+A buffer contains exactly one disk block).  
+
+
+BlockId:
+
+ This is a storage type for BlockNumber. 
+ This type is used for on-disk structures (e.g., in HeapTupleData) 
+ whereas BlockNumber is the type on which calculations are performed 
+ 
+ BlockIds can be SHORTALIGN'd (and therefore any
+ structures that contains them, such as ItemPointerData, can also be
+ SHORTALIGN'd).  this is an important consideration for reducing the
+ space requirements of the line pointer (ItemIdData) array on each
+ page and the header of each heap or index tuple.
+ 
+Invalid block id is a 32-bit number where all bits are 1: 0xFFFFFFFF

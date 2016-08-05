@@ -1,44 +1,72 @@
+#include "indextuple.h"
+#include "error.h"
+#include "memory.h"
 
 #ifndef Space_Partitioning_h
 #define Space_Partitioning_h
 
-#include "buffer.h"
-#include <io.h>
-
-#ifdef _WIN32
-#include <windows.h>
-#endif
-
-/*
- * Represents list of "nodes" that subdivide a set of tuples
- * Layout: header/optional prefix/array of nodes
- */
 typedef struct SpacePartitioningInnerTupleData
 {
-	unsigned int TupleState:2,	           /* LIVE/REDIRECT/DEAD/PLACEHOLDER */
-				 AllNodesAreTheSame:1,	   /* all nodes in tuple are equivalent */
-				 NumberOfNodes:13,		   /* number of nodes within inner tuple */
-				 PrefixSize:16;	           /* size of prefix, or 0 if none */
+	unsigned int TupleState:2,	           /* Live, Redirect, Dead, Placeholder */
+				 AllNodesAreTheSame:1,	   
+				 NumberOfNodes:13,		   
+				 PrefixSize:16;	           
 
-	uint16		 Size;			           /* total size of inner tuple */
+	uint16		 Size;			           
 
-	/* On most machines there will be a couple of wasted bytes here */
-	/* prefix datum follows, then nodes */
 } SpacePartitioningInnerTupleData;
 
 typedef SpacePartitioningInnerTupleData *SpacePartitioningInnerTuple;
 
-/*
- * Node tuples use the same header as ordinary IndexTuples, 
- */
 typedef IndexTupleData SpacePartitioningNodeTupleData;
+
+typedef SpacePartitioningNodeTupleData *SpacePartitioningNodeTuple;
+
+typedef struct SpacePartitioningConfig
+{
+	ObjectId	InnerTuplePrefixType;		
+	ObjectId	InnerTupleNodeLabelType;	
+	Bool		CanReturnData;	            
+	Bool		SupportLongValues;	        
+} SpacePartitioningConfig;
+
+typedef struct SpacePartitioningType
+{
+	ObjectId   TypeId;
+	Bool       IsPassedByValue;
+	int16	   TypeLength;
+} SpacePartitioningType;
+
+typedef struct SpacePartitioningState
+{
+	SpacePartitioningConfig InnerTupleConfig;
+
+	SpacePartitioningType   LeafValuesType;		
+	SpacePartitioningType   InnerTuplePrefixValuesType;
+	SpacePartitioningType   NodeLabelValuesType;
+
+	char*                   DeadTupleStorage;
+
+	TransactionId           CreateRedirectTupleTranId;		
+	Bool		            PerformsIndexBuild;	
+} SpacePartitioningState;
 
 
 #define InnerTupleHeaderSize ALIGN_DEFAULT(sizeof(SpacePartitioningInnerTupleData))
 
 #define InnerTupleData(tuple) (((char*)(tuple)) + InnerTupleHeaderSize)
 
-#define InnetTupleStartNode(x) ((SpGistNodeTuple) (_SGITDATA(x) + (x)->prefixSize))
+#define InnerTupleStartNode(tuple) ((SpacePartitioningNodeTuple)(InnerTupleData(tuple) + (tuple)->PrefixSize))
+
+
+#define IterateThruInnerTupleNodes(innerTuple, i, nodeTuple)	\
+	for ((i) = 0, (nodeTuple) = InnerTupleStartNode(innerTuple); \
+		 (i) < (innerTuple)->NumberOfNodes; \
+		 (i)++, (nodeTuple) = (SpacePartitioningNodeTuple)(((char*)(nodeTuple)) + IndexTupleSize(nodeTuple)))
+
+#define DoesNotExceedTupleBoundaries(position, innerTuple) \
+    ((position) < 0 || (position) > (innerTuple)->NumberOfNodes)
+
 
 #endif
 

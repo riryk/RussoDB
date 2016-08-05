@@ -135,7 +135,7 @@ typedef union SType_4b
  * else if the first bit is 1 we take bits from 8 to 1
  * else we take bits from 32 to 2.
  */
-#define SIZE(p) \
+#define ComputeSize(p) \
 	(IS_FIRST_BYTE_1(p) ? GET_SECOND_BYTE(p) \
 	                    : (IS_FIRST_BIT_1(p) ? CUT_THE_LAST_BIT_AND_TAKE_7_BITS(p) \
 						                     : CUT_LAST_2_BITS_AND_TAKE_30_NEXT_BITS(p)))
@@ -144,7 +144,7 @@ typedef union SType_4b
 #define SIZE_BY_LEN(len, p) \
 	( \
        ((len) > 0) ? (len) \
-		           : ( ((len) == -1) ? (SIZE(p)) : (strlen((char*)(p)) + 1) ) \
+		           : ( ((len) == -1) ? (ComputeSize(p)) : (strlen((char*)(p)) + 1) ) \
 	)
 
 /* Mark as a short variable-length attribute and set the next 7 bits */

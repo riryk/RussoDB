@@ -3,6 +3,12 @@
 
 #include "common.h"
 
+#define ReportError(errorLevel, ...)  \
+	do { \
+	} while(0)
+
+#define ErrorLevel 1
+
 #define ERROR_STACK_SIZE 5
 #define TIME_STRING_LEN 128
 

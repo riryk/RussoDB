@@ -7,19 +7,21 @@ typedef struct IndexTupleData
 {
 	PageItemPointerData PointerToTuple;		
 
-	/* t_info is laid out in the following fashion:
-	 *
+	/* 
 	 * 15th (high) bit:      has nulls
-	 * 14th bit:             has var-width attributes
+	 * 14th bit:             has variable width attributes
 	 * 13th bit:             unused
 	 * 12-0 bit:             size of tuple
 	 */
-	unsigned short AdditionalInformation;		
+	unsigned short Fields;		
 
 } IndexTupleData;
 
 typedef IndexTupleData *IndexTuple;
 
+#define IndexSizeMask 0x1FFF    
+
+#define IndexTupleSize(tuple) ((size_t)(((IndexTuple)(tuple))->Fields & IndexSizeMask))
 
 #endif
 
