@@ -4,8 +4,12 @@
 #ifndef Page_Item_Pointer_h
 #define Page_Item_Pointer_h
 
+#define InvalidPosition 0
+
 typedef uint16 PageItemOffset;
 typedef uint16 PageItemLength;
+
+#define InvalidPageItemOffset ((PageItemOffset)0)
 
 typedef struct PageItemPointerData
 {

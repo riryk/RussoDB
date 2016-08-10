@@ -43,7 +43,7 @@ WHEN(write_block)
 {
 	char* somebuf = "some buffer";
 
-   	rfm_buf = malloc(BLOCK_SIZE);
+   	rfm_buf = malloc(BlockSize);
 
 	strcpy(rfm_buf, somebuf);
 
@@ -65,12 +65,12 @@ TEST_TEAR_DOWN(write_block)
 
 TEST(write_block, then_the_block_should_be_written)
 {	
-	char* buffer  = malloc(BLOCK_SIZE);
-	long  seekpos = lseek(rfm_fd, 10 * BLOCK_SIZE, 0);
+	char* buffer  = malloc(BlockSize);
+	long  seekpos = lseek(rfm_fd, 10 * BlockSize, 0);
 	int   readres;
 
-	TEST_ASSERT_EQUAL_UINT32(seekpos, 10 * BLOCK_SIZE);
-    readres = read(rfm_fd, buffer, BLOCK_SIZE);
+	TEST_ASSERT_EQUAL_UINT32(seekpos, 10 * BlockSize);
+    readres = read(rfm_fd, buffer, BlockSize);
 
     TEST_ASSERT_EQUAL_STRING(rfm_buf, buffer);
 }

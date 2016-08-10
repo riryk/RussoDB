@@ -180,7 +180,7 @@ void* allocateChunkBlock(
 	MemoryChunk	  chunk;
 
     void*         chunkPtr;
-    size_t        size      = ALIGN_DEFAULT(chunkSize);
+    size_t        size      = AlignDefault(chunkSize);
     
     ASSERT(elog, funcMalloc != NULL, NULL);
     block = (MemoryBlock)funcMalloc(blockSize);
@@ -565,7 +565,7 @@ MemorySet memSetCreate(
 
 	ASSERT(elog, set != NULL, NULL);
 
-	initBlockSize = ALIGN_DEFAULT(initBlockSize);
+	initBlockSize = AlignDefault(initBlockSize);
 
 	/* Check if initBlockSize is less than 
 	 * the minimum allowed value. 
@@ -573,7 +573,7 @@ MemorySet memSetCreate(
 	if (initBlockSize < MEM_BLOCK_INIT_MIN_SIZE)
 		initBlockSize = MEM_BLOCK_INIT_MIN_SIZE;
 
-	maxBlockSize = ALIGN_DEFAULT(maxBlockSize);
+	maxBlockSize = AlignDefault(maxBlockSize);
 
 	/* maxBlock should be bigger than initBlockSize. */
 	if (maxBlockSize < initBlockSize)
@@ -609,7 +609,7 @@ MemorySet memSetCreate(
 	/* Here minContextSize is more than the block size.
 	 * In this case we allocate the first block.
 	 */
-	blockSize = ALIGN_DEFAULT(minContainerSize);
+	blockSize = AlignDefault(minContainerSize);
 
 	ASSERT(elog, funcMalloc != NULL, NULL); 
     block     = (MemoryBlock)funcMalloc(blockSize);
@@ -920,7 +920,7 @@ void* reallocateMemory(
 		ASSERT(elog, block->freeEnd == expected_block_end, NULL); 
 
 		/* Do the realloc */
-		chunk_size = ALIGN_DEFAULT(new_size);
+		chunk_size = AlignDefault(new_size);
 		block_size = chunk_size + MEM_BLOCK_SIZE + MEM_CHUNK_SIZE;
 
 		ASSERT(elog, funcRealloc != NULL, NULL); 

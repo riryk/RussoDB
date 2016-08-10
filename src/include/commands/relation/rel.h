@@ -115,7 +115,7 @@ typedef struct SRelOptions
 	 (((RelOptions)((rel)->options))->fillPercent) : (defaultPercent))
 
 #define GetPageFreeSpace(rel, defaultPercent) \
-	(BLOCK_SIZE * (100 - RelFillPercent((rel), (defaultPercent))) / 100)
+	(BlockSize * (100 - RelFillPercent((rel), (defaultPercent))) / 100)
 
 #define RelGetCurrentBlock(rel) \
 	((rel)->data != NULL ? \

@@ -114,8 +114,8 @@ typedef struct SHashtable
 #define HASH_SHARED_MEMORY      0x200
 
 
-#define GET_HASH_KEY(item)           ((char*)item + ALIGN_DEFAULT(sizeof(SHashItem)))
-#define GET_HASH_VALUE(key, keyLen)  ((char*)key + ALIGN_DEFAULT(keyLen))
+#define GET_HASH_KEY(item)           ((char*)item + AlignDefault(sizeof(SHashItem)))
+#define GET_HASH_VALUE(key, keyLen)  ((char*)key + AlignDefault(keyLen))
 #define IS_TABLE_PARTITIONED(table)  ((table)->partNum != 0)
 
 

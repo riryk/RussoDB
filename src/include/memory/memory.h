@@ -42,8 +42,8 @@ typedef enum MemContType
    MCT_MemorySet
 } MemContType;
 
-#define MEM_BLOCK_SIZE	   ALIGN_DEFAULT(sizeof(SMemoryBlock))
-#define MEM_CHUNK_SIZE	   ALIGN_DEFAULT(sizeof(SMemoryChunk))
+#define MEM_BLOCK_SIZE	   AlignDefault(sizeof(SMemoryBlock))
+#define MEM_CHUNK_SIZE	   AlignDefault(sizeof(SMemoryChunk))
 
 #define UNUSED_SPACE_MARK  0x7E  /* In dec it is 126, in binary - 0111 1110 */
 

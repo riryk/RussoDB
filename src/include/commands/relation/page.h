@@ -22,12 +22,12 @@
  * +--------------------------------+-----------------+
  *									^ special
  */
-typedef struct SItemId
+typedef struct ItemPointerData
 {
 	unsigned	off:15,		
 				flags:2,    
 				len:15;		
-} SItemId, *ItemId;
+} ItemPointerData, *ItemPointer;
 
 
 #define ITEM_UNUSED		0		/* unused when item's len = 0 */
@@ -58,7 +58,7 @@ typedef struct SPageHeader
 	uint16          special;	  /* offset to start of special space */
 	uint16		    version;
 	uint            tranId;
-	SItemId	        items[1];		
+	ItemPointerData	        items[1];		
 } SPageHeader, *PageHeader;
 
 #define SizeOfPageHeader (offsetof(SPageHeader, items))
@@ -79,7 +79,7 @@ typedef struct SPageHeader
  * page header and items array. 
  */
 #define SizeOfHeaderWithItemsArr(rowsPerPage) \
-    (ALIGN_DEFAULT(SizeOfPageHeader + (rowsPerPage) * sizeof(SItemId)))
+    (AlignDefault(SizeOfPageHeader + (rowsPerPage) * sizeof(ItemPointerData)))
 
 /* Suppose that we want to have 'rowsPerPage' rows on a page
  * BLOCK_SIZE is the total size of a page and 
@@ -88,13 +88,13 @@ typedef struct SPageHeader
  * maxRowSize.
  */
 #define MaxRowSize_By_RowsPerPage(rowsPerPage) \
-	(ALIGN_DOWN_DEFAULT((BLOCK_SIZE - SizeOfHeaderWithItemsArr(rowsPerPage)) / (rowsPerPage)))
+	(AlignDownDefault((BlockSize - SizeOfHeaderWithItemsArr(rowsPerPage)) / (rowsPerPage)))
 
 /* This macro caclulates the maximum number of rows
  * which can fit into a page.
  */
 #define MaxRowCountPerPage \
-	((int)(BLOCK_SIZE - SizeOfPageHeader) / (ALIGN_DEFAULT(offsetof(SRelRowHeader, nullBits)) + sizeof(SItemId)))
+	((int)(BlockSize - SizeOfPageHeader) / (AlignDefault(offsetof(SRelRowHeader, nullBits)) + sizeof(ItemPointerData)))
 
 /* This macros determines if there is 
  * at least one free item on a page. 
@@ -110,22 +110,22 @@ typedef struct SPageHeader
 
 /* Get ItemId from page by number */
 #define GetItemIdFromPage(page, num) \
-    ((ItemId)(&((PageHeader)(page))->items[(num) - 1]))
+    ((ItemPointer)(&((PageHeader)(page))->items[(num) - 1]))
 
 /* Consider that we put only one row per page.
  * We substract memory allocated for a page header 
  * and for ItemId.
  */
 #define MaxRowSize_OneRowPerPage \
-    (BLOCK_SIZE - ALIGN_DEFAULT(SizeOfPageHeader + sizeof(SItemId)))
+    (BlockSize - AlignDefault(SizeOfPageHeader + sizeof(SItemId)))
 
 /* This macros calculates a number of items 
  * which are put on a page. 
  */
 #define RowsCountOnPage(page) \
-	((((PageHeader)(page))->freeStart <= SizeOfPageHeader) ? 0 : ((((PageHeader)(page))->freeStart - SizeOfPageHeader) / sizeof(SItemId)))
+	((((PageHeader)(page))->freeStart <= SizeOfPageHeader) ? 0 : ((((PageHeader)(page))->freeStart - SizeOfPageHeader) / sizeof(ItemPointerData)))
 
-#define MaxItemId  ((int)(BLOCK_SIZE / sizeof(SItemId)))
+#define MaxItemId  ((int)(BlockSize / sizeof(ItemPointerData)))
 
 #define IsItemIdValid(itemId) \
 	((Bool)((itemId != 0) && (itemId <= MaxItemId)))

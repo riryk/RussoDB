@@ -11,9 +11,9 @@ extern const IHashtableManager  hashtableManager;
 
 #define HASH_ELEM_SIZE(tbl) \
 ( \
-    ALIGN_DEFAULT(sizeof(SHashItem)) \
-  + ALIGN_DEFAULT((tbl)->keyLen) \
-  + ALIGN_DEFAULT((tbl)->valLen) \
+    AlignDefault(sizeof(SHashItem)) \
+  + AlignDefault((tbl)->keyLen) \
+  + AlignDefault((tbl)->valLen) \
 )
 
 uint itemsNumToAlloc(uint elemSize);

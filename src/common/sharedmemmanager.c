@@ -29,7 +29,7 @@ void sharMemCtor(
 	sharMemLock = (TSpinLock*)(((char*)smHdr) + smHdr->freeoffset);
     
 	/* Update free memory pointer. */
-    smHdr->freeoffset += ALIGN_DEFAULT(sizeof(TSpinLock));
+    smHdr->freeoffset += AlignDefault(sizeof(TSpinLock));
 
     /* Assert that we have not exceeded the totalsize. */
     ASSERT_VOID(elog, smHdr->freeoffset <= smHdr->totalSize);
@@ -56,7 +56,7 @@ SharMemHeader sharMemCreate(
 	DWORD		        sizeLow;
 	DWORD               lastError;
 
-	ASSERT(elog, size > ALIGN_DEFAULT(sizeof(SSharMemHeader)), False);
+	ASSERT(elog, size > AlignDefault(sizeof(SSharMemHeader)), False);
 
 	szSharMem      = SHAR_MEM_NAME;
 	sharMemSegAddr = NULL;
@@ -172,7 +172,7 @@ SharMemHeader sharMemCreate(
 	sharMemHdrLocal->procId     = GetProcessId(GetCurrentProcess());
 	sharMemHdrLocal->hdrId      = 0;
 	sharMemHdrLocal->totalSize  = size;
-	sharMemHdrLocal->freeoffset = ALIGN_DEFAULT(sizeof(SSharMemHeader));
+	sharMemHdrLocal->freeoffset = AlignDefault(sizeof(SSharMemHeader));
 	sharMemHdrLocal->handle     = sharMemMapCpy;
 
 	sharMemSegAddr = mem;
@@ -270,7 +270,7 @@ void* allocSharedMem(
     volatile SharMemHeader smHdr = sharMemHdr;
 
 	/* First of all we align size */
-    size = ALIGN_DEFAULT(size);
+    size = AlignDefault(size);
 
 	/* Assert if shared memory header is not null. */
 	ASSERT(elog, smHdr != NULL, NULL); 
@@ -287,7 +287,7 @@ void* allocSharedMem(
 	 * assume that a large buffer is requested and 
 	 * we buffer align the size.
 	 */
-	if (size >= BLOCK_SIZE)
+	if (size >= BlockSize)
 		newStart = ALIGN_BUFFER(newStart);
 
     newFree  = newStart + size;

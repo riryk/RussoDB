@@ -115,7 +115,7 @@ void proc_func_sstap()
     
 	procIdMem     = (void*)((char*)shar_mem_hdr_sstap_1 
 		                        + shar_mem_hdr_sstap_1->freeoffset
-						        - ALIGN_DEFAULT(sizeof(int)));
+						        - AlignDefault(sizeof(int)));
     
 	procIdPointer = (int*)procIdMem;
     procId        = *procIdPointer;

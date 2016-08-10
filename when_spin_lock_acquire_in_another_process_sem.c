@@ -117,7 +117,7 @@ void proc_func_slaiaps()
     
 	memSpinLock = (void*)((char*)shar_mem_hdr_slaiaps_1 
 		                        + shar_mem_hdr_slaiaps_1->freeoffset
-						        - ALIGN_DEFAULT(sizeof(TSpinLock)));
+						        - AlignDefault(sizeof(TSpinLock)));
     
 	slock_slaiaps = (TSpinLock*)memSpinLock;
 

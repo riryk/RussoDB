@@ -53,7 +53,7 @@ TEST_TEAR_DOWN(allocate_large_chunk)
 TEST(allocate_large_chunk, then_chunk_block_must_be_created)
 {    
     int chunk_size_requested = size_alc;
-    int chunk_size           = ALIGN_DEFAULT(chunk_size_requested);
+    int chunk_size           = AlignDefault(chunk_size_requested);
 
 	void*           chunkMem = mem_alc;
 	MemoryChunk     chunk    = (MemoryChunk)((char*)chunkMem - MEM_CHUNK_SIZE); 

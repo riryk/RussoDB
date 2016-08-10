@@ -116,7 +116,7 @@ void proc_func_slfstip()
     
 	memSpinLock = (void*)((char*)shar_mem_hdr_slfstip_1 
 		                        + shar_mem_hdr_slfstip_1->freeoffset
-						        - ALIGN_DEFAULT(sizeof(TSpinLock)));
+						        - AlignDefault(sizeof(TSpinLock)));
     
 	slock_slfstip = (TSpinLock*)memSpinLock;
 

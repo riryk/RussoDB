@@ -698,6 +698,10 @@
 						RelativePath="src\include\dataaccess\indextuple.h"
 						>
 					</File>
+					<File
+						RelativePath="src\include\dataaccess\scankey.h"
+						>
+					</File>
 				</Filter>
 				<Filter
 					Name="storage"

@@ -45,7 +45,7 @@ TEST(create_memory_set_with_large_min_size, then_new_block_must_be_created)
 {
 	MemoryBlock  block           = ms_cmswlms->blockList;
 	int          freeMem         = block->freeEnd - block->freeStart;
-	int          expectedFreeMem = ALIGN_DEFAULT(mincontsize_cmswlms) - MEM_BLOCK_SIZE;
+	int          expectedFreeMem = AlignDefault(mincontsize_cmswlms) - MEM_BLOCK_SIZE;
 
 	TEST_ASSERT_NOT_NULL(block);
 

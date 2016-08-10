@@ -136,7 +136,7 @@ TEST(shared_mem_allocate_in_another_process, then_the_object_should_be_read)
 {
 	void*       mem     = (void*)((char*)shar_mem_hdr_smaiap_1 
 		                        + shar_mem_hdr_smaiap_1->freeoffset
-						        - ALIGN_DEFAULT(sizeof(SSharMemTest)));
+						        - AlignDefault(sizeof(SSharMemTest)));
 
     SharMemTest testObj = (SharMemTest)mem; 
 

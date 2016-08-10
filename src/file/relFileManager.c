@@ -379,7 +379,7 @@ int getBlocksNum(
 	len = fm->restoreFilePos(fm, seg->find, 0, SEEK_END);
 
 	/* And calculate the number of blocks. */
-	bnum = len / BLOCK_SIZE;
+	bnum = len / BlockSize;
 
 	/* If the last segment is not filled,
 	 * we simply return the total blocks number.
@@ -473,11 +473,11 @@ void readBlock(
 	int              bytes;
 
 	seg     = _->findBlockSegm(_, fold, rel, part, block, EXTENSION_FAIL, REL_SEGM_SIZE);
-    seekpos = (off_t)BLOCK_SIZE *(block % REL_SEGM_SIZE);
+    seekpos = (off_t)BlockSize *(block % REL_SEGM_SIZE);
 
     seekposret = fm->restoreFilePos(fm, seg->find, seekpos, SEEK_SET);    
     
-	bytes = fm->readFile(fm, seg->find, buffer, BLOCK_SIZE);
+	bytes = fm->readFile(fm, seg->find, buffer, BlockSize);
 }
 
 FileSeg writeBlock(
@@ -496,10 +496,10 @@ FileSeg writeBlock(
 	int              nbytes;
 
 	seg     = _->findBlockSegm(_, fold, rel, part, block, EXTENSION_FAIL, REL_SEGM_SIZE);
-	seekpos = (off_t)BLOCK_SIZE *(block % REL_SEGM_SIZE);
+	seekpos = (off_t)BlockSize *(block % REL_SEGM_SIZE);
 
 	seekposret = fm->restoreFilePos(fm, seg->find, seekpos, SEEK_END);
-	fm->writeFile(fm, seg->find, buffer, BLOCK_SIZE);
+	fm->writeFile(fm, seg->find, buffer, BlockSize);
 
 	return seg;
 	//_->pushFSyncRequest(_, fold, rel, part, seg);
@@ -520,10 +520,10 @@ void extendRelation(
     off_t		     seekpos, seekposret;
 
     seg     = _->findBlockSegm(_, fold, rel, part, block, EXTENSION_CREATE, REL_SEGM_SIZE);
-    seekpos = (off_t)BLOCK_SIZE *(block % REL_SEGM_SIZE);
+    seekpos = (off_t)BlockSize *(block % REL_SEGM_SIZE);
 
     seekposret = fm->restoreFilePos(fm, seg->find, seekpos, SEEK_END);
-    fm->writeFile(fm, seg->find, buffer, BLOCK_SIZE);
+    fm->writeFile(fm, seg->find, buffer, BlockSize);
 
 	return seg;
 }

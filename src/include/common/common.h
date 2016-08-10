@@ -12,7 +12,10 @@
 extern const SICommon sCommonHelper;
 extern const ICommon  commonHelper;
 
-typedef uintptr_t DataPointer;
+typedef uintptr_t DataPointerIntValue;
+typedef char* DataPointer;
+
+#define ConvertIntValueToPointer(intValue) ((DataPointer)(intValue))
 
 typedef unsigned int ObjectId;
 typedef unsigned int TransactionId;
@@ -48,7 +51,7 @@ typedef __int64        int64;
  * REL_SEGM_SIZE = 2^30 / 2^13 = 2^(30-13) = 2^17
  */
 #define REL_SEGM_SIZE (1 << 17)
-#define BLOCK_SIZE (1 << 13)
+#define BlockSize (1 << 13)
 #define MAX_BLOCK_SIZE (1 << 15)
 #define MAX_PRINTED_CHARS 10
 #define MAX_LISTEN 64
@@ -134,13 +137,13 @@ typedef struct SName
  * = 8(n + 1) + (k - 1), 0 <= k - 1 <= 8. We clear k - 1 and 
  * receive 8(n + 1) 
  */
-#define ALIGN_DEFAULT(LEN)      ALIGN(ALIGN_DEFAULT_VAL, (LEN))
+#define AlignDefault(len)       ALIGN(ALIGN_DEFAULT_VAL, (len))
 #define ALIGN_INT(LEN)          ALIGN(ALIGN_INT_VAL, (LEN)) 
 #define ALIGN_DOUBLE(LEN)       ALIGN(ALIGN_DOUBLE_VAL, (LEN)) 
 #define ALIGN_SHORT(LEN)        ALIGN(ALIGN_SHORT_VAL, (LEN)) 
 #define ALIGN_BUFFER(LEN)		ALIGN(ALIGN_BUFFER_VAL, (LEN))
 
-#define ALIGN_DOWN_DEFAULT(LEN) ALIGN_DOWN(ALIGN_DEFAULT_VAL, (LEN))
+#define AlignDownDefault(length) ALIGN_DOWN(ALIGN_DEFAULT_VAL, (length))
 
 #define GET_1_BYTE(val) (((uint)(val)) & 0x000000ff)
 #define GET_2_BYTES(val) (((uint)(val)) & 0x0000ffff)

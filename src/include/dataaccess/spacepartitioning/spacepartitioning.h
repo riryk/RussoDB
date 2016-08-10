@@ -1,9 +1,13 @@
 #include "indextuple.h"
 #include "error.h"
 #include "memory.h"
+#include "scankey.h"
+#include "page.h"
+#include "list.h"
 
 #ifndef Space_Partitioning_h
 #define Space_Partitioning_h
+
 
 typedef struct SpacePartitioningInnerTupleData
 {
@@ -18,9 +22,26 @@ typedef struct SpacePartitioningInnerTupleData
 
 typedef SpacePartitioningInnerTupleData *SpacePartitioningInnerTuple;
 
+#define InnerTupleHeaderSize AlignDefault(sizeof(SpacePartitioningInnerTupleData))
+
+#define InnerTupleData(tuple) (((char*)(tuple)) + InnerTupleHeaderSize)
+
+#define InnerTupleStartNode(tuple) ((SpacePartitioningNodeTuple)(InnerTupleData(tuple) + (tuple)->PrefixSize))
+
+#define IterateThruInnerTupleNodes(innerTuple, i, nodeTuple)	\
+	for ((i) = 0, (nodeTuple) = InnerTupleStartNode(innerTuple); \
+		 (i) < (innerTuple)->NumberOfNodes; \
+		 (i)++, (nodeTuple) = (SpacePartitioningNodeTuple)(((char*)(nodeTuple)) + IndexTupleSize(nodeTuple)))
+
+#define DoesNotExceedTupleBoundaries(position, innerTuple) \
+    ((position) < 0 || (position) > (innerTuple)->NumberOfNodes)
+
+
 typedef IndexTupleData SpacePartitioningNodeTupleData;
 
 typedef SpacePartitioningNodeTupleData *SpacePartitioningNodeTuple;
+
+#define NodeTupleHeaderSize AlignDefault(sizeof(SpacePartitioningNodeTupleData))
 
 typedef struct SpacePartitioningConfig
 {
@@ -42,8 +63,8 @@ typedef struct SpacePartitioningState
 	SpacePartitioningConfig InnerTupleConfig;
 
 	SpacePartitioningType   LeafValuesType;		
-	SpacePartitioningType   InnerTuplePrefixValuesType;
-	SpacePartitioningType   NodeLabelValuesType;
+	SpacePartitioningType   PrefixType;
+	SpacePartitioningType   LabelType;
 
 	char*                   DeadTupleStorage;
 
@@ -52,21 +73,30 @@ typedef struct SpacePartitioningState
 } SpacePartitioningState;
 
 
-#define InnerTupleHeaderSize ALIGN_DEFAULT(sizeof(SpacePartitioningInnerTupleData))
+typedef struct SpacePartitioningIndexScanData
+{
+	SpacePartitioningState   State;
+	MemoryContainer          TemporaryMemoryContainer;
 
-#define InnerTupleData(tuple) (((char*)(tuple)) + InnerTupleHeaderSize)
+	Bool		SearchNulls;
+	Bool		SearchNonNulls;
 
-#define InnerTupleStartNode(tuple) ((SpacePartitioningNodeTuple)(InnerTupleData(tuple) + (tuple)->PrefixSize))
+	int			NumberOfIndexKeys;
+	ScanKey		IndexScankeyData;
+
+	List*       PagesToVisit;
+} SpacePartitioningIndexScanData;
+
+typedef SpacePartitioningIndexScanData* SpacePartitioningIndexScan;
 
 
-#define IterateThruInnerTupleNodes(innerTuple, i, nodeTuple)	\
-	for ((i) = 0, (nodeTuple) = InnerTupleStartNode(innerTuple); \
-		 (i) < (innerTuple)->NumberOfNodes; \
-		 (i)++, (nodeTuple) = (SpacePartitioningNodeTuple)(((char*)(nodeTuple)) + IndexTupleSize(nodeTuple)))
+#define SpacePartitioningMaxPageDataSize  \
+	AlignDownDefault(BlockSize - \
+				     SizeOfPageHeader - \
+				     AlignDefault(sizeof(SpacePartitioningIndexScanData)))
 
-#define DoesNotExceedTupleBoundaries(position, innerTuple) \
-    ((position) < 0 || (position) > (innerTuple)->NumberOfNodes)
-
+#define InnerTupleSizeExceedsPageLimit(innerTupleSize) \
+    (innerTupleSize > SpacePartitioningMaxPageDataSize - sizeof(PageItemPointerData))
 
 #endif
 
