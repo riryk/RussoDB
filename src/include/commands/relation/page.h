@@ -6,6 +6,8 @@
 #include "relrow.h"
 #include "stddef.h"
 
+typedef DataPointer Page;
+
 /*
  * +----------------+---------------------------------+
  * | PageHeader     | item1 item2 item3 ...			  |
@@ -138,5 +140,6 @@ typedef struct SPageHeader
 
 #define MAX_ROW_SIZE	MaxRowSize_By_RowsPerPage(ROWS_PER_PAGE)
 
+#define PageIndexDeleteMultipleItems(Page page, PageOffsetNumber* itemOffsets, int numberOfItems)
 
 #endif

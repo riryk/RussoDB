@@ -9,6 +9,11 @@
 #define Space_Partitioning_h
 
 
+#define SpacePartitioningLiveTuple	  0	
+#define SPGIST_REDIRECT		1	/* temporary redirection placeholder */
+#define SPGIST_DEAD			2	/* dead, cannot be removed because of links */
+#define SPGIST_PLACEHOLDER	3	/* placeholder, used to preserve offsets */
+
 typedef struct SpacePartitioningInnerTupleData
 {
 	unsigned int TupleState:2,	           /* Live, Redirect, Dead, Placeholder */
@@ -42,6 +47,21 @@ typedef IndexTupleData SpacePartitioningNodeTupleData;
 typedef SpacePartitioningNodeTupleData *SpacePartitioningNodeTuple;
 
 #define NodeTupleHeaderSize AlignDefault(sizeof(SpacePartitioningNodeTupleData))
+
+
+typedef struct SpacePartitioningDeadTupleData
+{
+	uint                   TupleState:2,	          /* LIVE/REDIRECT/DEAD/PLACEHOLDER */
+		                   TupleSize:30;
+	PageItemOffset         NextOffset;	     
+	PageItemPointerData    RedirectTo;	   
+	TransactionId          TransactionId;
+} SpGistDeadTupleData;
+
+typedef SpacePartitioningDeadTupleData *SpacePartitioningDeadTuple;
+
+#define DeadTupleHeaderSize AlignDefault(sizeof(SpacePartitioningDeadTupleData))
+
 
 typedef struct SpacePartitioningConfig
 {

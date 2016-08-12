@@ -17,6 +17,12 @@ typedef char* DataPointer;
 
 #define ConvertIntValueToPointer(intValue) ((DataPointer)(intValue))
 
+#define QuickSort(itemsArray, numberOfItems, elementSize, element) 
+
+#define QuickSortIsLarger 1
+#define QuickSortIsSmaller -1
+#define QuickSortIsEqual 0
+
 typedef unsigned int ObjectId;
 typedef unsigned int TransactionId;
 
