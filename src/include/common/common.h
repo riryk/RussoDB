@@ -14,6 +14,7 @@ extern const ICommon  commonHelper;
 
 typedef uintptr_t DataPointerIntValue;
 typedef char* DataPointer;
+typedef DataPointer Item;
 
 #define ConvertIntValueToPointer(intValue) ((DataPointer)(intValue))
 
@@ -25,6 +26,8 @@ typedef char* DataPointer;
 
 typedef unsigned int ObjectId;
 typedef unsigned int TransactionId;
+
+#define InvalidTransactionId ((TransactionId)0)
 
 typedef unsigned char  uint8;
 typedef char           int8;

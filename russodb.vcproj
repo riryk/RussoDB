@@ -682,6 +682,14 @@
 				<Filter
 					Name="dataaccess"
 					>
+					<File
+						RelativePath="src\include\dataaccess\indextuple.h"
+						>
+					</File>
+					<File
+						RelativePath="src\include\dataaccess\scankey.h"
+						>
+					</File>
 					<Filter
 						Name="spacepartitioning"
 						>
@@ -693,15 +701,7 @@
 							RelativePath="src\include\dataaccess\spacepartitioning\spacepartitioning.txt"
 							>
 						</File>
-				    </Filter>
-					<File
-						RelativePath="src\include\dataaccess\indextuple.h"
-						>
-					</File>
-					<File
-						RelativePath="src\include\dataaccess\scankey.h"
-						>
-					</File>
+					</Filter>
 				</Filter>
 				<Filter
 					Name="storage"
@@ -713,7 +713,7 @@
 					<File
 						RelativePath="src\include\storage\block.txt"
 						>
-					</File>  
+					</File>
 					<File
 						RelativePath="src\include\storage\pageitempointer.h"
 						>
@@ -722,7 +722,7 @@
 						RelativePath="src\include\storage\pageitempointer.txt"
 						>
 					</File>
-				</Filter> 
+				</Filter>
 			</Filter>
 			<Filter
 				Name="file"
@@ -1744,21 +1744,29 @@
 				Name="dataaccess"
 				>
 				<Filter
-				    Name="spacepartitioning"
-				    >
-				    <File
-					    RelativePath="src\dataaccess\spacepartitioning\spaceinserter.c"
-					    >
-				    </File>
+					Name="spacepartitioning"
+					>
 					<File
-					    RelativePath="src\dataaccess\spacepartitioning\spaceinserter.txt"
-					    >
-				    </File>
+						RelativePath=".\src\dataaccess\spacepartitioning\space_nodes_creator.c"
+						>
+					</File>
 					<File
-					    RelativePath="src\dataaccess\spacepartitioning\spacenodescreator.c"
-					    >
-				    </File>
-				</Filter>	
+						RelativePath=".\src\dataaccess\spacepartitioning\space_nodes_inserter.c"
+						>
+					</File>
+					<File
+						RelativePath=".\src\dataaccess\spacepartitioning\space_page_item_deleter.c"
+						>
+					</File>
+					<File
+						RelativePath=".\src\dataaccess\spacepartitioning\space_page_leaftuple_adder.c"
+						>
+					</File>
+					<File
+						RelativePath="src\dataaccess\spacepartitioning\spaceinserter.txt"
+						>
+					</File>
+				</Filter>
 			</Filter>
 		</Filter>
 	</Files>

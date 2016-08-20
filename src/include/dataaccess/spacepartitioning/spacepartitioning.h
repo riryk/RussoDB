@@ -4,15 +4,16 @@
 #include "scankey.h"
 #include "page.h"
 #include "list.h"
+#include "rel.h"
 
 #ifndef Space_Partitioning_h
 #define Space_Partitioning_h
 
 
-#define SpacePartitioningLiveTuple	  0	
-#define SPGIST_REDIRECT		1	/* temporary redirection placeholder */
-#define SPGIST_DEAD			2	/* dead, cannot be removed because of links */
-#define SPGIST_PLACEHOLDER	3	/* placeholder, used to preserve offsets */
+#define SpacePartitioningLiveTupleType  	  0	
+#define SpacePartitioningRedirectTupleType    1
+#define SpacePartitioningDeadTupleType  	  2
+#define SpacePartitioningPlaceholderType      3
 
 typedef struct SpacePartitioningInnerTupleData
 {
@@ -56,7 +57,7 @@ typedef struct SpacePartitioningDeadTupleData
 	PageItemOffset         NextOffset;	     
 	PageItemPointerData    RedirectTo;	   
 	TransactionId          TransactionId;
-} SpGistDeadTupleData;
+} SpacePartitioningDeadTupleData;
 
 typedef SpacePartitioningDeadTupleData *SpacePartitioningDeadTuple;
 
@@ -88,7 +89,7 @@ typedef struct SpacePartitioningState
 
 	char*                   DeadTupleStorage;
 
-	TransactionId           CreateRedirectTupleTranId;		
+	TransactionId           TransactionId;		
 	Bool		            PerformsIndexBuild;	
 } SpacePartitioningState;
 
@@ -109,7 +110,6 @@ typedef struct SpacePartitioningIndexScanData
 
 typedef SpacePartitioningIndexScanData* SpacePartitioningIndexScan;
 
-
 #define SpacePartitioningMaxPageDataSize  \
 	AlignDownDefault(BlockSize - \
 				     SizeOfPageHeader - \
@@ -117,6 +117,17 @@ typedef SpacePartitioningIndexScanData* SpacePartitioningIndexScan;
 
 #define InnerTupleSizeExceedsPageLimit(innerTupleSize) \
     (innerTupleSize > SpacePartitioningMaxPageDataSize - sizeof(PageItemPointerData))
+
+typedef struct SpacePartitioningLeafTupleData
+{
+	uint              TupleState:2,	  /* LIVE/REDIRECT/DEAD/PLACEHOLDER */
+			          Size:30;		      
+	PageOffsetNumber  NextTupleOffset;	
+	ItemPointerData   PointerToHeapTuple;
+
+} SpacePartitioningLeafTupleData;
+
+typedef SpacePartitioningLeafTupleData* SpacePartitioningLeafTuple;
 
 #endif
 
