@@ -18,7 +18,7 @@ void doCreateTestFiles(int filesCount)
     for (i = 0; i < fcount; i++)
 	{
         fnames[i] = (char*)mem + i * expSize;
-		_snprintf_s(fnames[i], expSize, 100, pattern, i);
+		//_snprintf_s(fnames[i], expSize, 100, pattern, i);
 	}
 }
 

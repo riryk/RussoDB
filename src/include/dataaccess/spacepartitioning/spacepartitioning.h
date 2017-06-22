@@ -122,7 +122,7 @@ typedef struct SpacePartitioningLeafTupleData
 {
 	uint              TupleState:2,	  /* LIVE/REDIRECT/DEAD/PLACEHOLDER */
 			          Size:30;		      
-	PageOffsetNumber  NextTupleOffset;	
+	PageItemOffset    NextTupleOffset;
 	ItemPointerData   PointerToHeapTuple;
 
 } SpacePartitioningLeafTupleData;

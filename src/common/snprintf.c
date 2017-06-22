@@ -2,6 +2,10 @@
 #include "common.h"
 #include "error.h"
 
+
+#ifndef SNPRINTF_IMPL
+#define SNPRINTF_IMPL
+
 typedef struct SPrintfInfo
 {
 	char*       curr;			
@@ -91,6 +95,7 @@ Bool doprintf(
 	return True;
 }
 
+/*
 int snprintf(
     char*        s, 
 	size_t       count, 
@@ -118,6 +123,7 @@ int snprintf(
 
 	return info.curr - info.start;
 }
+*/
 
 int snprintf_args(
 	char*        s, 
@@ -145,3 +151,4 @@ int snprintf_args(
 	return info.curr - info.start;
 }
 
+#endif
