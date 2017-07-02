@@ -95,7 +95,6 @@ Bool doprintf(
 	return True;
 }
 
-/*
 int snprintf(
     char*        s, 
 	size_t       count, 
@@ -123,7 +122,6 @@ int snprintf(
 
 	return info.curr - info.start;
 }
-*/
 
 int snprintf_args(
 	char*        s, 
