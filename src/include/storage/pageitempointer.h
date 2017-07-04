@@ -35,4 +35,14 @@ typedef PageItemPointerData *PageItemPointer;
 	(pointer)->PositionId = offsetNumber \
 )
 
+#define ItemPointerGetBlockNumber(pointer) \
+( \
+	BlockIdGetBlockNumber(&(pointer)->BlockId) \
+)
+
+#define ItemPointerGetOffsetNumber(pointer) \
+( \
+	(pointer)->PositionId \
+)
+
 #endif

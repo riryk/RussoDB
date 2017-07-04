@@ -5,6 +5,7 @@
 #include "hashtable.h"
 #include "relationmanager.h"
 #include "ibuffermanager.h"
+#include "page.h"
 
 /* This buffer manager is applied for writing 
  * buffers to a database file. It is organized 
@@ -12,6 +13,8 @@
  * from this link:
  * http://www.westnet.com/~gsmith/content/postgresql/InsideBufferCache.pdf
  */
+typedef void *Block;
+
 extern Hashtable    bufCache;
 
 extern const SIBufferManager sBufferManager;
@@ -23,6 +26,14 @@ extern char*             bufBlocks;
 extern int			     bufNum;
 
 void ctorBufMan(void* self);
+
+BufferId ReadBuffer(Relation reln, BlockNumber blockNum);
+
+void ReleaseBuffer(int buffer);
+
+#define BufferGetBlock(buffer) ((Block) (bufBlocks + ((uint) ((buffer) - 1)) * BlockSize))
+
+#define BufferGetPage(buffer) ((Page)BufferGetBlock(buffer))
 
 Bool pinBuffer(
     void*                self,
@@ -53,14 +64,14 @@ void flushBuffer(
     BufferInfo           buf, 
 	RelData              rel);
 
-int readBuffer(
+int readBufferInternal(
 	void*                self,
     RelData              rel, 
     FilePartNumber       partnum,
     uint                 blocknum,
     BufRing              ring);
 
-int getBlockNum(int buffer);
+int BufferGetBlockNumber(int buffer);
 
 void dirtyBuffer(int buffer);
 

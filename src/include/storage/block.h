@@ -23,4 +23,9 @@ typedef BlockIdData *BlockId;
 	(blockId)->BlockIdLowPart = (blockNumber) & 0xffff \
 )
 
+#define BlockIdGetBlockNumber(blockId) \
+( \
+	(BlockNumber) (((blockId)->BlockIdHighPart << 16) | ((uint16) (blockId)->BlockIdLowPart)) \
+)
+
 #endif

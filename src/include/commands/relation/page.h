@@ -5,6 +5,7 @@
 #include "common.h"
 #include "relrow.h"
 #include "stddef.h"
+#include "itemid.h"
 
 typedef DataPointer Page;
 
@@ -24,25 +25,6 @@ typedef DataPointer Page;
  * +--------------------------------+-----------------+
  *									^ special
  */
-typedef struct ItemPointerData
-{
-	unsigned	off:15,		
-				flags:2,    
-				len:15;		
-} ItemPointerData, *ItemPointer;
-
-
-#define ITEM_UNUSED		0		/* unused when item's len = 0 */
-#define ITEM_NORMAL		1		/* normal items are items with len > 0 */
-#define ITEM_REDIRECT	2		/* len = 0 */
-#define ITEM_DEAD		3		/* dead, may or may not have storage */
-
-/* This macro checks if a item is in use or not */
-#define ItemIdIsInUse(itemId) \
-	((itemId)->flags != ITEM_UNUSED)
-
-#define ItemIdHasStorage(itemId) \
-	((itemId)->len != 0)
 
 typedef struct SPageTLog
 {
@@ -110,9 +92,16 @@ typedef struct SPageHeader
 #define PageClearHasFreeLinePointers(page) \
 	(((PageHeader)(page))->flags &= ~PAGE_HAS_FREE_ITEMS)
 
+#define PageGetContents(page) ((char *) (page))
+
+#define PageGetItem(page, itemId) \
+( \
+	(char*)(((char *)(page)) + ItemIdGetOffset(itemId)) \
+)
+
 /* Get ItemId from page by number */
-#define GetItemIdFromPage(page, num) \
-    ((ItemPointer)(&((PageHeader)(page))->items[(num) - 1]))
+#define PageGetItemId(page, offsetNumber) \
+    ((ItemPointer)(&((PageHeader)(page))->items[(offsetNumber) - 1]))
 
 /* Consider that we put only one row per page.
  * We substract memory allocated for a page header 

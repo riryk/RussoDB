@@ -6,6 +6,8 @@
 #include "relfile.h"
 #include "latch.h"
 
+#define InvalidBuffer (-1)
+
 /* Number of partitions of the shared buffer mapping hashtable 
  * Partitions in a hashtable has been created to reduce contention
  * which is caused by one single lock.
