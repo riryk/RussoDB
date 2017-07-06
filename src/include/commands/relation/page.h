@@ -8,6 +8,7 @@
 #include "itemid.h"
 
 typedef DataPointer Page;
+typedef DataPointer PageItem;
 
 /*
  * +----------------+---------------------------------+
@@ -96,7 +97,7 @@ typedef struct SPageHeader
 
 #define PageGetItem(page, itemId) \
 ( \
-	(char*)(((char *)(page)) + ItemIdGetOffset(itemId)) \
+	(PageItem)(((char *)(page)) + ItemIdGetOffset(itemId)) \
 )
 
 /* Get ItemId from page by number */

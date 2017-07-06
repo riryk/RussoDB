@@ -12,6 +12,7 @@
 extern const SICommon sCommonHelper;
 extern const ICommon  commonHelper;
 
+typedef uintptr_t Datum;
 typedef uintptr_t DataPointerIntValue;
 typedef char* DataPointer;
 typedef DataPointer Item;
@@ -48,6 +49,8 @@ typedef __int64        int64;
 #define ALIGN_DOUBLE_VAL    8
 #define ALIGN_SHORT_VAL     2
 #define ALIGN_BUFFER_VAL	32
+
+#define FlexibleArrayMember
 
 #define CYCLE for(;;) 
 #define Max(x, y)		((x) > (y) ? (x) : (y))

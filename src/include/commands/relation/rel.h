@@ -6,6 +6,7 @@
 #include "page.h"
 #include "relfile.h"
 #include "types.h"
+#include "tuple.h"
 
 #define REL_MIN_FILL_PERCENT         10
 #define REL_FILL_PERCENT_DEFAULT     100
@@ -74,6 +75,7 @@ typedef struct SRelation
    uint		       refCount;
    uint            typeId;
    uint            attrCount;
+   TupleDescriptor tupleDescriptor;
    RelAttribute    attributes;
    VarLenAttr      options;
    RelData         data;
@@ -120,6 +122,8 @@ typedef struct SRelOptions
 #define RelGetCurrentBlock(rel) \
 	((rel)->data != NULL ? \
      (rel)->data->currentBlock : INVALID_BLOCK)
+
+#define RelationGetDescriptor(relation) ((relation)->tupleDescriptor)
 
 #endif
 
