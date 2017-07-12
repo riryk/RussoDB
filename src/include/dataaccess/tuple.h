@@ -10,6 +10,8 @@ typedef struct TupleDescriptor
 	uint referenceCount;
 } *TupleDescriptor;
 
+#define attributeIsNull(attribute, bits) (!((bits)[(attribute) >> 3] & (1 << ((attribute) & 0x07))))
+
 #endif
 
 
