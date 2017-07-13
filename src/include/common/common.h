@@ -118,6 +118,7 @@ typedef struct SName
 	char	    value[NAME_MAX_LENGTH];
 } SName, *Name;
 
+#define VarSizeAny(dataPointer) (0)
 
 #define ALIGN(VAL,LEN)  \
 	(((int)(LEN) + ((VAL) - 1)) & ~((int)((VAL) - 1)))
@@ -167,6 +168,14 @@ typedef struct SName
 
 
 #define FILE_EXISTS(name) ((access((name), _A_NORMAL) != -1) ? True : False)
+
+#define Int32GetDatum(data) ((Datum)SET_4_BYTES(data))
+
+#define Int16GetDatum(data) ((Datum)SET_2_BYTES(data))
+
+#define CharGetDatum(data) ((Datum)SET_1_BYTE(data))
+
+#define PointerGetDatum(data) ((Datum)(data))
 
 #define cat_rel_attr_count   8
 
