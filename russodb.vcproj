@@ -44,7 +44,7 @@
 				Name="VCCLCompilerTool"
 				AdditionalOptions="/MP"
 				Optimization="0"
-				AdditionalIncludeDirectories="src/include/file;src/include/error;src/include/common;src/include/os/file;src/include/commands;src/include/commands/relation;src/include/memory;src/include/lib/unity;src/include/tests/unit;src/include/common/hashtable;src/include/tests/unit/memory;src/include/tests/unit/common/hashtable;src/include/commands/relation/row;src/include/tests/unit/commands/relation/row;src/include/commands/relation/buffer;src/include/tests/unit/file/file_manager;src/include/common/config;src/include/tests/unit/error;src/include/common/signal;src/include/common/lock;src/include/tests/unit/common/sharedmem;src/include/dataaccess;src/include/dataaccess/spacepartitioning;src/include/storage;src/dataaccess/blockrangeindex/brin_internal.h;src/dataaccess/blockrangeindex/brin_range_map.h;src/dataaccess/blockrangeindex/brin_page.h;src/dataaccess/blockrangeindex/brin_tuple.h;src/include/storage/offset.h;src/include/storage/itemid.h;src/include/dataaccess/tuple.h;src/include/dataaccess/index.h;src/include/commands/relation/relattribute.h;"
+				AdditionalIncludeDirectories="src/include/file;src/include/error;src/include/common;src/include/os/file;src/include/commands;src/include/commands/relation;src/include/memory;src/include/lib/unity;src/include/tests/unit;src/include/common/hashtable;src/include/tests/unit/memory;src/include/tests/unit/common/hashtable;src/include/commands/relation/row;src/include/tests/unit/commands/relation/row;src/include/commands/relation/buffer;src/include/tests/unit/file/file_manager;src/include/common/config;src/include/tests/unit/error;src/include/common/signal;src/include/common/lock;src/include/tests/unit/common/sharedmem;src/include/dataaccess;src/include/dataaccess/spacepartitioning;src/include/storage;src/dataaccess/blockrangeindex;src/common/datum;"
 				StringPooling="false"
 				RuntimeLibrary="3"
 				AssemblerOutput="0"
@@ -360,6 +360,10 @@
 					</File>
 					<File
 						RelativePath="src\include\common\types.h"
+						>
+					</File>
+					<File
+						RelativePath="src\include\common\typecache.h"
 						>
 					</File>
 					<Filter
@@ -888,6 +892,18 @@
 					</File>
 					<File
 						RelativePath="src\common\lock\spinlockstrategy.c"
+						>
+					</File>
+				</Filter>
+				<Filter
+					Name="datum"
+					>
+					<File
+						RelativePath="src\common\datum\datum.c"
+						>
+					</File>
+					<File
+						RelativePath="src\common\datum\datum.h"
 						>
 					</File>
 				</Filter>
