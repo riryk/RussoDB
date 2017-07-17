@@ -26,4 +26,7 @@ typedef struct ItemPointerData
 #define ItemIdGetOffset(itemId) \
    ((itemId)->off)
 
+#define ItemIdGetLength(itemId) \
+   ((itemId)->len)
+
 #endif

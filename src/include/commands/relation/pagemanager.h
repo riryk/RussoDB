@@ -10,9 +10,7 @@ void initializePage(
 	  size_t        size, 
 	  size_t        suplSize);
 
-size_t getFreeSpace(
-	  void*         self,
-	  void*         page);
+size_t PageGetExactFreeSpace(Page page);
 
 uint16 addItemToPage(
 	  void*          page,

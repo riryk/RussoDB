@@ -103,7 +103,7 @@ typedef struct SPageHeader
 /* Get ItemId from page by number */
 #define PageGetItemId(page, offsetNumber) \
     ((ItemPointer)(&((PageHeader)(page))->items[(offsetNumber) - 1]))
-
+    
 /* Consider that we put only one row per page.
  * We substract memory allocated for a page header 
  * and for ItemId.

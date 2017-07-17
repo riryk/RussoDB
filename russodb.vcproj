@@ -942,6 +942,14 @@
 						RelativePath=".\src\dataaccess\blockrangeindex\brin_range_map.c"
 						>
 					</File>
+					<File
+						RelativePath=".\src\dataaccess\blockrangeindex\brin_page_operations.c"
+						>
+					</File>
+					<File
+						RelativePath=".\src\dataaccess\blockrangeindex\brin_page_operations.h"
+						>
+					</File>
 				</Filter>
 				<Filter
 					Name="spacepartitioning"
