@@ -6,6 +6,7 @@
 #include "relationmanager.h"
 #include "ibuffermanager.h"
 #include "page.h"
+#include "relfile.h"
 
 /* This buffer manager is applied for writing 
  * buffers to a database file. It is organized 
@@ -34,6 +35,9 @@ void ReleaseBuffer(int buffer);
 #define BufferGetBlock(buffer) ((Block) (bufBlocks + ((uint) ((buffer) - 1)) * BlockSize))
 
 #define BufferGetPage(buffer) ((Page)BufferGetBlock(buffer))
+
+#define RelationGetNumberOfBlocks(relation) \
+   RelationGetNumberOfBlocksInFork(relation, FILE_PART_MAIN)
 
 Bool pinBuffer(
     void*                self,
@@ -74,6 +78,8 @@ int readBufferInternal(
 int BufferGetBlockNumber(int buffer);
 
 void dirtyBuffer(int buffer);
+
+BlockNumber RelationGetNumberOfBlocksInFork(Relation relation, FilePartNumber forkNumber);
 
 uint getBlocksNumInRelPart(
 	void*                 self,

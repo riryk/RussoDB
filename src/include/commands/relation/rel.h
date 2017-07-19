@@ -72,5 +72,12 @@ typedef struct SRelOptions
 
 #define RelationGetDescriptor(relation) ((relation)->tupleDescriptor)
 
+#define RelationGetRelationId(relation) ((relation)->id)
+
+//TODO: Open physical file, which is a part of relation
+#define RelationOpenFile(relation) \
+	do { \
+	} while (0)
+
 #endif
 
