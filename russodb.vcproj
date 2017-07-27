@@ -615,6 +615,10 @@
 						>
 					</File>
 					<File
+						RelativePath="src\include\dataaccess\strategynumber.h"
+						>
+					</File>
+					<File
 						RelativePath="src\include\dataaccess\tuple.h"
 						>
 					</File>
@@ -918,14 +922,22 @@
 				<Filter
 					Name="blockrangeindex"
 					>
-					<File
-						RelativePath=".\src\dataaccess\blockrangeindex\brin_inclusion_strategy.c"
-						>
-					</File>
-					<File
-						RelativePath=".\src\dataaccess\blockrangeindex\brin_inclusion_strategy.h"
-						>
-					</File>
+					<Filter
+					    Name="inclusionstrategy"
+					    >
+					    <File
+						    RelativePath=".\src\dataaccess\blockrangeindex\inclusionstrategy\brin_inclusion_add_value.c"
+						    >
+					    </File>
+						<File
+						    RelativePath=".\src\dataaccess\blockrangeindex\inclusionstrategy\brin_inclusion_consistent.c"
+						    >
+					    </File>
+					    <File
+						    RelativePath=".\src\dataaccess\blockrangeindex\inclusionstrategy\brin_inclusion_strategy.h"
+						    >
+					    </File>	
+					</Filter>
 					<File
 						RelativePath=".\src\dataaccess\blockrangeindex\brin_page.h"
 						>
