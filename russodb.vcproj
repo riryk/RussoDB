@@ -44,7 +44,7 @@
 				Name="VCCLCompilerTool"
 				AdditionalOptions="/MP"
 				Optimization="0"
-				AdditionalIncludeDirectories="src/include/file;src/include/error;src/include/common;src/include/os/file;src/include/commands;src/include/commands/relation;src/include/memory;src/include/lib/unity;src/include/tests/unit;src/include/common/hashtable;src/include/tests/unit/memory;src/include/tests/unit/common/hashtable;src/include/commands/relation/row;src/include/tests/unit/commands/relation/row;src/include/commands/relation/buffer;src/include/tests/unit/file/file_manager;src/include/common/config;src/include/tests/unit/error;src/include/common/signal;src/include/common/lock;src/include/tests/unit/common/sharedmem;src/include/dataaccess;src/include/dataaccess/spacepartitioning;src/include/storage;src/dataaccess/blockrangeindex;src/common/datum;src/backend/catalog;src/dataaccess/heap;src/dataaccess/index;"
+				AdditionalIncludeDirectories="src/include/file;src/include/error;src/include/common;src/include/os/file;src/include/commands;src/include/commands/relation;src/include/memory;src/include/lib/unity;src/include/tests/unit;src/include/common/hashtable;src/include/tests/unit/memory;src/include/tests/unit/common/hashtable;src/include/commands/relation/row;src/include/tests/unit/commands/relation/row;src/include/commands/relation/buffer;src/include/tests/unit/file/file_manager;src/include/common/config;src/include/tests/unit/error;src/include/common/signal;src/include/common/lock;src/include/tests/unit/common/sharedmem;src/include/dataaccess;src/include/dataaccess/spacepartitioning;src/include/storage;src/dataaccess/blockrangeindex;src/common/datum;src/backend/catalog;src/dataaccess/heap;src/dataaccess/index;src/utils/types;"
 				StringPooling="false"
 				RuntimeLibrary="3"
 				AssemblerOutput="0"
@@ -919,6 +919,14 @@
 					Name="blockrangeindex"
 					>
 					<File
+						RelativePath=".\src\dataaccess\blockrangeindex\brin_inclusion_strategy.c"
+						>
+					</File>
+					<File
+						RelativePath=".\src\dataaccess\blockrangeindex\brin_inclusion_strategy.h"
+						>
+					</File>
+					<File
 						RelativePath=".\src\dataaccess\blockrangeindex\brin_page.h"
 						>
 					</File>
@@ -1020,6 +1028,30 @@
 					</File>
 					<File
 						RelativePath=".\src\backend\catalog\catalog_index.c"
+						>
+					</File>
+			    </Filter>
+			</Filter>
+			<Filter
+				Name="utils"
+				>
+				<Filter
+					Name="types"
+					>
+					<File
+						RelativePath=".\src\utils\types\range_type.h"
+						>
+					</File>
+					<File
+						RelativePath=".\src\utils\types\range_type.c"
+						>
+					</File>
+			    </Filter>
+				<Filter
+					Name="cache"
+					>
+					<File
+						RelativePath=".\src\utils\cache\type_cache.c"
 						>
 					</File>
 			    </Filter>

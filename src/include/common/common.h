@@ -52,6 +52,10 @@ typedef __int64        int64;
 
 #define FlexibleArrayMember
 
+#define DatumGetBool(datum) ((Bool)(GET_1_BYTE(datum) != 0))
+
+#define BoolGetDatum(datum) ((Datum)((datum) ? 1 : 0))
+
 #define CYCLE for(;;) 
 #define Max(x, y)		((x) > (y) ? (x) : (y))
 #define Min(x, y)		((x) < (y) ? (x) : (y))
@@ -119,6 +123,7 @@ typedef struct SName
 } SName, *Name;
 
 #define VarSizeAny(dataPointer) (0)
+#define VarSize(dataPointer) (0)
 
 #define ALIGN(VAL,LEN)  \
 	(((int)(LEN) + ((VAL) - 1)) & ~((int)((VAL) - 1)))

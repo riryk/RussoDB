@@ -6,8 +6,13 @@
 
 typedef struct TypeCacheEntry
 {
-	int16		typeLength;
-	Bool		typeByValue;
+	int16 typeLength;
+	Bool typeByValue;
+	char typeAlign;
+	void* comparisonFunction;
+	struct TypeCacheEntry* rangeElementType;
 } TypeCacheEntry;
+
+TypeCacheEntry* lookupTypeCache(uint typeId);
 
 #endif
