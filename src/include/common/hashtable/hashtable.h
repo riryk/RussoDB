@@ -113,6 +113,9 @@ typedef struct SHashtable
 #define HASH_PARTITION          0x100
 #define HASH_SHARED_MEMORY      0x200
 
+#define HashElement     0x0010 /* Set keysize and entrysize */
+#define HashBlobs		0x0020	/* Select support functions for binary keys */
+
 
 #define GET_HASH_KEY(item)           ((char*)item + AlignDefault(sizeof(SHashItem)))
 #define GET_HASH_VALUE(key, keyLen)  ((char*)key + AlignDefault(keyLen))

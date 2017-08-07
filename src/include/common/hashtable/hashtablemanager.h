@@ -8,6 +8,12 @@
 extern const SIHashtableManager sHashtableManager;
 extern const IHashtableManager  hashtableManager;
 
+typedef struct
+{
+   Hashtable* hashTable;
+   int currentBucket;
+   HashItem* currentEntry; 
+}  HashSequentialScanStatus;
 
 #define HASH_ELEM_SIZE(tbl) \
 ( \
@@ -19,7 +25,6 @@ extern const IHashtableManager  hashtableManager;
 uint itemsNumToAlloc(uint elemSize);
 
 Hashtable createHashtable(
-    void*              self,
 	char*              name, 
 	long               maxItemsNum, 
 	HashtableSettings  set, 
@@ -27,16 +32,21 @@ Hashtable createHashtable(
 
 void* hashFind(
 	Hashtable          tbl, 
-    void*              key);
+  void*              key);
 
 void* hashInsert(
-	void*              self,
-    Hashtable          tbl, 
-    void*              key);
+  Hashtable tbl, 
+  void* key,
+  Bool* wasFoundBeforeInsert);
 
 void* hashRemove(
-	void*              self,
-    Hashtable          tbl, 
-    void*              key);
+  Hashtable          tbl, 
+  void*              key);
+
+void hashSequentialScanInit(HashSequentialScanStatus* status, Hashtable* hashTable);
+
+void* hashSequentialSearch(HashSequentialScanStatus* status);
+
+void hashSequentialSearchTerminate(HashSequentialScanStatus* status);
 
 #endif
