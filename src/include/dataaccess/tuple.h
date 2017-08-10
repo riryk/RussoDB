@@ -12,6 +12,13 @@ typedef struct TupleDescriptor
 	uint referenceCount;
 } *TupleDescriptor;
 
+typedef struct HeapTupleData
+{
+	uint length;
+} HeapTupleData;
+
+typedef HeapTupleData* HeapTuple;
+
 #define AttributeIsNull(attribute, bits) (!((bits)[(attribute) >> 3] & (1 << ((attribute) & 0x07))))
 
 #define AttributeAlignNominal(currentOffset) ALIGN_SHORT(currentOffset)
