@@ -933,6 +933,10 @@
 						    RelativePath=".\src\dataaccess\blockrangeindex\inclusionstrategy\brin_inclusion_consistent.c"
 						    >
 					    </File>
+						<File
+						    RelativePath=".\src\dataaccess\blockrangeindex\inclusionstrategy\brin_inclusion_union.c"
+						    >
+					    </File>
 					    <File
 						    RelativePath=".\src\dataaccess\blockrangeindex\inclusionstrategy\brin_inclusion_strategy.h"
 						    >
@@ -960,6 +964,10 @@
 					</File>
 					<File
 						RelativePath=".\src\dataaccess\blockrangeindex\brin_internal.h"
+						>
+					</File>
+					<File
+						RelativePath=".\src\dataaccess\blockrangeindex\brin.h"
 						>
 					</File>
 					<File

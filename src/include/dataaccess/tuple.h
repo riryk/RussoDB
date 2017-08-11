@@ -3,6 +3,7 @@
 
 #include "common.h"
 #include "relattribute.h"
+#include "pageitempointer.h"
 
 typedef struct TupleDescriptor
 {
@@ -15,6 +16,7 @@ typedef struct TupleDescriptor
 typedef struct HeapTupleData
 {
 	uint length;
+	PageItemPointerData selfItemPointer;
 } HeapTupleData;
 
 typedef HeapTupleData* HeapTuple;
