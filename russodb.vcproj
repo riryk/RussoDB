@@ -711,6 +711,10 @@
 					RelativePath="src\memory\trackmemmanager.c"
 					>
 				</File>
+				<File
+					RelativePath="src\memory\aset.c"
+					>
+				</File>
 			</Filter>
 			<Filter
 				Name="lib"
