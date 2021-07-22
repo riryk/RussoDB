@@ -44,7 +44,7 @@
 				Name="VCCLCompilerTool"
 				AdditionalOptions="/MP"
 				Optimization="0"
-				AdditionalIncludeDirectories="src/include/file;src/include/error;src/include/common;src/include/os/file;src/include/commands;src/include/commands/relation;src/include/memory;src/include/lib/unity;src/include/tests/unit;src/include/common/hashtable;src/include/tests/unit/memory;src/include/tests/unit/common/hashtable;src/include/commands/relation/row;src/include/tests/unit/commands/relation/row;src/include/commands/relation/buffer;src/include/tests/unit/file/file_manager;src/include/common/config;src/include/tests/unit/error;src/include/common/signal;src/include/common/lock;src/include/tests/unit/common/sharedmem;src/include/dataaccess;src/include/dataaccess/spacepartitioning;src/include/storage;src/dataaccess/blockrangeindex;src/dataaccess/blockrangeindex/inclusionstrategy;src/common/datum;src/backend/catalog;src/dataaccess/heap;src/dataaccess/index;src/utils/types;src/backend/nodes;"
+				AdditionalIncludeDirectories="src/include/file;src/include/error;src/include/common;src/include/os/file;src/include/commands;src/include/commands/relation;src/include/memory;src/include/lib/unity;src/include/tests/unit;src/include/common/hashtable;src/include/tests/unit/memory;src/include/tests/unit/common/hashtable;src/include/commands/relation/row;src/include/tests/unit/commands/relation/row;src/include/commands/relation/buffer;src/include/tests/unit/file/file_manager;src/include/common/config;src/include/tests/unit/error;src/include/common/signal;src/include/common/lock;src/include/tests/unit/common/sharedmem;src/include/dataaccess;src/include/dataaccess/spacepartitioning;src/include/storage;src/dataaccess/blockrangeindex;src/dataaccess/blockrangeindex/inclusionstrategy;src/common/datum;src/backend/catalog;src/dataaccess/heap;src/dataaccess/index;src/utils/types;src/backend/nodes;src/include/nodes;src/include/utils"
 				StringPooling="false"
 				RuntimeLibrary="3"
 				AssemblerOutput="0"
@@ -220,6 +220,22 @@
 					</File>
 					<File
 						RelativePath="src\include\file\relfilemanager.h"
+						>
+					</File>
+				</Filter>
+				<Filter
+					Name="nodes"
+					>
+					<File
+						RelativePath="src\include\nodes\memnodes.h"
+						>
+					</File>
+				</Filter>
+				<Filter
+					Name="utils"
+					>
+					<File
+						RelativePath="src\include\utils\memutils.h"
 						>
 					</File>
 				</Filter>
@@ -713,6 +729,10 @@
 				</File>
 				<File
 					RelativePath="src\memory\aset.c"
+					>
+				</File>
+				<File
+					RelativePath="src\memory\mcxt.c"
 					>
 				</File>
 			</Filter>
