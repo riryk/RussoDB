@@ -5,3 +5,16 @@ extern void MemoryContextCreate(MemoryContext node,
 								MemoryContext parent,
 								const char *name);
 
+extern MemoryContext AllocSetContextCreateInternal(MemoryContext parent,
+												   const char *name,
+												   int minContextSize,
+												   int initBlockSize,
+												   int maxBlockSize);
+
+#define AllocSetContextCreate \
+	AllocSetContextCreateInternal
+
+
+
+
+
