@@ -859,7 +859,11 @@
 						>
 					</File>
 					<File
-						RelativePath=".\hashtable.txt"
+						RelativePath="src\common\hashtable\hashtable.txt"
+						>
+					</File>
+					<File
+						RelativePath="src\common\hashtable\hashtablehelper.txt"
 						>
 					</File>
 					<File
@@ -868,6 +872,10 @@
 					</File>
 					<File
 						RelativePath="src\common\hashtable\hashtablemanager.c"
+						>
+					</File>
+					<File
+						RelativePath="src\common\hashtable\dynahash.c"
 						>
 					</File>
 				</Filter>
