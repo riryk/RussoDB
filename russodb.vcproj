@@ -934,6 +934,10 @@
 						RelativePath="src\common\lock\spinlockstrategy.c"
 						>
 					</File>
+					<File
+						RelativePath="src\common\lock\spin.c"
+						>
+					</File>
 				</Filter>
 				<Filter
 					Name="datum"
