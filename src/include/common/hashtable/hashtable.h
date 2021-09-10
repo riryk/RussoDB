@@ -22,7 +22,8 @@ typedef enum
 	HASH_FIND,
 	HASH_INSERT,
 	HASH_DELETE,
-	HASH_INSERT_NULL
+	HASH_INSERT_NULL,
+	HASH_END
 } EHashAction;
 
 typedef struct SHashtableSettings
